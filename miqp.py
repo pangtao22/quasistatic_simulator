@@ -20,7 +20,7 @@ Jn_a = np.array([[-1, 0, 0], [0, 1, 0.], [0, 0, 0]])
 
 Jf_u = np.zeros((n_f, n_u))
 Jf_u[:, 0] = [0, 0, 0, 0, 1, -1]
-Jf_u[:, 1] = [-1, 1, -1, 1, 0, 0]
+Jf_u[:, 1] = [1, -1, 1, -1, 0, 0]
 
 Jf_a = np.zeros((n_f, n_a))
 Jf_a[:, 2] = [-1, 1, -1, 1, 0, 0]
@@ -116,7 +116,6 @@ M_s = np.maximum(U.diagonal() * impulse_max, M_gamma)
 
 
 
-
 #%% construct program to solve for forces and displacements
 M_value = 1
 v_a_cmd = np.array([0.1, -0.1, 0.1])
@@ -143,6 +142,10 @@ for i in range(n_c):
 for i in range(n_f):
     prog.AddLinearConstraint(rho[i] <= M_rho[i] * z_rho[i])
     prog.AddLinearConstraint(P_f[i] <= M_rho[i] * (1 - z_rho[i]))
+
+phi_bar = Jn_u.dot(dq_u) + Jn_a.dot(dq_a_cmd) + phi_l
+for i in range(n_c):
+    prog.AddLinearConstraint(P_n[i] >= - 1e4 * h * phi_bar[i])
 
 prog.AddQuadraticCost(((dq_a - dq_a_cmd)**2).sum())
 result = solver.Solve(prog, None, None)
