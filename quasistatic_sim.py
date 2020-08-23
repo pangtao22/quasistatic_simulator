@@ -205,21 +205,31 @@ class QuasistaticSimulator:
 
         prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dq_a)
         prog.AddLinearCost(-P_ext, 0, dq_u)
+
+        Jn = np.hstack([Jn_u, Jn_a])
+        Jf = np.hstack([Jf_u, Jf_a])
+        J = np.zeros_like(Jf)
+        phi_constraints = np.zeros(n_f)
+
         j_start = 0
         for i in range(n_c):
             for j in range(n_d[i]):
                 idx = j_start + j
-                a = phi_l[i] + Jn_u[i].dot(dq_u) + U[i] * Jn_a[i].dot(dq_a) + \
-                    Jf_u[idx].dot(dq_u) + U[i] * Jf_a[idx].dot(dq_a)
-                prog.AddLinearConstraint(a[0] >= 0)
+                J[idx] = Jn[i] + U[i, i] * Jf[idx]
+                phi_constraints[idx] = phi_l[i]
             j_start += n_d[i]
 
-        result = self.solver.Solve(prog, None, None)
+        dq = np.hstack([dq_u, dq_a])
+        constraints = prog.AddLinearConstraint(
+            J, -phi_constraints, np.full_like(phi_constraints, np.inf), dq)
 
+        result = self.solver.Solve(prog, None, None)
+        beta = result.GetDualSolution(constraints)
+        beta = np.array(beta).squeeze()
         dq_a = result.GetSolution(dq_a)
         dq_u = result.GetSolution(dq_u)
 
-        return dq_a, dq_u, result
+        return dq_a, dq_u, beta, result
 
     def UpdateVisualizer(self, q):
         qu = q[:n_u]
@@ -235,7 +245,5 @@ class QuasistaticSimulator:
         X_WC = meshcat.transformations.euler_matrix(np.pi / 2, 0, 0)
         X_WC[0:3, 3] = [xc, yc, 0]
         self.vis["cylinder"].set_transform(X_WC)
-
-
 
 
