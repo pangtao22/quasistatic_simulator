@@ -26,7 +26,7 @@ for i in range(n_c):
     E[i_start: i_end, i] = 1
     i_start += n_d[i]
 
-U = np.eye(n_c) * 0.5
+U = np.eye(n_c) * 0.8
 
 
 tau_ext = np.array([0., -10])

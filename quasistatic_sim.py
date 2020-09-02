@@ -25,13 +25,19 @@ class QuasistaticSimulator:
             meshcat.transformations.euler_matrix(np.pi / 2, 0, 0))
         self.finger_thickness = 0.05
         self.vis["left_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.2, 0.2]),
+            meshcat.geometry.Box([self.finger_thickness, 0.5, 0.2]),
             meshcat.geometry.MeshLambertMaterial(
                 color=0xff0000, opacity=1.0))
         self.vis["right_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.2, 0.2]),
+            meshcat.geometry.Box([self.finger_thickness, 0.5, 0.2]),
             meshcat.geometry.MeshLambertMaterial(
                 color=0xff0000, opacity=1.0))
+        self.vis["support"].set_object(
+            meshcat.geometry.Box([0.16, 0.16, 0.2]),
+            meshcat.geometry.MeshLambertMaterial(
+                color=0x00ff00, opacity=1.0))
+        self.vis["support"].set_transform(
+            meshcat.transformations.translation_matrix([0, -0.08, 0]))
 
         # use orthographic camera, show xy plane.
         camera = meshcat.geometry.OrthographicCamera(
@@ -228,8 +234,9 @@ class QuasistaticSimulator:
         beta = np.array(beta).squeeze()
         dq_a = result.GetSolution(dq_a)
         dq_u = result.GetSolution(dq_u)
+        constraint_values = phi_constraints + result.EvalBinding(constraints)
 
-        return dq_a, dq_u, beta, result
+        return dq_a, dq_u, beta, constraint_values, result
 
     def UpdateVisualizer(self, q):
         qu = q[:n_u]
