@@ -4,6 +4,7 @@ from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
 
 from problem_definition_pinch import *
+from meshcat_camera_utils import SetOrthographicCameraXY
 
 h = 0.01  # simulation time step
 dq_max = 1 * h  # 1m/s
@@ -39,12 +40,7 @@ class QuasistaticSimulator:
         self.vis["support"].set_transform(
             meshcat.transformations.translation_matrix([0, -0.08, 0]))
 
-        # use orthographic camera, show xy plane.
-        camera = meshcat.geometry.OrthographicCamera(
-            left=-0.5, right=0.5, bottom=-0.5, top=0.5, near=-1000, far=1000)
-        self.vis['/Cameras/default/rotated'].set_object(camera)
-        self.vis['/Cameras/default'].set_transform(
-            meshcat.transformations.translation_matrix([0, 0, 1]))
+        SetOrthographicCameraXY(self.vis)
 
     @staticmethod
     def InitProgram(phi_l):

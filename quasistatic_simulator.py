@@ -4,6 +4,8 @@ from pydrake.systems.meshcat_visualizer import (
     MeshcatVisualizer, MeshcatContactVisualizer)
 from pydrake.systems.framework import DiagramBuilder, LeafSystem
 from pydrake.multibody.tree import JacobianWrtVariable
+from pydrake.solvers import mathematicalprogram as mp
+from pydrake.solvers.gurobi import GurobiSolver
 
 from setup_environments import *
 from contact_aware_control.contact_particle_filter.utils_cython import (
@@ -59,7 +61,6 @@ class QuasistaticSimulator:
             self.position_indices_actuated.append(
                 self.GetPositionsIndicesForModel(model_a))
 
-        #TODO: consider rotation of free objects.
         for model_u in self.models_unactuated:
             self.body_indices_unactuated.append(plant.GetBodyIndices(model_u))
             self.position_indices_unactuated.append(
@@ -76,6 +77,10 @@ class QuasistaticSimulator:
         self.n_u = self.n_u_list.sum()
 
         self.nd_per_contact = nd_per_contact
+
+        # solver
+        self.solver = GurobiSolver()
+        assert self.solver.available()
 
     def UpdateConfiguration(self, q):
         """
@@ -185,6 +190,7 @@ class QuasistaticSimulator:
         n_d = np.full(n_c, self.nd_per_contact)
         n_f = n_d.sum()
 
+        phi = np.zeros(n_c)
         Jn_u = np.zeros((n_c, self.n_u))
         Jn_a = np.zeros((n_c, self.n_a))
         Jf_u = np.zeros((n_f, self.n_u))
@@ -192,6 +198,7 @@ class QuasistaticSimulator:
 
         i_f_start = 0
         for i_c, sdp in enumerate(signed_distance_pairs):
+            phi[i_c] = sdp.distance
             body1 = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_A)
             body2 = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_B)
 
@@ -224,7 +231,7 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
-        return n_c, n_d, n_f, Jn_u, Jn_a, Jf_u, Jf_a
+        return n_c, n_d, n_f, Jn_u, Jn_a, Jf_u, Jf_a, phi
 
     def GetMbpBodyFromSceneGraphGeometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
@@ -234,3 +241,48 @@ class QuasistaticSimulator:
         selector = np.arange(self.plant.num_positions())
         return self.plant.GetPositionsFromArray(
             model_instance_index, selector).astype(np.int)
+
+    # TODO: P_ext and h should probably come from elsewhere...
+    def StepAnitescu(self, q, q_a_cmd, tau_u_ext, h):
+        self.UpdateConfiguration(q)
+        n_c, n_d, n_f, Jn_u, Jn_a, Jf_u, Jf_a, phi_l = \
+            self.CalcContactJacobians(0.1)
+        dq_a_cmd = q_a_cmd - q[self.n_u:]
+
+        prog = mp.MathematicalProgram()
+        dq_u = prog.NewContinuousVariables(self.n_u, "dq_u")
+        dq_a = prog.NewContinuousVariables(self.n_a, "dq_a")
+
+        # TODO: don't hard code these.
+        Kq_a = np.eye(self.n_a) * 1000
+        P_ext = tau_u_ext * h
+        U = np.eye(n_c) * 0.8
+
+        prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dq_a)
+        prog.AddLinearCost(-P_ext, 0, dq_u)
+
+        Jn = np.hstack([Jn_u, Jn_a])
+        Jf = np.hstack([Jf_u, Jf_a])
+        J = np.zeros_like(Jf)
+        phi_constraints = np.zeros(n_f)
+
+        j_start = 0
+        for i in range(n_c):
+            for j in range(n_d[i]):
+                idx = j_start + j
+                J[idx] = Jn[i] + U[i, i] * Jf[idx]
+                phi_constraints[idx] = phi_l[i]
+            j_start += n_d[i]
+
+        dq = np.hstack([dq_u, dq_a])
+        constraints = prog.AddLinearConstraint(
+            J, -phi_constraints, np.full_like(phi_constraints, np.inf), dq)
+
+        result = self.solver.Solve(prog, None, None)
+        beta = result.GetDualSolution(constraints)
+        beta = np.array(beta).squeeze()
+        dq_a = result.GetSolution(dq_a)
+        dq_u = result.GetSolution(dq_u)
+        constraint_values = phi_constraints + result.EvalBinding(constraints)
+
+        return dq_a, dq_u, beta, constraint_values, result

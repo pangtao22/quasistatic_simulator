@@ -16,14 +16,6 @@
       </inertial>
     </link>
 
-    <joint name="z_slider" type="prismatic">
-      <parent>world</parent>
-      <child>gripper_body</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-      </axis>
-    </joint>
-
     <joint name="y_slider_left" type="prismatic">
       <parent>gripper_body</parent>
       <child>left_finger</child>
@@ -32,7 +24,7 @@
       </axis>
     </joint>
 
-      <joint name="y_slider_right" type="prismatic">
+    <joint name="y_slider_right" type="prismatic">
       <parent>gripper_body</parent>
       <child>right_finger</child>
       <axis>
@@ -40,9 +32,17 @@
       </axis>
     </joint>
 
+    <joint name="z_slider" type="prismatic">
+      <parent>world</parent>
+      <child>gripper_body</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+      </axis>
+    </joint>
+
     <!-- The model for a solid box of uniform density. -->
     <link name="left_finger">
-      <pose>0 -0.005 0 0 0 0</pose>
+      <pose>0 -0.01 0 0 0 0</pose>
       <inertial>
         <mass>1.0</mass>
         <inertia>
@@ -83,7 +83,7 @@
 
       <!-- The model for a solid box of uniform density. -->
     <link name="right_finger">
-      <pose>0 0.005 0 0 0 0</pose>
+      <pose>0 0.01 0 0 0 0</pose>
       <inertial>
         <mass>1.0</mass>
         <inertia>
