@@ -19,13 +19,18 @@ Jf_u[:, 1] = [1, -1, 1, -1, 0, 0]
 Jf_a = np.zeros((n_f, n_a))
 Jf_a[:, 2] = [-1, 1, -1, 1, 0, 0]
 
-E = np.zeros((n_f, n_c))
-i_start = 0
-for i in range(n_c):
-    i_end = i_start + n_d[i]
-    E[i_start: i_end, i] = 1
-    i_start += n_d[i]
 
+def CalcE(n_d, n_c):
+    E = np.zeros((n_d.sum(), n_c))
+    i_start = 0
+    for i in range(n_c):
+        i_end = i_start + n_d[i]
+        E[i_start: i_end, i] = 1
+        i_start += n_d[i]
+    return E
+
+
+E = CalcE(n_d, n_c)
 U = np.eye(n_c) * 0.8
 
 
