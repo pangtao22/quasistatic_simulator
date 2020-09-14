@@ -12,7 +12,7 @@ from contact_aware_control.plan_runner.setup_three_link_arm import (
 module_path = pathlib.Path(__file__).parent.absolute()
 
 
-def CreatePlantFor2dArmWithFreeBox(builder):
+def CreatePlantFor2dArmWithFree3DBox(builder):
     """
     :param builder: a DiagramBuilder object.
     :return:
@@ -77,7 +77,8 @@ def CreatePlantFor2dArmWith2dBox(builder):
     plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
 
     # Add object
-    object_sdf_path = os.path.join(module_path, "models", "sphere_yz.sdf")
+    object_sdf_path = os.path.join(
+        module_path, "models", "box_yz_rotation_big.sdf")
     object_model = parser.AddModelFromFile(object_sdf_path)
     plant.Finalize()
 

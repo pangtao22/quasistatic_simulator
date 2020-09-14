@@ -1,4 +1,3 @@
-
 from pydrake.common.value import AbstractValue
 from pydrake.systems.meshcat_visualizer import (
     MeshcatVisualizer, MeshcatContactVisualizer)
@@ -13,7 +12,7 @@ from contact_aware_control.contact_particle_filter.utils_cython import (
 from problem_definition_pinch import CalcE
 
 
-#%%
+# %%
 class QuasistaticSimulator:
     def __init__(self, setup_environment, nd_per_contact):
         """
@@ -32,6 +31,7 @@ class QuasistaticSimulator:
             scene_graph.get_pose_bundle_output_port(),
             viz.GetInputPort("lcm_visualization"))
         diagram = builder.Build()
+        viz.vis.delete()
         viz.load()
 
         self.diagram = diagram
@@ -55,26 +55,35 @@ class QuasistaticSimulator:
         self.body_indices_unactuated = []
         self.position_indices_actuated = []
         self.position_indices_unactuated = []
+        self.velocity_indices_unactuated = []
 
         for model_a in self.models_actuated:
             self.body_indices_actuated.append(plant.GetBodyIndices(model_a))
             self.position_indices_actuated.append(
-                self.GetPositionsIndicesForModel(model_a))
+                self.GetPositionIndicesForModel(model_a))
 
         for model_u in self.models_unactuated:
             self.body_indices_unactuated.append(plant.GetBodyIndices(model_u))
             self.position_indices_unactuated.append(
-                self.GetPositionsIndicesForModel(model_u))
+                self.GetPositionIndicesForModel(model_u))
+            self.velocity_indices_unactuated.append(
+                self.GetVelocityIndicesForModel(model_u))
 
         # compute n_u and n_a
         self.n_a_list = np.array(
             [plant.num_positions(model) for model in self.models_actuated],
             dtype=np.int)
         self.n_a = self.n_a_list.sum()
-        self.n_u_list = np.array(
+
+        self.n_u_q_list = np.array(
             [plant.num_positions(model) for model in self.models_unactuated],
             dtype=np.int)
-        self.n_u = self.n_u_list.sum()
+        self.n_u_q = self.n_u_q_list.sum()
+
+        self.n_u_v_list = np.array(
+            [plant.num_velocities(model) for model in self.models_unactuated],
+            dtype=np.int)
+        self.n_u_v = self.n_u_v_list.sum()
 
         self.nd_per_contact = nd_per_contact
 
@@ -88,8 +97,8 @@ class QuasistaticSimulator:
         :return:
         """
         # Update state in plant_context
-        q_u = q[:self.n_u]
-        q_a = q[self.n_u:]
+        q_u = q[:self.n_u_q]
+        q_a = q[self.n_u_q:]
         assert len(self.models_actuated) <= 1
         assert len(self.models_unactuated) <= 1
         for model_a in self.models_actuated:
@@ -102,9 +111,9 @@ class QuasistaticSimulator:
     def DrawCurrentConfiguration(self):
         self.viz.DoPublish(self.context_meshcat, [])
 
-    def UpdateNormalAndTangentialJacobianRows(
-            self, body, pC_D, n_W, i_c: int, n_di: int, i_f_start: int,
-            position_indices, Jn, Jf):
+    def UpdateNormalAndTangentialJacobianRows(self, body, pC_D, n_W,
+            i_c: int, n_di: int,
+            i_f_start: int, position_indices, Jn, Jf, jacobian_wrt_variable):
         """
         Updates corresonding rows of Jn and Jf.
         :param body: a RigidBody object that belongs to either
@@ -121,21 +130,21 @@ class QuasistaticSimulator:
         :param Jf: tangent jacobian of shape(n_f, len(position_indices)).
         :return: None.
         """
-        J_q_WBi = self.plant.CalcJacobianTranslationalVelocity(
+        J_WBi = self.plant.CalcJacobianTranslationalVelocity(
             context=self.context_plant,
-            with_respect_to=JacobianWrtVariable.kQDot,
+            with_respect_to=jacobian_wrt_variable,
             frame_B=body.body_frame(),
             p_BoBi_B=pC_D,
             frame_A=self.plant.world_frame(),
             frame_E=self.plant.world_frame())
-        J_qa_WBi = J_q_WBi[:, position_indices]
+        J_WBi = J_WBi[:, position_indices]
         dC = CalcTangentVectors(n_W, n_di)
 
-        Jn[i_c] = n_W.dot(J_qa_WBi)
-        Jf[i_f_start: i_f_start + n_di] = dC.dot(J_qa_WBi)
+        Jn[i_c] = n_W.dot(J_WBi)
+        Jf[i_f_start: i_f_start + n_di] = dC.dot(J_WBi)
 
-    @staticmethod
-    def FindContactFromSignedDistancePair(bodyA, bodyB, sdp, body_indices):
+    def FindContactFromSignedDistancePair(self, bodyA, bodyB, sdp,
+                                          body_indices):
         """
         Determine if either of the two bodies (bodyA and bodyB) are in
         body_indices_list. If true, return
@@ -152,7 +161,8 @@ class QuasistaticSimulator:
         """
         # D: frame of body
         # pC_D: "contact" point for the body expressed in frame D.
-        # n_W: contact normal pointing away from the body expressed in world frame.
+        # n_W: contact normal pointing away from the body expressed in world
+        #   frame.
 
         body_D, pC_D, n_W = None, None, None
         is_A_in = bodyA.index() in body_indices
@@ -163,11 +173,16 @@ class QuasistaticSimulator:
 
         if is_A_in:
             body_D = bodyA
-            pC_D = sdp.p_ACa
+            # X_DF: Transformation between frame B, the body frame of body,
+            #   and F, the frame of the contact geometry where contact is
+            #   detected.
+            X_DF = self.inspector.GetPoseInFrame(sdp.id_A)
+            pC_D = X_DF.multiply(sdp.p_ACa)
             n_W = sdp.nhat_BA_W
         elif is_B_in:
             body_D = bodyB
-            pC_D = sdp.p_BCb
+            X_DF = self.inspector.GetPoseInFrame(sdp.id_B)
+            pC_D = X_DF.multiply(sdp.p_BCb)
             n_W = -sdp.nhat_BA_W
 
         return body_D, pC_D, n_W
@@ -191,9 +206,13 @@ class QuasistaticSimulator:
         n_f = n_d.sum()
 
         phi = np.zeros(n_c)
-        Jn_u = np.zeros((n_c, self.n_u))
+        Jn_u_q = np.zeros((n_c, self.n_u_q))
+        Jf_u_q = np.zeros((n_f, self.n_u_q))
+
+        Jn_u_v = np.zeros((n_c, self.n_u_v))
+        Jf_u_v = np.zeros((n_f, self.n_u_v))
+
         Jn_a = np.zeros((n_c, self.n_a))
-        Jf_u = np.zeros((n_f, self.n_u))
         Jf_a = np.zeros((n_f, self.n_a))
 
         i_f_start = 0
@@ -220,37 +239,51 @@ class QuasistaticSimulator:
                     body=body_a, pC_D=pCa_A, n_W=n_a_W, i_c=i_c, n_di=n_d[i_c],
                     i_f_start=i_f_start,
                     position_indices=self.position_indices_actuated[0],
-                    Jn=Jn_a, Jf=Jf_a)
+                    Jn=Jn_a, Jf=Jf_a,
+                    jacobian_wrt_variable=JacobianWrtVariable.kQDot)
 
             if body_u is not None:
                 self.UpdateNormalAndTangentialJacobianRows(
                     body=body_u, pC_D=pCu_U, n_W=n_u_W, i_c=i_c, n_di=n_d[i_c],
                     i_f_start=i_f_start,
                     position_indices=self.position_indices_unactuated[0],
-                    Jn=Jn_u, Jf=Jf_u)
+                    Jn=Jn_u_q, Jf=Jf_u_q,
+                    jacobian_wrt_variable=JacobianWrtVariable.kQDot)
+
+                self.UpdateNormalAndTangentialJacobianRows(
+                    body=body_u, pC_D=pCu_U, n_W=n_u_W, i_c=i_c, n_di=n_d[i_c],
+                    i_f_start=i_f_start,
+                    position_indices=self.velocity_indices_unactuated[0],
+                    Jn=Jn_u_v, Jf=Jf_u_v,
+                    jacobian_wrt_variable=JacobianWrtVariable.kV)
 
             i_f_start += n_d[i_c]
 
-        return n_c, n_d, n_f, Jn_u, Jn_a, Jf_u, Jf_a, phi
+        return n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi
 
     def GetMbpBodyFromSceneGraphGeometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
         return self.plant.GetBodyFromFrameId(f_id)
 
-    def GetPositionsIndicesForModel(self, model_instance_index):
+    def GetPositionIndicesForModel(self, model_instance_index):
         selector = np.arange(self.plant.num_positions())
         return self.plant.GetPositionsFromArray(
             model_instance_index, selector).astype(np.int)
 
-    # TODO: P_ext and h should probably come from elsewhere...
+    def GetVelocityIndicesForModel(self, model_instance_index):
+        selector = np.arange(self.plant.num_velocities())
+        return self.plant.GetVelocitiesFromArray(
+            model_instance_index, selector).astype(np.int)
+
+    # TODO: tau_u_ext and h should probably come from elsewhere...
     def StepAnitescu(self, q, q_a_cmd, tau_u_ext, h):
         self.UpdateConfiguration(q)
-        n_c, n_d, n_f, Jn_u, Jn_a, Jf_u, Jf_a, phi_l = \
-            self.CalcContactJacobians(0.1)
-        dq_a_cmd = q_a_cmd - q[self.n_u:]
+        n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi_l = \
+            self.CalcContactJacobians(0.05)
+        dq_a_cmd = q_a_cmd - q[self.n_u_q:]
 
         prog = mp.MathematicalProgram()
-        dq_u = prog.NewContinuousVariables(self.n_u, "dq_u")
+        dq_u = prog.NewContinuousVariables(self.n_u_q, "dq_u")
         dq_a = prog.NewContinuousVariables(self.n_a, "dq_a")
 
         # TODO: don't hard code these.
@@ -261,8 +294,8 @@ class QuasistaticSimulator:
         prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dq_a)
         prog.AddLinearCost(-P_ext, 0, dq_u)
 
-        Jn = np.hstack([Jn_u, Jn_a])
-        Jf = np.hstack([Jf_u, Jf_a])
+        Jn = np.hstack([Jn_u_q, Jn_a])
+        Jf = np.hstack([Jf_u_q, Jf_a])
         J = np.zeros_like(Jf)
         phi_constraints = np.zeros(n_f)
 
@@ -279,10 +312,71 @@ class QuasistaticSimulator:
             J, -phi_constraints, np.full_like(phi_constraints, np.inf), dq)
 
         result = self.solver.Solve(prog, None, None)
+        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
         dq_a = result.GetSolution(dq_a)
         dq_u = result.GetSolution(dq_u)
+        constraint_values = phi_constraints + result.EvalBinding(constraints)
+
+        return dq_a, dq_u, beta, constraint_values, result
+
+    # TODO: tau_u_ext and h should probably come from elsewhere...
+    def StepAnitescu3D(self, q, q_a_cmd, tau_u_ext, h):
+        assert self.n_u_q == 7 and self.n_u_v == 6
+
+        self.UpdateConfiguration(q)
+        n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi_l = \
+            self.CalcContactJacobians(0.05)
+        dq_a_cmd = q_a_cmd - q[self.n_u_q:]
+        q_u = q[:self.n_u_q]
+        Q = q_u[:4]  # Quaternion Q_WB
+
+        prog = mp.MathematicalProgram()
+        dv_u = prog.NewContinuousVariables(self.n_u_v, "dv_u")
+        dv_a = prog.NewContinuousVariables(self.n_a, "dv_a")
+
+        # TODO: don't hard code these.
+        Kq_a = np.eye(self.n_a) * 1000
+        P_ext = tau_u_ext * h
+        U = np.eye(n_c) * 0.8
+
+        prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dv_a)
+        prog.AddLinearCost(-P_ext, 0, dv_u)
+
+        Jn = np.hstack([Jn_u_v, Jn_a])
+        Jf = np.hstack([Jf_u_v, Jf_a])
+        J = np.zeros_like(Jf)
+        phi_constraints = np.zeros(n_f)
+
+        j_start = 0
+        for i in range(n_c):
+            for j in range(n_d[i]):
+                idx = j_start + j
+                J[idx] = Jn[i] + U[i, i] * Jf[idx]
+                phi_constraints[idx] = phi_l[i]
+            j_start += n_d[i]
+
+        dv = np.hstack([dv_u, dv_a])
+        constraints = prog.AddLinearConstraint(
+            J, -phi_constraints, np.full_like(phi_constraints, np.inf), dv)
+
+        result = self.solver.Solve(prog, None, None)
+        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
+        beta = result.GetDualSolution(constraints)
+        beta = np.array(beta).squeeze()
+        dv_a_value = result.GetSolution(dv_a)
+        dv_u_value = result.GetSolution(dv_u)
+
+        E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
+                      [-Q[2], Q[3], Q[0], -Q[1]],
+                      [-Q[3], -Q[2], Q[1], Q[0]]])
+
+        dq_a = dv_a_value
+        dq_u = np.zeros(7)
+        dq_u[:4] = 0.5 * E.T.dot(dv_u_value[:3])
+        dq_u[4:] = dv_u_value[3:]
+
         constraint_values = phi_constraints + result.EvalBinding(constraints)
 
         return dq_a, dq_u, beta, constraint_values, result
