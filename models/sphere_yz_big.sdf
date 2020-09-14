@@ -42,7 +42,7 @@
          box would free fall if it wasn't for the contact with the ground. -->
     <joint name="z_slider" type="prismatic">
       <parent>ghost_body</parent>
-      <child>box</child>
+      <child>sphere</child>
       <axis>
         <xyz>0 0 1</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
@@ -69,14 +69,27 @@
       <visual name="visual">
         <geometry>
           <sphere>
-            <radius>0.1</radius>
+            <radius>0.5</radius>
           </sphere>
         </geometry>
       </visual>
+
+      <visual name='box'>
+        <pose> 0 0 0.45 0 0 0 </pose>
+        <geometry>
+          <box>
+           <size>1 0.1 0.1 </size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 0 0 1</diffuse>
+        </material>
+      </visual>
+
       <collision name="collision">
         <geometry>
           <sphere>
-            <radius>0.1</radius>
+            <radius>0.5</radius>
           </sphere>
         </geometry>
         <surface>

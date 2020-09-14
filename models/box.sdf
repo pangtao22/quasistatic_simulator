@@ -9,11 +9,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.06 0.09 0.2"/>
+<!--        <box size="0.06 0.09 0.2"/>-->
+        <box size="1 1 1"/>
       </geometry>
-      <material name="green">
-        <color rgba="0.1 0.1 0.8 0.9"/>
-      </material>
     </visual>
     <!--
       This places contact spheres on the corners of the visual box and a
@@ -28,53 +26,53 @@
      -->
     <collision>
       <geometry>
-        <box size="0.059 0.089 0.199"/>
+        <box size="0.999 0.999 0.999"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="-0.03 -0.045 -0.1" rpy="0 0 0"/>
+      <origin xyz="-0.5 -0.5 -0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="-0.03 0.045 -0.1" rpy="0 0 0"/>
+      <origin xyz="-0.5 0.5 -0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="0.03 0.045 -0.1" rpy="0 0 0"/>
+      <origin xyz="0.5 0.5 -0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="0.03 -0.045 -0.1" rpy="0 0 0"/>
+      <origin xyz="0.5 -0.5 -0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="-0.03 -0.045 0.1" rpy="0 0 0"/>
+      <origin xyz="-0.5 -0.5 0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="-0.03 0.045 0.1" rpy="0 0 0"/>
+      <origin xyz="-0.5 0.5 0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="0.03 0.045 0.1" rpy="0 0 0"/>
+      <origin xyz="0.5 0.5 0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>
     </collision>
     <collision>
-      <origin xyz="0.03 -0.045 0.1" rpy="0 0 0"/>
+      <origin xyz="0.5 -0.5 0.5" rpy="0 0 0"/>
       <geometry>
         <sphere radius="1e-7"/>
       </geometry>

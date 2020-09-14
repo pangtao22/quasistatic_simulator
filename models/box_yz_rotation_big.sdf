@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
+
   <!-- Note:
        This file defines the model for a box with two degrees of freedom
        (DOFs): a) one DOF for the horizontal motion along the y axis and
@@ -8,9 +9,10 @@
        the box and the world so that we can attach two prismatic joints for
        these two DOFs. The ghost body has negligible mass.
   -->
-  <model name="sphere_yz">
+  <!-- world->ghost_body_y->ghost_body_z_sphere-->
+  <model name="box_yz">
     <!-- Ghost body of negligible mass. -->
-    <link name="ghost_body">
+    <link name="ghost_body_y">
       <inertial>
         <mass>1.0e-6</mass>
         <inertia>
@@ -23,12 +25,24 @@
         </inertia>
       </inertial>
     </link>
-    <!-- The y slider will have an actuator with a corresponding input port
-         in our MultibodyPlant model so that we can apply an external force.
-    -->
+
+    <link name="ghost_body_z">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>
+
     <joint name="y_slider" type="prismatic">
       <parent>world</parent>
-      <child>ghost_body</child>
+      <child>ghost_body_y</child>
       <axis>
         <xyz>0 1 0</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
@@ -38,11 +52,10 @@
         </limit>
       </axis>
     </joint>
-    <!-- The z slider allows the box to freely move up and down. Thus, the
-         box would free fall if it wasn't for the contact with the ground. -->
+
     <joint name="z_slider" type="prismatic">
-      <parent>ghost_body</parent>
-      <child>box</child>
+      <parent>ghost_body_y</parent>
+      <child>ghost_body_z</child>
       <axis>
         <xyz>0 0 1</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
@@ -53,8 +66,23 @@
         </limit>
       </axis>
     </joint>
-    <!-- The model for a solid box of uniform density. -->
-    <link name="sphere">
+
+    <joint name="rotation" type="revolute">
+      <parent>ghost_body_z</parent>
+      <child>box</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <!-- Drake attaches an actuator to all joints with a non-zero effort
+             limit. We do not want an actuator for this joint and therefore we
+             set a zero effort limit. -->
+        <limit>
+          <effort>0</effort>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- The model for a solid sphere of uniform density. -->
+    <link name="box">
       <inertial>
         <mass>1.0</mass>
         <inertia>
@@ -66,18 +94,20 @@
           <izz>0.166666666666667</izz>
         </inertia>
       </inertial>
-      <visual name="visual">
+
+      <visual name="box_visual">
         <geometry>
-          <sphere>
-            <radius>0.1</radius>
-          </sphere>
+          <box>
+            <size>0.01 0.999 0.999</size>
+          </box>
         </geometry>
       </visual>
+
       <collision name="collision">
         <geometry>
-          <sphere>
-            <radius>0.1</radius>
-          </sphere>
+          <box>
+            <size>0.01 0.999 0.999</size>
+          </box>
         </geometry>
         <surface>
           <friction>
@@ -90,6 +120,25 @@
           </friction>
         </surface>
       </collision>
+
+      <collision name="lower_left_corner">
+        <pose> 0 -0.5 -0.5 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
+      <collision name="lower_right_corner">
+        <pose> 0 0.5 -0.5 0 0 0 </pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
     </link>
   </model>
 </sdf>
