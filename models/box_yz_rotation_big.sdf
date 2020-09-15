@@ -81,7 +81,7 @@
       </axis>
     </joint>
 
-    <!-- The model for a solid sphere of uniform density. -->
+    <!-- The model for a solid box of uniform density. -->
     <link name="box">
       <inertial>
         <mass>1.0</mass>
@@ -114,8 +114,8 @@
             <ode>
               <!-- MultibodyPlant's time stepping only uses the static
                    coefficient of friction, <mu>. -->
-              <mu>0.8</mu>
-              <mu2>0.8</mu2>
+              <mu>0.5</mu>
+              <mu2>0.5</mu2>
             </ode>
           </friction>
         </surface>
