@@ -99,6 +99,9 @@
             <radius>0.5</radius>
           </sphere>
         </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 0.8</diffuse>
+        </material>
       </visual>
 
       <visual name='box'>
