@@ -13,6 +13,13 @@ from contact_aware_control.plan_runner.setup_three_link_arm import (
 from setup_environments import *
 from sim_params_3link_arm import *
 
+#%%
+object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
+q_a0 = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])
+q_u0 = np.array([1.7, 0.5, 0])
+q0 = np.hstack([q_u0, q_a0])
+
+
 
 #%%  Build diagram.
 builder = DiagramBuilder()
@@ -63,7 +70,8 @@ context_controller = diagram.GetSubsystemContext(controller, context)
 context_plant = diagram.GetSubsystemContext(plant, context)
 
 controller.tau_feedforward_input_port.FixValue(context_controller, np.zeros(3))
-plant.SetPositions(context_plant, q0)
+plant.SetPositions(context_plant, object_model, q_u0)
+plant.SetPositions(context_plant, robot_model, q_a0)
 
 
 #%%

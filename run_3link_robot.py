@@ -3,9 +3,14 @@ import time
 from quasistatic_simulator import *
 from meshcat_camera_utils import SetOrthographicCameraYZ
 
+from sim_params_3link_arm import *
+
 #%%
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWith2dBox, nd_per_contact=2)
-SetOrthographicCameraYZ(q_sim.viz.vis)
+object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=2,
+                             object_sdf_path=object_sdf_path,
+                             joint_stiffness=Kq_a)
+# SetOrthographicCameraYZ(q_sim.viz.vis)
 
 
 #%%
@@ -16,15 +21,15 @@ q_sim.UpdateConfiguration(q)
 q_sim.DrawCurrentConfiguration()
 
 #%%
-h = 0.001
+h = 0.01
 tau_u_ext = np.array([0., -10, 0])
-n_steps = 500
+n_steps = int(t_final / h)
 
 input("start?")
 for i in range(n_steps):
     # dr = np.min([0.001 * i, 0.02])
     # q_a_cmd = np.array([-r * 1.1 + dr, r * 1.1 - dr, -0.002 * i])
-    q_a_cmd = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2]) + h * i
+    q_a_cmd = q_a_traj.value(h * i).squeeze()
     dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu(
         q, q_a_cmd, tau_u_ext, h)
 
@@ -34,7 +39,7 @@ for i in range(n_steps):
     q_sim.DrawCurrentConfiguration()
 
     # logging
-    time.sleep(h * 10)
+    time.sleep(h)
     # input("next?")
 
 #%%

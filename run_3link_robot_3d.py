@@ -1,27 +1,26 @@
 import time
 
 from quasistatic_simulator import *
+from sim_params_3link_arm import *
 
 #%%
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithFree3DBox, nd_per_contact=8)
-
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=8,
+                             object_sdf_path=object_sdf_path,
+                             joint_stiffness=Kq_a)
 
 #%%
-q_a = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])
-q_u = np.array([1, 0, 0, 0, 0, 1.7, 0.5])
-q = np.hstack([q_u, q_a])
-q_sim.UpdateConfiguration(q)
+q_sim.UpdateConfiguration(q0)
 q_sim.DrawCurrentConfiguration()
 
-
 #%%
-h = 0.001
-tau_u_ext = np.array([0, 0, 0, 0., 0, -5])
-n_steps = int(0.5 / h)
+h = 0.01
+tau_u_ext = np.array([0, 0, 0, 0., 0, -10])
+n_steps = int(t_final / h)
+q = q0.copy()
 
 input("start?")
 for i in range(n_steps):
-    q_a_cmd = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2]) + h * i
+    q_a_cmd = q_a_traj.value(h * i).squeeze()
     dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu3D(
         q, q_a_cmd, tau_u_ext, h)
 

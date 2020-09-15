@@ -9,21 +9,25 @@ from pydrake.solvers.gurobi import GurobiSolver
 from setup_environments import *
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
-from problem_definition_pinch import CalcE
 
 
 # %%
 class QuasistaticSimulator:
-    def __init__(self, setup_environment, nd_per_contact):
+    def __init__(self, setup_environment, nd_per_contact, object_sdf_path,
+                 joint_stiffness):
         """
         Let's assume that
         - There's only one unactuated and one actuated model instance.
         - Each rigid body has one contact geometry.
+        :param joint_stiffness: a 1D vector of length n_a. The stiffness of
+        all joints of the robot.
         """
+        self.Kq_a = np.diag(joint_stiffness).astype(float)
+
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model, object_model = setup_environment(
-            builder)
+            builder, object_sdf_path)
         viz = MeshcatVisualizer(
             scene_graph, frames_to_draw={"three_link_arm": {"link_ee"}})
         builder.AddSystem(viz)
@@ -86,6 +90,7 @@ class QuasistaticSimulator:
         self.n_u_v = self.n_u_v_list.sum()
 
         self.nd_per_contact = nd_per_contact
+        assert self.n_a == self.Kq_a.diagonal().size
 
         # solver
         self.solver = GurobiSolver()
@@ -287,11 +292,10 @@ class QuasistaticSimulator:
         dq_a = prog.NewContinuousVariables(self.n_a, "dq_a")
 
         # TODO: don't hard code these.
-        Kq_a = np.eye(self.n_a) * 1000
         P_ext = tau_u_ext * h
         U = np.eye(n_c) * 0.8
 
-        prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dq_a)
+        prog.AddQuadraticCost(self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, dq_a)
         prog.AddLinearCost(-P_ext, 0, dq_u)
 
         Jn = np.hstack([Jn_u_q, Jn_a])
@@ -337,11 +341,10 @@ class QuasistaticSimulator:
         dv_a = prog.NewContinuousVariables(self.n_a, "dv_a")
 
         # TODO: don't hard code these.
-        Kq_a = np.eye(self.n_a) * 1000
         P_ext = tau_u_ext * h
         U = np.eye(n_c) * 0.8
 
-        prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dv_a)
+        prog.AddQuadraticCost(self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, dv_a)
         prog.AddLinearCost(-P_ext, 0, dv_u)
 
         Jn = np.hstack([Jn_u_v, Jn_a])
