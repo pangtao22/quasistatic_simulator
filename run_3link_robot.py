@@ -6,8 +6,9 @@ from meshcat_camera_utils import SetOrthographicCameraYZ
 from sim_params_3link_arm import *
 
 #%%
-object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=2,
+# object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
+object_sdf_path = os.path.join("models", "sphere_yz_rotation_big.sdf")
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=4,
                              object_sdf_path=object_sdf_path,
                              joint_stiffness=Kq_a)
 # SetOrthographicCameraYZ(q_sim.viz.vis)
@@ -30,8 +31,11 @@ for i in range(n_steps):
     # dr = np.min([0.001 * i, 0.02])
     # q_a_cmd = np.array([-r * 1.1 + dr, r * 1.1 - dr, -0.002 * i])
     q_a_cmd = q_a_traj.value(h * i).squeeze()
-    dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu(
-        q, q_a_cmd, tau_u_ext, h)
+    dq_a, dq_u, beta, constraint_values, result, contact_results = \
+        q_sim.StepAnitescu(
+        q, q_a_cmd, tau_u_ext, h,
+        is_planar=True,
+        contact_detection_tolerance=0.01)
 
     # Update q
     q += np.hstack([dq_u, dq_a])
@@ -40,7 +44,7 @@ for i in range(n_steps):
 
     # logging
     time.sleep(h)
-    # input("next?")
+    input("next?")
 
 #%%
 n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi = \

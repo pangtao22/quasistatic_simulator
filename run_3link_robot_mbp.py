@@ -20,7 +20,6 @@ q_u0 = np.array([1.7, 0.5, 0])
 q0 = np.hstack([q_u0, q_a0])
 
 
-
 #%%  Build diagram.
 builder = DiagramBuilder()
 plant, scene_graph, robot_model, object_model = \

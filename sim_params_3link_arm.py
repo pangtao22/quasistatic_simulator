@@ -3,7 +3,7 @@ import os
 import numpy as np
 from pydrake.trajectories import PiecewisePolynomial
 
-object_sdf_path = os.path.join("models", "box.sdf")
+box3d_sdf_path = os.path.join("models", "box.sdf")
 
 Kq_a = np.array([1000, 1000, 1000], dtype=float)
 q_a0 = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])

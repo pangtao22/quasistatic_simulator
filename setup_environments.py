@@ -20,12 +20,11 @@ def Create3LinkArmControllerPlant():
     plant = MultibodyPlant(1e-3)
     parser = Parser(plant=plant)
     parser.AddModelFromFile(robot_sdf_path)
-    plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
     plant.WeldFrames(
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
     plant.Finalize()
     return plant
-
 
 
 def CreatePlantFor2dArmWithObject(builder, object_sdf_path):
@@ -63,7 +62,7 @@ def CreatePlantFor2dArmWithObject(builder, object_sdf_path):
             object_model)
 
 
-def CreatePlantFor2dGripper(builder):
+def CreatePlantFor2dGripper(builder, *args):
     """
     This function should be called when constructing a Diagram in RobotSimulator.
     :param builder: a reference to the DiagramBuilder.

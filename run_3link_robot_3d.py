@@ -4,8 +4,8 @@ from quasistatic_simulator import *
 from sim_params_3link_arm import *
 
 #%%
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=8,
-                             object_sdf_path=object_sdf_path,
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=4,
+                             object_sdf_path=box3d_sdf_path,
                              joint_stiffness=Kq_a)
 
 #%%
@@ -21,8 +21,11 @@ q = q0.copy()
 input("start?")
 for i in range(n_steps):
     q_a_cmd = q_a_traj.value(h * i).squeeze()
-    dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu3D(
-        q, q_a_cmd, tau_u_ext, h)
+    dq_a, dq_u, beta, constraint_values, result, contact_results = \
+        q_sim.StepAnitescu(
+            q, q_a_cmd, tau_u_ext, h,
+            is_planar=False,
+            contact_detection_tolerance=0.01)
 
     # Update q
     q += np.hstack([dq_u, dq_a])

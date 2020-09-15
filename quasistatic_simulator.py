@@ -1,3 +1,5 @@
+from typing import List
+
 from pydrake.common.value import AbstractValue
 from pydrake.systems.meshcat_visualizer import (
     MeshcatVisualizer, MeshcatContactVisualizer)
@@ -5,6 +7,9 @@ from pydrake.systems.framework import DiagramBuilder, LeafSystem
 from pydrake.multibody.tree import JacobianWrtVariable
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
+from pydrake.multibody.plant import PointPairContactInfo, ContactResults
+from pydrake.geometry import PenetrationAsPointPair
+from pydrake.common.value import AbstractValue
 
 from setup_environments import *
 from contact_aware_control.contact_particle_filter.utils_cython import (
@@ -12,6 +17,22 @@ from contact_aware_control.contact_particle_filter.utils_cython import (
 
 
 # %%
+class ContactInfo(object):
+    """
+    Used as an intermediate storage structure for constructing
+    PointPairContactInfo.
+    n_W is pointing into body B.
+    dC_W are the tangent vectors spanning the tangent plane at the
+    contact point.
+    """
+
+    def __init__(self, bodyA_index, bodyB_index, p_WC_W, n_W, dC_W):
+        self.bodyA_index = bodyA_index
+        self.bodyB_index = bodyB_index
+        self.p_WC_W = p_WC_W
+        self.n_W = n_W
+        self.dC_W = dC_W
+
 class QuasistaticSimulator:
     def __init__(self, setup_environment, nd_per_contact, object_sdf_path,
                  joint_stiffness):
@@ -34,6 +55,14 @@ class QuasistaticSimulator:
         builder.Connect(
             scene_graph.get_pose_bundle_output_port(),
             viz.GetInputPort("lcm_visualization"))
+
+        # ContactVisualizer
+        contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
+        builder.AddSystem(contact_viz)
+        builder.Connect(
+            scene_graph.get_pose_bundle_output_port(),
+            contact_viz.GetInputPort("pose_bundle"))
+
         diagram = builder.Build()
         viz.vis.delete()
         viz.load()
@@ -42,6 +71,7 @@ class QuasistaticSimulator:
         self.plant = plant
         self.scene_graph = scene_graph
         self.viz = viz
+        self.contact_viz = contact_viz
         self.inspector = scene_graph.model_inspector()
 
         self.context = diagram.CreateDefaultContext()
@@ -51,6 +81,8 @@ class QuasistaticSimulator:
             scene_graph, self.context)
         self.context_meshcat = diagram.GetMutableSubsystemContext(
             self.viz, self.context)
+        self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
+            self.contact_viz, self.context)
 
         # Get actuated and un-actuated model instances in respective lists?
         self.models_actuated = [robot_model]
@@ -96,6 +128,8 @@ class QuasistaticSimulator:
         self.solver = GurobiSolver()
         assert self.solver.available()
 
+        self.contact_results = ContactResults()
+
     def UpdateConfiguration(self, q):
         """
         :param q = [q_u, q_a]
@@ -114,7 +148,14 @@ class QuasistaticSimulator:
                 self.context_plant, model_u, q_u)
 
     def DrawCurrentConfiguration(self):
+        # Body poses
         self.viz.DoPublish(self.context_meshcat, [])
+
+        # Contact forces
+        self.context_meshcat_contact.FixInputPort(
+            self.contact_viz.GetInputPort("contact_results").get_index(),
+            AbstractValue.Make(self.contact_results))
+        self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
     def UpdateNormalAndTangentialJacobianRows(self, body, pC_D, n_W,
             i_c: int, n_di: int,
@@ -143,13 +184,15 @@ class QuasistaticSimulator:
             frame_A=self.plant.world_frame(),
             frame_E=self.plant.world_frame())
         J_WBi = J_WBi[:, position_indices]
-        dC = CalcTangentVectors(n_W, n_di)
+        dC_W = CalcTangentVectors(n_W, n_di)
 
         Jn[i_c] = n_W.dot(J_WBi)
-        Jf[i_f_start: i_f_start + n_di] = dC.dot(J_WBi)
+        Jf[i_f_start: i_f_start + n_di] = dC_W.dot(J_WBi)
 
-    def FindContactFromSignedDistancePair(self, bodyA, bodyB, sdp,
-                                          body_indices):
+        return dC_W
+
+    def FindContactFromSignedDistancePair(
+            self, bodyA, bodyB, p_ACa_A, p_BCb_B, nhat_BA_W, body_indices):
         """
         Determine if either of the two bodies (bodyA and bodyB) are in
         body_indices_list. If true, return
@@ -160,7 +203,6 @@ class QuasistaticSimulator:
 
         :param bodyA: A RigidBody object containing geometry id_A in sdp.
         :param bodyB: A RigidBody object containing geometry id_B in sdp.
-        :param sdp: A SignedDistancePair object.
         :param body_indices: A list/set of body indices.
         :return:
         """
@@ -181,14 +223,12 @@ class QuasistaticSimulator:
             # X_DF: Transformation between frame B, the body frame of body,
             #   and F, the frame of the contact geometry where contact is
             #   detected.
-            X_DF = self.inspector.GetPoseInFrame(sdp.id_A)
-            pC_D = X_DF.multiply(sdp.p_ACa)
-            n_W = sdp.nhat_BA_W
+            pC_D = p_ACa_A
+            n_W = nhat_BA_W
         elif is_B_in:
             body_D = bodyB
-            X_DF = self.inspector.GetPoseInFrame(sdp.id_B)
-            pC_D = X_DF.multiply(sdp.p_BCb)
-            n_W = -sdp.nhat_BA_W
+            pC_D = p_BCb_B
+            n_W = -nhat_BA_W
 
         return body_D, pC_D, n_W
 
@@ -217,14 +257,33 @@ class QuasistaticSimulator:
         Jn_u_v = np.zeros((n_c, self.n_u_v))
         Jf_u_v = np.zeros((n_f, self.n_u_v))
 
+        # It is assumed here that q_a_dot = v_a.
         Jn_a = np.zeros((n_c, self.n_a))
         Jf_a = np.zeros((n_f, self.n_a))
 
+        contact_info_list = []
+
         i_f_start = 0
         for i_c, sdp in enumerate(signed_distance_pairs):
+            print(self.inspector.GetNameByGeometryId(sdp.id_A))
+            print(self.inspector.GetNameByGeometryId(sdp.id_B))
+            print(self.inspector.GetFrameId(sdp.id_A))
+            print(self.inspector.GetFrameId(sdp.id_B))
+            print("distance: ", sdp.distance)
+            print("")
+
             phi[i_c] = sdp.distance
             body1 = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_A)
             body2 = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_B)
+            # 1 and 2 denote the body frames of body1 and body2.
+            # F is the contact geometry frame relative to the body to which
+            # the contact geometry belongs.
+            # p_1C1_1 is the coordinates of the "contact" point C1 relative
+            # to the body frame 1 expressed in frame 1.
+            X_1F = self.inspector.GetPoseInFrame(sdp.id_A)
+            X_2F = self.inspector.GetPoseInFrame(sdp.id_B)
+            p_1C1_1 = X_1F.multiply(sdp.p_ACa)
+            p_2C2_2 = X_2F.multiply(sdp.p_BCb)
 
             # A: frame of actuated body.
             # U: frame of unactuated body.
@@ -234,13 +293,15 @@ class QuasistaticSimulator:
             #   expressed in world frame.
 
             body_a, pCa_A, n_a_W = self.FindContactFromSignedDistancePair(
-                body1, body2, sdp, self.body_indices_actuated[0])
+                body1, body2, p_1C1_1, p_2C2_2, sdp.nhat_BA_W,
+                self.body_indices_actuated[0])
 
             body_u, pCu_U, n_u_W = self.FindContactFromSignedDistancePair(
-                body1, body2, sdp, self.body_indices_unactuated[0])
+                body1, body2, p_1C1_1, p_2C2_2, sdp.nhat_BA_W,
+                self.body_indices_unactuated[0])
 
             if body_a is not None:
-                self.UpdateNormalAndTangentialJacobianRows(
+                dC_a_W = self.UpdateNormalAndTangentialJacobianRows(
                     body=body_a, pC_D=pCa_A, n_W=n_a_W, i_c=i_c, n_di=n_d[i_c],
                     i_f_start=i_f_start,
                     position_indices=self.position_indices_actuated[0],
@@ -248,7 +309,7 @@ class QuasistaticSimulator:
                     jacobian_wrt_variable=JacobianWrtVariable.kQDot)
 
             if body_u is not None:
-                self.UpdateNormalAndTangentialJacobianRows(
+                dC_u_W = self.UpdateNormalAndTangentialJacobianRows(
                     body=body_u, pC_D=pCu_U, n_W=n_u_W, i_c=i_c, n_di=n_d[i_c],
                     i_f_start=i_f_start,
                     position_indices=self.position_indices_unactuated[0],
@@ -264,7 +325,58 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
-        return n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi
+            # PointPairContactInfo stores the contact force of its bodyB.
+            # For convenience, I assign bodyB_index to bodyA_index in the
+            # PointPairContactInfo, which is wrong, but has no bad
+            # consequence because bodyA_index is not used for contact force
+            # visualization anyway.
+            #
+            # Each entry in the list consists of
+            # bodyA_index, bodyB_index, p_WCb_W, n_u_W,
+
+            if body_u is not None:
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, body_u)
+                contact_info_list.append(
+                    ContactInfo(body_u.index(), body_u.index(),
+                                X_WD.multiply(pCu_U), n_u_W, dC_u_W))
+            elif body_a is not None:
+                # TODO: think this through...
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, body_a)
+                contact_info_list.append(
+                    ContactInfo(body_a.index(), body_a.index(),
+                                X_WD.multiply(pCa_A), n_a_W, dC_a_W))
+            else:
+                raise RuntimeError("At least one body in a contact pair "
+                                   "should be unactuated.")
+
+        return (n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,
+                contact_info_list)
+
+    def CalcContactResults(self, contact_info_list: List[ContactInfo],
+                           beta: np.array, h: float, n_c: int, n_d: np.array,
+                           friction_coefficient: np.array):
+        assert len(contact_info_list) == n_c
+        contact_results = ContactResults()
+        i_f_start = 0
+        for i_c, contact_info in enumerate(contact_info_list):
+            i_f_end = i_f_start + n_d[i_c]
+            beta_i = beta[i_f_start: i_f_end]
+            f_normal_W = contact_info.n_W * beta_i.sum() / h
+            f_tangential_W = \
+                contact_info.dC_W.T.dot(beta_i) * friction_coefficient[i_c] / h
+            contact_results.AddContactInfo(
+                PointPairContactInfo(
+                    contact_info.bodyA_index,
+                    contact_info.bodyB_index,
+                    f_normal_W + f_tangential_W,
+                    contact_info.p_WC_W,
+                    0, 0, PenetrationAsPointPair()))
+
+            i_f_start += n_d[i_c]
+
+        return contact_results
 
     def GetMbpBodyFromSceneGraphGeometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
@@ -281,71 +393,32 @@ class QuasistaticSimulator:
             model_instance_index, selector).astype(np.int)
 
     # TODO: tau_u_ext and h should probably come from elsewhere...
-    def StepAnitescu(self, q, q_a_cmd, tau_u_ext, h):
-        self.UpdateConfiguration(q)
-        n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi_l = \
-            self.CalcContactJacobians(0.05)
-        dq_a_cmd = q_a_cmd - q[self.n_u_q:]
-
-        prog = mp.MathematicalProgram()
-        dq_u = prog.NewContinuousVariables(self.n_u_q, "dq_u")
-        dq_a = prog.NewContinuousVariables(self.n_a, "dq_a")
-
-        # TODO: don't hard code these.
-        P_ext = tau_u_ext * h
-        U = np.eye(n_c) * 0.8
-
-        prog.AddQuadraticCost(self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, dq_a)
-        prog.AddLinearCost(-P_ext, 0, dq_u)
-
-        Jn = np.hstack([Jn_u_q, Jn_a])
-        Jf = np.hstack([Jf_u_q, Jf_a])
-        J = np.zeros_like(Jf)
-        phi_constraints = np.zeros(n_f)
-
-        j_start = 0
-        for i in range(n_c):
-            for j in range(n_d[i]):
-                idx = j_start + j
-                J[idx] = Jn[i] + U[i, i] * Jf[idx]
-                phi_constraints[idx] = phi_l[i]
-            j_start += n_d[i]
-
-        dq = np.hstack([dq_u, dq_a])
-        constraints = prog.AddLinearConstraint(
-            J, -phi_constraints, np.full_like(phi_constraints, np.inf), dq)
-
-        result = self.solver.Solve(prog, None, None)
-        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
-        beta = result.GetDualSolution(constraints)
-        beta = np.array(beta).squeeze()
-        dq_a = result.GetSolution(dq_a)
-        dq_u = result.GetSolution(dq_u)
-        constraint_values = phi_constraints + result.EvalBinding(constraints)
-
-        return dq_a, dq_u, beta, constraint_values, result
-
-    # TODO: tau_u_ext and h should probably come from elsewhere...
-    def StepAnitescu3D(self, q, q_a_cmd, tau_u_ext, h):
-        assert self.n_u_q == 7 and self.n_u_v == 6
+    def StepAnitescu(self, q, q_a_cmd, tau_u_ext, h, is_planar,
+                     contact_detection_tolerance):
+        #TODO: remove this ad hoc check to support more general 3D systems.
+        if not is_planar:
+            assert self.n_u_q == 7 and self.n_u_v == 6
 
         self.UpdateConfiguration(q)
-        n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi_l = \
-            self.CalcContactJacobians(0.05)
+        (n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi_l,
+            contact_info_list) = self.CalcContactJacobians(
+            contact_detection_tolerance)
         dq_a_cmd = q_a_cmd - q[self.n_u_q:]
         q_u = q[:self.n_u_q]
-        Q = q_u[:4]  # Quaternion Q_WB
 
         prog = mp.MathematicalProgram()
-        dv_u = prog.NewContinuousVariables(self.n_u_v, "dv_u")
-        dv_a = prog.NewContinuousVariables(self.n_a, "dv_a")
 
-        # TODO: don't hard code these.
+        # generalized velocity times time step.
+        v_u_h = prog.NewContinuousVariables(self.n_u_v, "v_u_h")
+        v_a_h = prog.NewContinuousVariables(self.n_a, "v_a_h")
+
         P_ext = tau_u_ext * h
+        # TODO: don't hard code these.
         U = np.eye(n_c) * 0.8
 
-        prog.AddQuadraticCost(self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, dv_a)
-        prog.AddLinearCost(-P_ext, 0, dv_u)
+        prog.AddQuadraticCost(
+            self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, v_a_h)
+        prog.AddLinearCost(-P_ext, 0, v_u_h)
 
         Jn = np.hstack([Jn_u_v, Jn_a])
         Jf = np.hstack([Jf_u_v, Jf_a])
@@ -360,7 +433,7 @@ class QuasistaticSimulator:
                 phi_constraints[idx] = phi_l[i]
             j_start += n_d[i]
 
-        dv = np.hstack([dv_u, dv_a])
+        dv = np.hstack([v_u_h, v_a_h])
         constraints = prog.AddLinearConstraint(
             J, -phi_constraints, np.full_like(phi_constraints, np.inf), dv)
 
@@ -368,18 +441,24 @@ class QuasistaticSimulator:
         assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
-        dv_a_value = result.GetSolution(dv_a)
-        dv_u_value = result.GetSolution(dv_u)
+        dv_a_h_value = result.GetSolution(v_a_h)
+        dv_u_h_value = result.GetSolution(v_u_h)
 
-        E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
-                      [-Q[2], Q[3], Q[0], -Q[1]],
-                      [-Q[3], -Q[2], Q[1], Q[0]]])
+        dq_a = dv_a_h_value
+        if is_planar:
+            dq_u = dv_u_h_value
+        else:
+            Q = q_u[:4]  # Quaternion Q_WB
+            E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
+                          [-Q[2], Q[3], Q[0], -Q[1]],
+                          [-Q[3], -Q[2], Q[1], Q[0]]])
 
-        dq_a = dv_a_value
-        dq_u = np.zeros(7)
-        dq_u[:4] = 0.5 * E.T.dot(dv_u_value[:3])
-        dq_u[4:] = dv_u_value[3:]
+            dq_u = np.zeros(7)
+            dq_u[:4] = 0.5 * E.T.dot(dv_u_h_value[:3])
+            dq_u[4:] = dv_u_h_value[3:]
 
         constraint_values = phi_constraints + result.EvalBinding(constraints)
-
-        return dq_a, dq_u, beta, constraint_values, result
+        contact_results = self.CalcContactResults(
+            contact_info_list, beta, h, n_c, n_d, U.diagonal())
+        self.contact_results = contact_results
+        return dq_a, dq_u, beta, constraint_values, result, contact_results
