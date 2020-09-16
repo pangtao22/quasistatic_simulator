@@ -2,11 +2,14 @@ import time
 
 from quasistatic_simulator import *
 from sim_params_3link_arm import *
+from meshcat_camera_utils import SetOrthographicCameraYZ
+
 
 #%%
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=4,
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=8,
                              object_sdf_path=box3d_sdf_path,
                              joint_stiffness=Kq_a)
+SetOrthographicCameraYZ(q_sim.viz.vis)
 
 #%%
 q_sim.UpdateConfiguration(q0)

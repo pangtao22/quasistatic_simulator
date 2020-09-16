@@ -49,8 +49,8 @@ for i in range(n_steps):
 
 
 #%% Print contact information for one configuration.
-n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi = \
-    q_sim.CalcContactJacobians(0.01)
+(n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,
+    U, contact_info_list) = q_sim.CalcContactJacobians(0.01)
 
 query_object = q_sim.scene_graph.get_query_output_port().Eval(
     q_sim.context_sg)

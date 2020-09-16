@@ -14,9 +14,12 @@ from setup_environments import *
 from sim_params_3link_arm import *
 
 #%%
-object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
+# object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
+object_sdf_path = box3d_sdf_path
+# object_sdf_path = os.path.join("models", "sphere_yz_rotation_big.sdf")
+
 q_a0 = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])
-q_u0 = np.array([1.7, 0.5, 0])
+# q_u0 = np.array([1.7, 0.5, 0])
 q0 = np.hstack([q_u0, q_a0])
 
 
