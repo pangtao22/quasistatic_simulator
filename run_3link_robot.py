@@ -37,9 +37,9 @@ for i in range(n_steps):
     q_a_cmd = q_a_traj.value(h * i).squeeze()
     dq_a, dq_u, beta, constraint_values, result, contact_results = \
         q_sim.StepAnitescu(
-        q, q_a_cmd, tau_u_ext, h,
-        is_planar=True,
-        contact_detection_tolerance=0.01)
+            q, q_a_cmd, tau_u_ext, h,
+            is_planar=True,
+            contact_detection_tolerance=0.01)
 
     # Update q
     q += np.hstack([dq_u, dq_a])

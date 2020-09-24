@@ -88,6 +88,7 @@ class QuasistaticSimulator:
 
         # Get actuated and un-actuated model instances in respective lists?
         self.models_actuated = [robot_model]
+        # TODO: support multiple unactuated bodies.
         self.models_unactuated = [object_model]
         self.body_indices_actuated = []
         self.body_indices_unactuated = []
@@ -266,13 +267,13 @@ class QuasistaticSimulator:
 
         i_f_start = 0
         for i_c, sdp in enumerate(signed_distance_pairs):
-            print("contact %i"%i_c)
-            print(self.inspector.GetNameByGeometryId(sdp.id_A))
-            print(self.inspector.GetNameByGeometryId(sdp.id_B))
-            print(self.inspector.GetFrameId(sdp.id_A))
-            print(self.inspector.GetFrameId(sdp.id_B))
-            print("distance: ", sdp.distance)
-            print("")
+            # print("contact %i"%i_c)
+            # print(self.inspector.GetNameByGeometryId(sdp.id_A))
+            # print(self.inspector.GetNameByGeometryId(sdp.id_B))
+            # print(self.inspector.GetFrameId(sdp.id_A))
+            # print(self.inspector.GetFrameId(sdp.id_B))
+            # print("distance: ", sdp.distance)
+            # print("")
 
             phi[i_c] = sdp.distance
             U[i_c] = self.GetFrictionCoefficientFromSignedDistancePair(sdp)
