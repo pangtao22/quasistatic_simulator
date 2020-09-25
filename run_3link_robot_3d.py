@@ -1,4 +1,5 @@
 import time
+import copy
 
 from quasistatic_simulator import *
 from sim_params_3link_arm import *
@@ -12,31 +13,34 @@ q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=8,
 SetOrthographicCameraYZ(q_sim.viz.vis)
 
 #%%
-q_sim.UpdateConfiguration(q0)
+q_sim.UpdateConfiguration(q0_list)
 q_sim.DrawCurrentConfiguration()
 
 #%%
 h = 0.01
 tau_u_ext = np.array([0, 0, 0, 0., 0, -10])
 n_steps = int(t_final / h)
-q = q0.copy()
+q_list = copy.deepcopy(q0_list)
 
 input("start?")
 for i in range(n_steps):
     q_a_cmd = q_a_traj.value(h * i).squeeze()
-    dq_a, dq_u, beta, constraint_values, result, contact_results = \
-        q_sim.StepAnitescu(
-            q, q_a_cmd, tau_u_ext, h,
+    q_a_cmd_list = [None, q_a_cmd]
+    tau_u_ext_list = [tau_u_ext, None]
+    dq_u, dq_a = q_sim.StepAnitescu(
+            q_list, q_a_cmd, tau_u_ext_list, h,
             is_planar=False,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q += np.hstack([dq_u, dq_a])
-    q[:4] / np.linalg.norm(q[:4])  # normalize quaternion
-    q_sim.UpdateConfiguration(q)
+    q_list[0] += dq_u
+    q_list[1] += dq_a
+    q_u = q_list[0]
+    q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+    q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
-    print("qu: ", q[:7])
-    print("dq_u", dq_u)
+    # print("qu: ", q[:7])
+    # print("dq_u", dq_u)
     # logging
     # time.sleep(h)
     input("next?")

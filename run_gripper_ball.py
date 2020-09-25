@@ -17,8 +17,8 @@ q_sim = QuasistaticSimulator(CreatePlantFor2dGripper, nd_per_contact=2,
 r = 0.1
 q_a = np.array([0.1, -1.05*r, 1.05*r])
 q_u = np.array([0, r])
-q = np.hstack([q_u, q_a])
-q_sim.UpdateConfiguration(q)
+q_list = [q_u, q_a]
+q_sim.UpdateConfiguration(q_list)
 q_sim.DrawCurrentConfiguration()
 
 #%%
@@ -28,19 +28,18 @@ n_steps = 50
 
 # input("start?")
 for i in range(n_steps):
-    # PrintAllContacts(q_sim)
-    # dr = np.min([0.001 * i, 0.02])
-    # q_a_cmd = np.array([-r * 1.1 + dr, r * 1.1 - dr, -0.002 * i])
     q_a_cmd = np.array([0.1 + np.max([-0.002 * i, -0.03]), -r * 0.9, r * 0.9])
-    dq_a, dq_u, beta, constraint_values, result, contact_results = \
-        q_sim.StepAnitescu(
-            q, q_a_cmd, tau_u_ext, h,
+    q_a_cmd_list = [None, q_a_cmd]
+    tau_u_ext_list = [tau_u_ext, None]
+    dq_u, dq_a = q_sim.StepAnitescu(
+            q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=True,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q += np.hstack([dq_u, dq_a])
-    q_sim.UpdateConfiguration(q)
+    q_list[0] += dq_u
+    q_list[1] += dq_a
+    q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
 
     # logging
@@ -49,8 +48,8 @@ for i in range(n_steps):
 
 
 #%% Print contact information for one configuration.
-(n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,
-    U, contact_info_list) = q_sim.CalcContactJacobians(0.01)
+n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi, U, contact_info_list \
+    = q_sim.CalcContactJacobians(0.01)
 
 query_object = q_sim.scene_graph.get_query_output_port().Eval(
     q_sim.context_sg)
