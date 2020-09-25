@@ -28,7 +28,7 @@ for i in range(n_steps):
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
     dq_u, dq_a = q_sim.StepAnitescu(
-            q_list, q_a_cmd, tau_u_ext_list, h,
+            q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=False,
             contact_detection_tolerance=0.01)
 
