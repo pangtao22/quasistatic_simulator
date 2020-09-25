@@ -10,7 +10,7 @@
        these two DOFs. The ghost body has negligible mass.
   -->
   <!-- world->ghost_body_y->ghost_body_z_sphere-->
-  <model name="simple_cuboid">
+  <model name="simple_cuboid_1m">
     <!-- The model for a solid box of uniform density. -->
     <link name="box">
       <inertial>
@@ -87,6 +87,43 @@
           </sphere>
         </geometry>
       </collision>
+
+      <collision name="minus_x_upper_left_corner">
+        <pose> -0.5 -0.5 0.5 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
+      <collision name="minus_x_upper_right_corner">
+        <pose> -0.5 0.5 0.5 0 0 0 </pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
+      <collision name="plus_x_upper_left_corner">
+        <pose> 0.5 -0.5 0.5 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
+      <collision name="plus_x_upper_right_corner">
+        <pose> 0.5 0.5 0.5 0 0 0 </pose>
+        <geometry>
+          <sphere>
+            <radius>1e-7</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
 
     </link>
   </model>
