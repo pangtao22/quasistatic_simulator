@@ -12,8 +12,9 @@ object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
 # object_sdf_path = os.path.join("models", "sphere_yz_rotation_big.sdf")
 # object_sdf_path = os.path.join("models", "sphere_yz_big.sdf")
 
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=2,
-                             object_sdf_path=object_sdf_path,
+q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithMultipleObjects,
+                             nd_per_contact=2,
+                             object_sdf_path=[object_sdf_path],
                              joint_stiffness=Kq_a)
 # SetOrthographicCameraYZ(q_sim.viz.vis)
 
@@ -36,20 +37,19 @@ for i in range(n_steps):
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
 
-    dq_u, dq_a = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.StepAnitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=True,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_list[0] += dq_u
-    q_list[1] += dq_a
+    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
     q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
 
     # logging
     time.sleep(h)
-    # input("next?")
+    input("next?")
 
 #%%
 (n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,

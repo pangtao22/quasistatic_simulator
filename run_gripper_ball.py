@@ -31,14 +31,13 @@ for i in range(n_steps):
     q_a_cmd = np.array([0.1 + np.max([-0.002 * i, -0.03]), -r * 0.9, r * 0.9])
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
-    dq_u, dq_a = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.StepAnitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=True,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_list[0] += dq_u
-    q_list[1] += dq_a
+    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
     q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
 

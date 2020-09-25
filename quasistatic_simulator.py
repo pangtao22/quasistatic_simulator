@@ -49,8 +49,8 @@ class QuasistaticSimulator:
 
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
-        plant, scene_graph, robot_model, object_model = setup_environment(
-            builder, object_sdf_path)
+        plant, scene_graph, robot_model_list, object_model_list = \
+            setup_environment(builder, object_sdf_path)
         viz = MeshcatVisualizer(
             scene_graph, frames_to_draw={"three_link_arm": {"link_ee"}})
         builder.AddSystem(viz)
@@ -92,10 +92,11 @@ class QuasistaticSimulator:
             consistent with the order in q_list passed to other functions in 
             this class.
         '''
-        # TODO: support multiple unactuated bodies.
-        self.models_list = [object_model, robot_model]
-        self.models_actuated_indices = [1]
-        self.models_unactuated_indices = [0]
+        self.models_list = object_model_list + robot_model_list
+        n_u_models = len(object_model_list)
+        n_a_models = len(robot_model_list)
+        self.models_unactuated_indices = np.arange(n_u_models)
+        self.models_actuated_indices = n_u_models + np.arange(n_a_models)
 
         # body indices for each model in self.models_list.
         self.body_indices_list = []
@@ -404,9 +405,9 @@ class QuasistaticSimulator:
         """
         # TODO: remove this ad hoc check to support more general 3D objects.
         if not is_planar:
-            for un_actuated_model_idx in self.models_unactuated_indices:
-                assert self.n_v_list[un_actuated_model_idx] == 6
-                assert len(q_list[un_actuated_model_idx]) == 7
+            for unactuated_model_idx in self.models_unactuated_indices:
+                assert self.n_v_list[unactuated_model_idx] == 6
+                assert len(q_list[unactuated_model_idx]) == 7
 
         self.UpdateConfiguration(q_list)
         n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi_l, U, contact_info_list = \
@@ -463,25 +464,63 @@ class QuasistaticSimulator:
         beta = np.array(beta).squeeze()
 
         # TODO: support multiple unactauted bodies.
-        v_u_h_value = result.GetSolution(v_h_list[0])
-        v_a_h_value = result.GetSolution(v_h_list[1])
+        v_h_value_list = []
+        for v_h in v_h_list:
+            v_h_value_list.append(result.GetSolution(v_h))
 
-        dq_a = v_a_h_value
-        if is_planar:
-            dq_u = v_u_h_value
-        else:
-            q_u = q_list[0]
-            Q = q_u[:4]  # Quaternion Q_WB
-            E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
-                          [-Q[2], Q[3], Q[0], -Q[1]],
-                          [-Q[3], -Q[2], Q[1], Q[0]]])
+        n_u_models = len(self.models_unactuated_indices)
+        dq_a_list = v_h_value_list[n_u_models:]
 
-            dq_u = np.zeros(7)
-            dq_u[:4] = 0.5 * E.T.dot(v_u_h_value[:3])
-            dq_u[4:] = v_u_h_value[3:]
+        dq_u_list = []
+        for i_model in self.models_unactuated_indices:
+            v_u_h_value = v_h_value_list[i_model]
+            if is_planar:
+                dq_u_list.append(v_u_h_value)
+            else:
+                q_u = q_list[i_model]
+                Q = q_u[:4]  # Quaternion Q_WB
+                E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
+                              [-Q[2], Q[3], Q[0], -Q[1]],
+                              [-Q[3], -Q[2], Q[1], Q[0]]])
+
+                dq_u = np.zeros(7)
+                dq_u[:4] = 0.5 * E.T.dot(v_u_h_value[:3])
+                dq_u[4:] = v_u_h_value[3:]
+                dq_u_list.append(dq_u)
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
         contact_results = self.CalcContactResults(
             contact_info_list, beta, h, n_c, n_d, U)
         self.contact_results = contact_results
-        return dq_u, dq_a
+        return dq_u_list, dq_a_list
+
+    def StepConfiguration(self,
+                          q_list: List[np.array],
+                          dq_u_list: List[np.array],
+                          dq_a_list: List[np.array],
+                          is_planar: bool):
+        """
+        Adds the delta of each model state, e.g. dq_u_list[i], to the
+            corresponding model configuration in q_list. If q_list[i]
+            includes a quaternion, the quaternion (usually the first four
+            numbers of a seven-number array) is normalized.
+        :param q_list:
+            [q_unactuated0, q_unactuated1, ... q_actuated0, q_actuated1, ...]
+        :param dq_u_list: [dq_unactuated0, dq_unactuated1, ...]
+        :param dq_a_list: [dq_actuated0, dq_actuated1, ...]
+        :param is_planar: whether unactuated models has quaternions in their
+            configuration.
+        :return: None.
+        """
+        dq_list = dq_u_list + dq_a_list
+        for i_model in self.models_unactuated_indices:
+            if is_planar:
+                q_list[i_model] += dq_list[i_model]
+            else:
+                q_u = q_list[i_model]
+                q_u += dq_list[i_model]
+                q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+
+        for i_model in self.models_actuated_indices:
+            q_list[i_model] += dq_list[i_model]
+

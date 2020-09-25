@@ -1,5 +1,6 @@
 import os
 import pathlib
+from typing import List
 
 import numpy as np
 from pydrake.multibody.parsing import Parser
@@ -27,10 +28,11 @@ def Create3LinkArmControllerPlant():
     return plant
 
 
-def CreatePlantFor2dArmWithObject(builder, object_sdf_path):
+def CreatePlantFor2dArmWithMultipleObjects(builder,
+                                           object_sdf_paths: List[str]):
     """
     :param builder: a DiagramBuilder object.
-    :param object_sdf_path: absolute path to an object.sdf.
+    :param object_sdf_paths: list of absolute paths to object.sdf files.
     :return:
     """
     # MultibodyPlant
@@ -52,14 +54,18 @@ def CreatePlantFor2dArmWithObject(builder, object_sdf_path):
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
     # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
 
-    # Add object
-    object_model = parser.AddModelFromFile(object_sdf_path)
+    # Add objects
+    object_models_list = []
+    for i, sdf_path in enumerate(object_sdf_paths):
+        object_models_list.append(
+            parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
+
     plant.Finalize()
 
     return (plant,
             scene_graph,
-            robot_model,
-            object_model)
+            [robot_model],
+            object_models_list)
 
 
 def CreatePlantFor2dGripper(builder, *args):
@@ -94,5 +100,5 @@ def CreatePlantFor2dGripper(builder, *args):
 
     return (plant,
             scene_graph,
-            robot_model,
-            object_model)
+            [robot_model],
+            [object_model])

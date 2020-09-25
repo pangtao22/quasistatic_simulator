@@ -7,12 +7,18 @@ from meshcat_camera_utils import SetOrthographicCameraYZ
 
 
 #%%
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithObject, nd_per_contact=8,
-                             object_sdf_path=box3d_sdf_path,
-                             joint_stiffness=Kq_a)
-SetOrthographicCameraYZ(q_sim.viz.vis)
+q_sim = QuasistaticSimulator(
+    CreatePlantFor2dArmWithMultipleObjects,
+    nd_per_contact=4,
+    object_sdf_path=[box3d_big_sdf_path, box3d_small_sdf_path],
+    joint_stiffness=Kq_a)
+# SetOrthographicCameraYZ(q_sim.viz.vis)
 
 #%%
+q_u1_0 = np.array([1, 0, 0, 0, 0, 1.7, 0.5])
+q_u2_0 = np.array([1, 0, 0, 0, 0.4, 2.5, 0.25])
+q0_list = [q_u1_0, q_u2_0, q_a0]
+
 q_sim.UpdateConfiguration(q0_list)
 q_sim.DrawCurrentConfiguration()
 
@@ -25,25 +31,22 @@ q_list = copy.deepcopy(q0_list)
 input("start?")
 for i in range(n_steps):
     q_a_cmd = q_a_traj.value(h * i).squeeze()
-    q_a_cmd_list = [None, q_a_cmd]
-    tau_u_ext_list = [tau_u_ext, None]
-    dq_u, dq_a = q_sim.StepAnitescu(
+    q_a_cmd_list = [None, None, q_a_cmd]
+    tau_u_ext_list = [tau_u_ext, tau_u_ext, None]
+    dq_u_list, dq_a_list = q_sim.StepAnitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=False,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_list[0] += dq_u
-    q_list[1] += dq_a
-    q_u = q_list[0]
-    q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
     q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
     # print("qu: ", q[:7])
     # print("dq_u", dq_u)
     # logging
-    # time.sleep(h)
-    input("next?")
+    time.sleep(2*h)
+    # input("next?")
 
 
 #%%
