@@ -264,7 +264,6 @@ class QuasistaticSimulator:
                     
                 The normal n_A/B_W needs to point into body A/B, respectively. 
                 '''
-
                 n_A_W = sdp.nhat_BA_W
                 d_A_W = CalcTangentVectors(n_A_W, n_d[i_c])
                 n_B_W = -n_A_W
@@ -313,27 +312,28 @@ class QuasistaticSimulator:
             i_f_start += n_d[i_c]
 
             # TODO: think this through...
-            #  PointPairContactInfo stores the contact force of its bodyB.
+            #  PointPairContactInfo stores the contact force for its bodyB.
             #  For convenience, I assign bodyB_index to bodyA_index in the
             #  PointPairContactInfo, which is wrong, but has no bad
             #  consequence because bodyA_index is not used for contact force
             #  visualization anyway.
 
-            # if body_u is not None:
-            #     X_WD = self.plant.EvalBodyPoseInWorld(
-            #         self.context_plant, body_u)
-            #     contact_info_list.append(
-            #         ContactInfo(body_u.index(), body_u.index(),
-            #                     X_WD.multiply(pCu_U), n_u_W, dC_u_W))
-            # elif body_a is not None:
-            #     X_WD = self.plant.EvalBodyPoseInWorld(
-            #         self.context_plant, body_a)
-            #     contact_info_list.append(
-            #         ContactInfo(body_a.index(), body_a.index(),
-            #                     X_WD.multiply(pCa_A), n_a_W, dC_a_W))
-            # else:
-            #     raise RuntimeError("At least one body in a contact pair "
-            #                        "should be unactuated.")
+            # If bodyA is not None, the contact force for bodyA is always shown.
+            if is_A_in:
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyA)
+                contact_info_list.append(
+                    MyContactInfo(bodyA.index(), bodyA.index(),
+                                X_WD.multiply(p_AcA_A), n_A_W, d_A_W))
+            elif is_B_in:
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyB)
+                contact_info_list.append(
+                    MyContactInfo(bodyB.index(), bodyB.index(),
+                                X_WD.multiply(p_BcB_B), n_B_W, d_B_W))
+            else:
+                raise RuntimeError("At least one body in a contact pair "
+                                   "should be unactuated.")
 
         return n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi, U, contact_info_list
 
@@ -481,7 +481,7 @@ class QuasistaticSimulator:
             dq_u[4:] = v_u_h_value[3:]
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
-        # contact_results = self.CalcContactResults(
-        #     contact_info_list, beta, h, n_c, n_d, U)
-        # self.contact_results = contact_results
+        contact_results = self.CalcContactResults(
+            contact_info_list, beta, h, n_c, n_d, U)
+        self.contact_results = contact_results
         return dq_u, dq_a
