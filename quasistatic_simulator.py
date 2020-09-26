@@ -319,19 +319,19 @@ class QuasistaticSimulator:
             #  consequence because bodyA_index is not used for contact force
             #  visualization anyway.
 
-            # If bodyA is not None, the contact force for bodyA is always shown.
-            if is_A_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyA)
-                contact_info_list.append(
-                    MyContactInfo(bodyA.index(), bodyA.index(),
-                                X_WD.multiply(p_AcA_A), n_A_W, d_A_W))
-            elif is_B_in:
+            # If bodyB is not None, the contact force for bodyB is always shown.
+            if is_B_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
                     self.context_plant, bodyB)
                 contact_info_list.append(
                     MyContactInfo(bodyB.index(), bodyB.index(),
                                 X_WD.multiply(p_BcB_B), n_B_W, d_B_W))
+            elif is_A_in:
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyA)
+                contact_info_list.append(
+                    MyContactInfo(bodyA.index(), bodyA.index(),
+                                X_WD.multiply(p_AcA_A), n_A_W, d_A_W))
             else:
                 raise RuntimeError("At least one body in a contact pair "
                                    "should be unactuated.")
@@ -463,7 +463,6 @@ class QuasistaticSimulator:
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
 
-        # TODO: support multiple unactauted bodies.
         v_h_value_list = []
         for v_h in v_h_list:
             v_h_value_list.append(result.GetSolution(v_h))

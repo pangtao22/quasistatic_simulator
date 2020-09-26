@@ -9,6 +9,8 @@ from pydrake.math import RigidTransform
 
 from contact_aware_control.plan_runner.setup_three_link_arm import (
     robot_sdf_path, ground_sdf_path)
+from contact_aware_control.plan_runner.setup_iiwa import (
+    iiwa_sdf_path_drake, ee_sdf_path)
 
 module_path = pathlib.Path(__file__).parent.absolute()
 # transform between robot base frame and world frame
@@ -52,6 +54,56 @@ def CreatePlantFor2dArmWithMultipleObjects(builder,
     robot_model = parser.AddModelFromFile(robot_sdf_path)
     plant.WeldFrames(
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
+    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+
+    # Add objects
+    object_models_list = []
+    for i, sdf_path in enumerate(object_sdf_paths):
+        object_models_list.append(
+            parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
+
+    plant.Finalize()
+
+    return (plant,
+            scene_graph,
+            [robot_model],
+            object_models_list)
+
+
+def CreatePlantForIiwaWithMultipleObjects(builder,
+                                          object_sdf_paths: List[str]):
+    """
+    :param builder: a DiagramBuilder object.
+    :param object_sdf_paths: list of absolute paths to object.sdf files.
+    :return:
+    """
+    # MultibodyPlant
+    plant = MultibodyPlant(1e-3)
+    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
+    parser = Parser(plant=plant, scene_graph=scene_graph)
+
+    # Add ground
+    parser.AddModelFromFile(ground_sdf_path)
+    X_WG = RigidTransform.Identity()
+    X_WG.set_translation([0, 0, -0.5])  # "ground"
+    plant.WeldFrames(A=plant.world_frame(),
+                     B=plant.GetFrameByName("ground"),
+                     X_AB=X_WG)
+
+    # fix robot to world
+    robot_model = parser.AddModelFromFile(iiwa_sdf_path_drake)
+    plant.WeldFrames(A=plant.world_frame(),
+                     B=plant.GetFrameByName("iiwa_link_0"),
+                     X_AB=RigidTransform.Identity())
+
+    # fix ee_sphere to l7
+    ee_model = parser.AddModelFromFile(ee_sdf_path)
+    X_L7E = RigidTransform()
+    X_L7E.set_translation([0, 0, 0.075])
+    plant.WeldFrames(A=plant.GetFrameByName("iiwa_link_7"),
+                     B=plant.GetFrameByName("body", ee_model),
+                     X_AB=X_L7E)
+
     # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
 
     # Add objects
