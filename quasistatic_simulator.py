@@ -186,8 +186,9 @@ class QuasistaticSimulator:
 
     def FindModelInstanceIndexForBody(self, body):
         i_model = None
-        for i_model, body_indices in enumerate(self.body_indices_list):
+        for i, body_indices in enumerate(self.body_indices_list):
             if body.index() in body_indices:
+                i_model = i
                 break
         return i_model
 
@@ -284,6 +285,16 @@ class QuasistaticSimulator:
                     Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
 
+            if is_B_in:
+                n_B_W = -sdp.nhat_BA_W
+                d_B_W = CalcTangentVectors(n_B_W, n_d[i_c])
+
+                self.UpdateNormalAndTangentialJacobianRows(
+                    body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
+                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
+                    position_indices=self.velocity_indices_list[i_model_B],
+                    Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
+                    jacobian_wrt_variable=JacobianWrtVariable.kV)
             elif is_A_in:
                 n_A_W = sdp.nhat_BA_W
                 d_A_W = CalcTangentVectors(n_A_W, n_d[i_c])
@@ -293,17 +304,6 @@ class QuasistaticSimulator:
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
                     position_indices=self.velocity_indices_list[i_model_A],
                     Jn=Jn_v_list[i_model_A], Jf=Jf_v_list[i_model_A],
-                    jacobian_wrt_variable=JacobianWrtVariable.kV)
-
-            elif is_B_in:
-                n_B_W = -sdp.nhat_BA_W
-                d_B_W = CalcTangentVectors(n_B_W, n_d[i_c])
-
-                self.UpdateNormalAndTangentialJacobianRows(
-                    body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
-                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
-                    position_indices=self.velocity_indices_list[i_model_B],
-                    Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
             else:
                 # either A or B is in self.body_indices_list
@@ -320,18 +320,19 @@ class QuasistaticSimulator:
             #  visualization anyway.
 
             # If bodyB is not None, the contact force for bodyB is always shown.
-            if is_B_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyB)
-                contact_info_list.append(
-                    MyContactInfo(bodyB.index(), bodyB.index(),
-                                X_WD.multiply(p_BcB_B), n_B_W, d_B_W))
-            elif is_A_in:
+            if is_A_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
                     self.context_plant, bodyA)
                 contact_info_list.append(
                     MyContactInfo(bodyA.index(), bodyA.index(),
                                 X_WD.multiply(p_AcA_A), n_A_W, d_A_W))
+            elif is_B_in:
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyB)
+                contact_info_list.append(
+                    MyContactInfo(bodyB.index(), bodyB.index(),
+                                X_WD.multiply(p_BcB_B), n_B_W, d_B_W))
+
             else:
                 raise RuntimeError("At least one body in a contact pair "
                                    "should be unactuated.")
