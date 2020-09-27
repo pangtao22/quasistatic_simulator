@@ -335,7 +335,7 @@ class QuasistaticSimulator:
                     Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
 
-            if is_B_in:
+            elif is_B_in:
                 n_B_W = -sdp.nhat_BA_W
                 d_B_W = CalcTangentVectors(n_B_W, n_d[i_c])
 
@@ -570,10 +570,14 @@ class QuasistaticSimulator:
             else:
                 q_u = q_list[i_model]
                 q_u += dq_list[i_model]
-                q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+                if q_u.size == 7:
+                    q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
 
         # TODO: this is hard-coded for IIWA with end effectors
         for i_model in self.models_actuated_indices:
-            q_list[i_model][0] += dq_list[i_model][:7]
-            q_list[i_model][1] += dq_list[i_model][7:]
+            if isinstance(q_list[i_model], list):
+                q_list[i_model][0] += dq_list[i_model][:7]
+                q_list[i_model][1] += dq_list[i_model][7:]
+            else:
+                q_list[i_model] += dq_list[i_model]
 
