@@ -9,9 +9,12 @@ from contact_aware_control.plan_runner.setup_iiwa import (
     CreateIiwaControllerPlant)
 
 from quasistatic_simulator import *
-from setup_environments import CreatePlantForIiwaWithMultipleObjects
+from setup_environments import (
+    CreateIiwaPlantWithMultipleObjects, CreateIiwaPlantWithSchunk)
 from sim_params_3link_arm import (
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path)
+
+import matplotlib.pyplot as plt
 
 #%% Create trajectory
 q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
@@ -29,18 +32,19 @@ q_a_traj, q_knots = CalcIiwaQTrajectory(
 
 
 #%%
-Kq_a = np.array([800., 600, 600, 600, 400, 200, 200])
+Kq_a = np.array([800., 600, 600, 600, 400, 200, 200, 250, 250])
 
 q_sim = QuasistaticSimulator(
-    CreatePlantForIiwaWithMultipleObjects,
+    CreateIiwaPlantWithSchunk,
     nd_per_contact=4,
     object_sdf_path=[box3d_medium_sdf_path, box3d_small_sdf_path],
     joint_stiffness=Kq_a)
 
 #%%
-q_u1_0 = np.array([1, 0, 0, 0, 0.85, 0, 0.3])
-q_u2_0 = np.array([1, 0, 0, 0, 1.5, 0.4, 0.25])
-q0_list = [q_u1_0, q_u2_0, q_a_traj.value(0).squeeze()]
+q_u1_0 = np.array([1, 0, 0, 0, 1.05, 0, 0.3])
+q_u2_0 = np.array([1, 0, 0, 0, 2.0, 0.4, 0.25])
+q0_list = [q_u1_0, q_u2_0,
+           [q_a_traj.value(0).squeeze(), np.array([-0.05, 0.05])]]
 
 q_sim.viz.vis["drake"]["contact_forces"].delete()
 q_sim.UpdateConfiguration(q0_list)
@@ -48,9 +52,12 @@ q_sim.DrawCurrentConfiguration()
 
 #%%
 h = 0.01
-tau_u_ext = np.array([0, 0, 0, 0., 0, -10])
+tau_u_ext = np.array([0, 0, 0, 0., 0, -50])
 n_steps = int(q_a_traj.end_time() / h)
 q_list = copy.deepcopy(q0_list)
+
+q_a_log = []
+q_a_cmd_log = []
 
 input("start?")
 for i in range(n_steps):
@@ -69,6 +76,18 @@ for i in range(n_steps):
     q_sim.UpdateConfiguration(q_list)
     q_sim.DrawCurrentConfiguration()
 
-    input("step?")
+    q_a_log.append(q_list[2][0].copy())
+    q_a_cmd_log.append(q_a_cmd)
 
+    # input("step?")
 
+#%%
+q_a_log = np.array(q_a_log)
+q_a_cmd_log = np.array(q_a_cmd_log)
+
+#%%
+for i in range(7):
+    plt.plot(q_a_log[:, i], label="q%d" % i)
+    plt.plot(q_a_cmd_log[:, i], label="q_cmd")
+    plt.legend()
+    plt.show()

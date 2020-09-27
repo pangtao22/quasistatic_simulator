@@ -92,26 +92,54 @@ class QuasistaticSimulator:
             consistent with the order in q_list passed to other functions in 
             this class.
         '''
-        self.models_list = object_model_list + robot_model_list
+        # TODO: if an element of robot_model_list is a list itself,
+        #  it is assumed that the models
+        #  in robot_model_list are fixed into one kinematic chain. For
+        #  example, a robot and a gripper fixed to the last link of the robot.
+        #  It would be nice to handle this more gracefully, but I don't know
+        #  how to do that yet...
+        models_list = object_model_list + robot_model_list
         n_u_models = len(object_model_list)
         n_a_models = len(robot_model_list)
         self.models_unactuated_indices = np.arange(n_u_models)
         self.models_actuated_indices = n_u_models + np.arange(n_a_models)
 
+        self.models_list_expanded = []
+        for model in models_list:
+            if isinstance(model, list):
+                for m in model:
+                    self.models_list_expanded.append(m)
+            else:
+                self.models_list_expanded.append(model)
+
         # body indices for each model in self.models_list.
         self.body_indices_list = []
         # velocity indices (into the generalized velocity vector of the MBP)
         self.velocity_indices_list = []
+        n_v_list = []
 
-        for model in self.models_list:
-            self.body_indices_list.append(plant.GetBodyIndices(model))
-            self.velocity_indices_list.append(
-                self.GetVelocityIndicesForModel(model))
+        for model in models_list:
+            if isinstance(model, list):
+                # model is a list of model instances... yes I know it can be
+                # less confusing...
+                body_indices = []
+                velocity_indices = []
+                for m in model:
+                    body_indices += plant.GetBodyIndices(m)
+                    velocity_indices += \
+                        self.GetVelocityIndicesForModel(m).tolist()
+                self.body_indices_list.append(body_indices)
+                self.velocity_indices_list.append(velocity_indices)
+                n_v_list.append(len(velocity_indices))
+            else:
+                body_indices = plant.GetBodyIndices(model)
+                velocity_indices = self.GetVelocityIndicesForModel(model)
+                self.body_indices_list.append(body_indices)
+                self.velocity_indices_list.append(velocity_indices)
+                n_v_list.append(len(velocity_indices))
 
-        self.n_v_list = np.array(
-            [plant.num_velocities(model) for model in self.models_list],
-            dtype=np.int)
-
+        self.n_v_list = np.array(n_v_list)
+        self.models_list = models_list
         self.nd_per_contact = nd_per_contact
 
         # TODO: One actuated bodies for now.
@@ -126,7 +154,27 @@ class QuasistaticSimulator:
         # For contact force visualization.
         self.contact_results = ContactResults()
 
-    def UpdateConfiguration(self, q_list: List[np.array]):
+    def ExpandQlist(self, q_list):
+        q_list_expanded = []
+        for q in q_list:
+            if isinstance(q, list):
+                for qi in q:
+                    q_list_expanded.append(qi)
+            else:
+                q_list_expanded.append(q)
+
+        return q_list_expanded
+
+    def ConcatenatetQlist(self, q_list):
+        q_list_concatenated = []
+        for q in q_list:
+            if isinstance(q, list):
+                q_list_concatenated.append(np.concatenate(q))
+            else:
+                q_list_concatenated.append(q)
+        return q_list_concatenated
+
+    def UpdateConfiguration(self, q_list: List):
         """
         :param q_list = [q_u0, q_u1, ..., q_a0, q_a1... q_an].
             A list of np arrays, each array
@@ -134,11 +182,13 @@ class QuasistaticSimulator:
         :return:
         """
         # Update state in plant_context
-        assert len(q_list) == len(self.models_list)
+        q_list_expanded = self.ExpandQlist(q_list)
+        assert len(q_list_expanded) == len(self.models_list_expanded)
 
-        for i in range(len(q_list)):
-            model = self.models_list[i]
-            self.plant.SetPositions(self.context_plant, model, q_list[i])
+        for i in range(len(q_list_expanded)):
+            model = self.models_list_expanded[i]
+            self.plant.SetPositions(
+                self.context_plant, model, q_list_expanded[i])
 
     def DrawCurrentConfiguration(self):
         # Body poses
@@ -411,6 +461,7 @@ class QuasistaticSimulator:
                 assert len(q_list[unactuated_model_idx]) == 7
 
         self.UpdateConfiguration(q_list)
+        q_list = self.ConcatenatetQlist(q_list)
         n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi_l, U, contact_info_list = \
             self.CalcContactJacobians(contact_detection_tolerance)
         nv = self.n_v_list.sum()
@@ -521,6 +572,8 @@ class QuasistaticSimulator:
                 q_u += dq_list[i_model]
                 q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
 
+        # TODO: this is hard-coded for IIWA with end effectors
         for i_model in self.models_actuated_indices:
-            q_list[i_model] += dq_list[i_model]
+            q_list[i_model][0] += dq_list[i_model][:7]
+            q_list[i_model][1] += dq_list[i_model][7:]
 

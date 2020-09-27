@@ -3,9 +3,10 @@ import pathlib
 from typing import List
 
 import numpy as np
+from pydrake.common import FindResourceOrThrow
 from pydrake.multibody.parsing import Parser
 from pydrake.multibody.plant import MultibodyPlant, AddMultibodyPlantSceneGraph
-from pydrake.math import RigidTransform
+from pydrake.math import RigidTransform, RollPitchYaw, RotationMatrix
 
 from contact_aware_control.plan_runner.setup_three_link_arm import (
     robot_sdf_path, ground_sdf_path)
@@ -70,8 +71,8 @@ def CreatePlantFor2dArmWithMultipleObjects(builder,
             object_models_list)
 
 
-def CreatePlantForIiwaWithMultipleObjects(builder,
-                                          object_sdf_paths: List[str]):
+def CreateIiwaPlantWithMultipleObjects(builder,
+                                       object_sdf_paths: List[str]):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
@@ -116,7 +117,59 @@ def CreatePlantForIiwaWithMultipleObjects(builder,
 
     return (plant,
             scene_graph,
-            [robot_model],
+            [[robot_model, ee_model]],
+            object_models_list)
+
+
+def CreateIiwaPlantWithSchunk(builder, object_sdf_paths: List[str]):
+    """
+    :param builder: a DiagramBuilder object.
+    :param object_sdf_paths: list of absolute paths to object.sdf files.
+    :return:
+    """
+    # MultibodyPlant
+    plant = MultibodyPlant(1e-3)
+    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
+    parser = Parser(plant=plant, scene_graph=scene_graph)
+
+    # Add ground
+    parser.AddModelFromFile(ground_sdf_path)
+    X_WG = RigidTransform.Identity()
+    X_WG.set_translation([0, 0, -0.5])  # "ground"
+    plant.WeldFrames(A=plant.world_frame(),
+                     B=plant.GetFrameByName("ground"),
+                     X_AB=X_WG)
+
+    # fix robot to world
+    robot_model = parser.AddModelFromFile(iiwa_sdf_path_drake)
+    plant.WeldFrames(A=plant.world_frame(),
+                     B=plant.GetFrameByName("iiwa_link_0"),
+                     X_AB=RigidTransform.Identity())
+
+    # fix ee_sphere to l7
+    schunk_sdf_path = FindResourceOrThrow(
+          "drake/manipulation/models/wsg_50_description/sdf"
+          "/schunk_wsg_50_ball_contact.sdf")
+    schunk_model = parser.AddModelFromFile(schunk_sdf_path)
+    X_L7E = RigidTransform(
+        RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
+    plant.WeldFrames(A=plant.GetFrameByName("iiwa_link_7"),
+                     B=plant.GetFrameByName("body", schunk_model),
+                     X_AB=X_L7E)
+
+    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+
+    # Add objects
+    object_models_list = []
+    for i, sdf_path in enumerate(object_sdf_paths):
+        object_models_list.append(
+            parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
+
+    plant.Finalize()
+
+    return (plant,
+            scene_graph,
+            [[robot_model, schunk_model]],
             object_models_list)
 
 
