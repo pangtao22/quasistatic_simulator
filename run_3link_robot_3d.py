@@ -8,7 +8,7 @@ from meshcat_camera_utils import SetOrthographicCameraYZ
 
 #%%
 q_sim = QuasistaticSimulator(
-    CreatePlantFor2dArmWithMultipleObjects,
+    Create2dArmPlantWithMultipleObjects,
     nd_per_contact=4,
     object_sdf_path=[box3d_big_sdf_path, box3d_small_sdf_path],
     joint_stiffness=Kq_a)

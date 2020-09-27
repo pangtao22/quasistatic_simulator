@@ -12,7 +12,7 @@ object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
 # object_sdf_path = os.path.join("models", "sphere_yz_rotation_big.sdf")
 # object_sdf_path = os.path.join("models", "sphere_yz_big.sdf")
 
-q_sim = QuasistaticSimulator(CreatePlantFor2dArmWithMultipleObjects,
+q_sim = QuasistaticSimulator(Create2dArmPlantWithMultipleObjects,
                              nd_per_contact=2,
                              object_sdf_path=[object_sdf_path],
                              joint_stiffness=Kq_a)

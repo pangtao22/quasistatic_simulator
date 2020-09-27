@@ -13,11 +13,15 @@ from contact_aware_control.plan_runner.setup_three_link_arm import (
 from contact_aware_control.plan_runner.setup_iiwa import (
     iiwa_sdf_path_drake, ee_sdf_path)
 
-module_path = pathlib.Path(__file__).parent.absolute()
 # transform between robot base frame and world frame
 X_WR = RigidTransform()
 X_WR.set_translation([0, 0, 0.1])
 
+module_path = pathlib.Path(__file__).parent.absolute()
+box3d_big_sdf_path = os.path.join("models", "box_1m.sdf")
+box3d_medium_sdf_path = os.path.join("models", "box_0.6m.sdf")
+box3d_small_sdf_path = os.path.join("models", "box_0.5m.sdf")
+box3d_8cm_sdf_path = os.path.join("models", "box_0.08m.sdf")
 
 def Create3LinkArmControllerPlant():
     # creates plant that includes only the robot, used for controllers.
@@ -31,8 +35,8 @@ def Create3LinkArmControllerPlant():
     return plant
 
 
-def CreatePlantFor2dArmWithMultipleObjects(builder,
-                                           object_sdf_paths: List[str]):
+def Create2dArmPlantWithMultipleObjects(
+        builder, object_sdf_paths: List[str]):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
