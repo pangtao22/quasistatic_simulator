@@ -22,6 +22,7 @@ box3d_big_sdf_path = os.path.join("models", "box_1m.sdf")
 box3d_medium_sdf_path = os.path.join("models", "box_0.6m.sdf")
 box3d_small_sdf_path = os.path.join("models", "box_0.5m.sdf")
 box3d_8cm_sdf_path = os.path.join("models", "box_0.08m.sdf")
+box3d_7cm_sdf_path = os.path.join("models", "box_0.07m.sdf")
 
 def Create3LinkArmControllerPlant():
     # creates plant that includes only the robot, used for controllers.

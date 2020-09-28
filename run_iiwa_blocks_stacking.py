@@ -13,7 +13,7 @@ from quasistatic_simulator import *
 from setup_environments import (
     CreateIiwaPlantWithMultipleObjects, CreateIiwaPlantWithSchunk,
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path,
-    box3d_8cm_sdf_path)
+    box3d_8cm_sdf_path, box3d_7cm_sdf_path)
 
 import matplotlib.pyplot as plt
 
@@ -23,14 +23,16 @@ q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
 plant_iiwa, _ = CreateIiwaControllerPlant()
 
 durations = [1.0, 2.0, 2.0, 1.0, 1.0, 2.0]
+n_blocks_to_stack = 3
+l = 0.08
 p_WQ_list = np.array([
     [0.55, 0, 0.10],
     [0.55, 0, 0.10],
-    [0.55, 0, 0.25],
-    [0.70, 0, 0.25],
-    [0.70, 0, 0.17],
-    [0.70, 0, 0.17],
-    [0.55, 0, 0.25],
+    [0.55, 0, 0.17 + n_blocks_to_stack * l],
+    [0.70, 0, 0.17 + n_blocks_to_stack * l],
+    [0.70, 0, 0.17 + (n_blocks_to_stack - 1) * l],
+    [0.70, 0, 0.17 + (n_blocks_to_stack - 1) * l],
+    [0.55, 0, 0.25 + n_blocks_to_stack * l],
 ])
 schunk_setpoints = [0.05, 0.02, 0.02, 0.02, 0.02, 0.05, 0.05]
 
@@ -65,15 +67,19 @@ q_sim = QuasistaticSimulator(
     CreateIiwaPlantWithSchunk,
     nd_per_contact=4,
     object_sdf_path=[box3d_8cm_sdf_path,
+                     box3d_8cm_sdf_path,
+                     box3d_7cm_sdf_path,
                      box3d_8cm_sdf_path],
     joint_stiffness=Kq_a)
 
 #%%
 q_u1_0 = np.array([1, 0, 0, 0, 0.55, 0, 0.04])
 q_u2_0 = np.array([1, 0, 0, 0, 0.70, 0, 0.04])
-q_u3_0 = np.array([1, 0, 0, 0, 0.71, 0.01, 0.12])
+q_u3_0 = np.array([1, 0, 0, 0, 0.70, 0., 0.115])
+q_u4_0 = np.array([1, 0, 0, 0, 0.70, 0., 0.19])
 
-q0_list = [q_u1_0, q_u2_0,
+
+q0_list = [q_u1_0, q_u2_0, q_u3_0, q_u4_0,
            [q_a_traj_list[0].value(0).squeeze(),
             schunk_traj_list[0].value(0).squeeze()]]
 
@@ -97,12 +103,12 @@ for q_a_traj, schunk_traj in zip(q_a_traj_list, schunk_traj_list):
         q_a_cmd = np.concatenate(
             [q_a_traj.value(h * i).squeeze(),
              schunk_traj.value(h * i).squeeze()])
-        q_a_cmd_list = [None, None, q_a_cmd]
-        tau_u_ext_list = [tau_u_ext, tau_u_ext, None]
+        q_a_cmd_list = [None, None, None, None, q_a_cmd]
+        tau_u_ext_list = [tau_u_ext, tau_u_ext, tau_u_ext, tau_u_ext, None]
         dq_u_list, dq_a_list = q_sim.StepAnitescu(
                 q_list, q_a_cmd_list, tau_u_ext_list, h,
                 is_planar=False,
-                contact_detection_tolerance=0.01)
+                contact_detection_tolerance=0.005)
 
         # Update q
         q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
