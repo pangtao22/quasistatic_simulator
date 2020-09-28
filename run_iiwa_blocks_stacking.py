@@ -88,7 +88,7 @@ q_sim.UpdateConfiguration(q0_list)
 q_sim.DrawCurrentConfiguration()
 
 #%%
-h = 0.01
+h = 0.02
 tau_u_ext = np.array([0, 0, 0, 0., 0, -2])
 q_list = copy.deepcopy(q0_list)
 
@@ -115,7 +115,7 @@ for q_a_traj, schunk_traj in zip(q_a_traj_list, schunk_traj_list):
         q_sim.UpdateConfiguration(q_list)
         q_sim.DrawCurrentConfiguration()
 
-        q_a_log.append(q_list[1][0].copy())
+        q_a_log.append(np.concatenate(q_list[-1]))
         q_a_cmd_log.append(q_a_cmd)
 
         # input("step?")
@@ -125,7 +125,7 @@ q_a_log = np.array(q_a_log)
 q_a_cmd_log = np.array(q_a_cmd_log)
 
 #%%
-for i in range(7):
+for i in range(9):
     plt.plot(q_a_log[:, i], label="q%d" % i)
     plt.plot(q_a_cmd_log[:, i], label="q_cmd")
     plt.legend()
