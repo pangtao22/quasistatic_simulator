@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from quasistatic_sim import *
-
+#%%
 q_sim = QuasistaticSimulator()
 
 #%% new "impedance robot" formulation, which I think is correct.

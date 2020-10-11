@@ -31,7 +31,7 @@ def CalcE(n_d, n_c):
 
 
 E = CalcE(n_d, n_c)
-U = np.eye(n_c) * 0.8
+U = np.eye(n_c) * 0.5
 
 
 tau_ext = np.array([0., -10])
