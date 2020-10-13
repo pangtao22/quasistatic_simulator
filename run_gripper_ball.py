@@ -43,8 +43,9 @@ for i in range(n_steps):
 
     # logging
     # time.sleep(h * 10)
-    input("next?")
+    # input("next?")
 
+q_sim.PrintSimStatcs()
 
 #%% Print contact information for one configuration.
 n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi, U, contact_info_list \

@@ -16,7 +16,7 @@ q_sim = QuasistaticSimulator(Create2dArmPlantWithMultipleObjects,
                              nd_per_contact=2,
                              object_sdf_path=[object_sdf_path],
                              joint_stiffness=Kq_a)
-# SetOrthographicCameraYZ(q_sim.viz.vis)
+SetOrthographicCameraYZ(q_sim.viz.vis)
 
 
 #%%
@@ -48,7 +48,7 @@ for i in range(n_steps):
     q_sim.DrawCurrentConfiguration()
 
     # logging
-    time.sleep(h)
+    # time.sleep(h)
     input("next?")
 
 #%%
