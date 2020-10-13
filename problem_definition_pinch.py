@@ -1,4 +1,5 @@
 import numpy as np
+from pydrake.trajectories import PiecewisePolynomial
 
 #%%
 # q = [qu, qa]
@@ -52,4 +53,26 @@ def CalcPhi(q):
     x_c, y_c = q_u
     x_l, x_r, y_g = q_a
     return np.array([x_c - x_l - r, x_r - x_c - r, y_c - r])
+
+
+h = 0.01  # simulation time step
+dq_max = 1 * h  # 1m/s
+impulse_max = 50 * h  # 50N
+P_ext = tau_ext * h
+
+# define actuated trajectory
+q0 = np.array([0, r, -1.06*r, 1.06*r, 0])
+
+qa_knots = np.zeros((4, 3))
+qa_knots[0] = q0[2:]
+qa_knots[1] = [-0.9*r, 0.9*r, 0]
+qa_knots[2] = [-0.9*r, 0.9*r, -0.03]
+qa_knots[3] = [-0.9*r, 0.9*r, -0.03]
+
+n_steps = 35
+t_knots = [0, 8*h, (8 + 15)*h, n_steps * h]
+q_traj = PiecewisePolynomial.FirstOrderHold(t_knots, qa_knots.T)
+
+t_contact_mode_change = [0.03, 0.13, 0.23]
+
 

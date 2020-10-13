@@ -6,11 +6,6 @@ from pydrake.solvers.gurobi import GurobiSolver
 from problem_definition_pinch import *
 from meshcat_camera_utils import SetOrthographicCameraXY
 
-h = 0.01  # simulation time step
-dq_max = 1 * h  # 1m/s
-impulse_max = 50 * h  # 50N
-P_ext = tau_ext * h
-
 
 class QuasistaticSimulator:
     def __init__(self):
