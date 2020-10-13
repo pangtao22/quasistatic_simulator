@@ -154,6 +154,11 @@ class QuasistaticSimulator:
         # For contact force visualization.
         self.contact_results = ContactResults()
 
+        # Logging num of contacts and solver time.
+        self.nc_log = []
+        self.nd_log = []
+        self.optimizer_time_log = []
+
     def ExpandQlist(self, q_list):
         q_list_expanded = []
         for q in q_list:
@@ -260,6 +265,9 @@ class QuasistaticSimulator:
         n_d = np.full(n_c, self.nd_per_contact)
         n_f = n_d.sum()
         U = np.zeros(n_c)
+
+        self.nc_log.append(n_c)
+        self.nd_log.append(n_d.sum())
 
         phi = np.zeros(n_c)
         Jn_v_list = []
@@ -511,6 +519,8 @@ class QuasistaticSimulator:
             J, -phi_constraints, np.full_like(phi_constraints, np.inf), vh)
 
         result = self.solver.Solve(prog, None, None)
+        self.optimizer_time_log.append(
+            result.get_solver_details().optimizer_time)
         assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
@@ -580,4 +590,15 @@ class QuasistaticSimulator:
                 q_list[i_model][1] += dq_list[i_model][7:]
             else:
                 q_list[i_model] += dq_list[i_model]
+
+    def PrintSimStatcs(self):
+        solver_time = np.array(self.optimizer_time_log)
+        n_c_s = np.array(self.nc_log)
+        n_d_s = np.array(self.nd_log)
+
+        print("Average solver time: ", solver_time.mean())
+        print("Solver time std: ", solver_time.std())
+        print("Average num. contacts: ", n_c_s.mean())
+        print("Average num. constraints: ", n_d_s.mean())
+
 
