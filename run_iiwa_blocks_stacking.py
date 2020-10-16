@@ -69,19 +69,34 @@ q_sim = QuasistaticSimulator(
     object_sdf_path=[box3d_8cm_sdf_path,
                      box3d_8cm_sdf_path,
                      box3d_7cm_sdf_path,
+                     box3d_8cm_sdf_path,
+                     box3d_8cm_sdf_path,
+                     box3d_7cm_sdf_path,
+                     box3d_8cm_sdf_path,
+                     box3d_8cm_sdf_path,
+                     box3d_7cm_sdf_path,
                      box3d_8cm_sdf_path],
     joint_stiffness=Kq_a)
 
 #%%
-q_u1_0 = np.array([1, 0, 0, 0, 0.55, 0, 0.04])
-q_u2_0 = np.array([1, 0, 0, 0, 0.70, 0, 0.04])
-q_u3_0 = np.array([1, 0, 0, 0, 0.70, 0., 0.115])
-q_u4_0 = np.array([1, 0, 0, 0, 0.70, 0., 0.19])
+q_u0_list = np.zeros((10, 7))
+q_u0_list[0] = [1, 0, 0, 0, 0.55, 0, 0.04]
+q_u0_list[1] = [1, 0, 0, 0, 0.70, 0, 0.04]
+q_u0_list[2] = [1, 0, 0, 0, 0.70, 0., 0.115]
+q_u0_list[3] = [1, 0, 0, 0, 0.70, 0., 0.19]
 
+q_u0_list[4] = [1, 0, 0, 0, 0.50, -0.2, 0.04]
+q_u0_list[5] = [1, 0, 0, 0, 0.50, -0.2, 0.115]
+q_u0_list[6] = [1, 0, 0, 0, 0.50, -0.2, 0.19]
 
-q0_list = [q_u1_0, q_u2_0, q_u3_0, q_u4_0,
-           [q_a_traj_list[0].value(0).squeeze(),
-            schunk_traj_list[0].value(0).squeeze()]]
+q_u0_list[7] = [1, 0, 0, 0, 0.45, 0.2, 0.04]
+q_u0_list[8] = [1, 0, 0, 0, 0.45, 0.2, 0.115]
+q_u0_list[9] = [1, 0, 0, 0, 0.48, 0.3, 0.04]
+
+#%%
+q0_list = [q_u0_i for q_u0_i in q_u0_list]
+q0_list.append([q_a_traj_list[0].value(0).squeeze(),
+                schunk_traj_list[0].value(0).squeeze()])
 
 q_sim.viz.vis["drake"]["contact_forces"].delete()
 q_sim.UpdateConfiguration(q0_list)
@@ -103,8 +118,8 @@ for q_a_traj, schunk_traj in zip(q_a_traj_list, schunk_traj_list):
         q_a_cmd = np.concatenate(
             [q_a_traj.value(h * i).squeeze(),
              schunk_traj.value(h * i).squeeze()])
-        q_a_cmd_list = [None, None, None, None, q_a_cmd]
-        tau_u_ext_list = [tau_u_ext, tau_u_ext, tau_u_ext, tau_u_ext, None]
+        q_a_cmd_list = [None] * len(q_u0_list) + [q_a_cmd]
+        tau_u_ext_list = [tau_u_ext] * len(q_u0_list) + [None]
         dq_u_list, dq_a_list = q_sim.StepAnitescu(
                 q_list, q_a_cmd_list, tau_u_ext_list, h,
                 is_planar=False,
