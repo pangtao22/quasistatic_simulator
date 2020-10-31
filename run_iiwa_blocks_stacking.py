@@ -7,11 +7,11 @@ from pydrake.trajectories import PiecewisePolynomial
 
 from contact_aware_control.plan_runner.contact_utils import CalcIiwaQTrajectory
 from contact_aware_control.plan_runner.setup_iiwa import (
-    CreateIiwaControllerPlant)
+    create_iiwa_controller_plant)
 
 from quasistatic_simulator import *
 from setup_environments import (
-    CreateIiwaPlantWithMultipleObjects, CreateIiwaPlantWithSchunk,
+    CreateIiwaPlantWithMultipleObjects, create_iiwa_plant_with_schunk,
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path,
     box3d_8cm_sdf_path, box3d_7cm_sdf_path)
 
@@ -20,11 +20,11 @@ import matplotlib.pyplot as plt
 #%% Create trajectory
 q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
 
-plant_iiwa, _ = CreateIiwaControllerPlant()
+plant_iiwa, _ = create_iiwa_controller_plant()
 
 durations = [1.0, 2.0, 2.0, 1.0, 1.0, 2.0]
 n_blocks_to_stack = 3
-l = 0.08
+l = 0.075
 p_WQ_list = np.array([
     [0.55, 0, 0.10],
     [0.55, 0, 0.10],
@@ -63,8 +63,11 @@ for i, duration in enumerate(durations):
 #%%
 Kq_a = np.array([800., 600, 600, 600, 400, 200, 200, 400, 400])
 
+Kq_iiwa = Kq_a[:7]
+Kq_schunk = Kq_a[7:]
+
 q_sim = QuasistaticSimulator(
-    CreateIiwaPlantWithSchunk,
+    create_iiwa_plant_with_schunk,
     nd_per_contact=4,
     object_sdf_path=[box3d_8cm_sdf_path,
                      box3d_8cm_sdf_path,
@@ -103,11 +106,12 @@ q_sim.UpdateConfiguration(q0_list)
 q_sim.DrawCurrentConfiguration()
 
 #%%
-h = 0.02
-tau_u_ext = np.array([0, 0, 0, 0., 0, -2])
+h = 0.01
+tau_u_ext = np.array([0, 0, 0, 0., 0, -10])
 q_list = copy.deepcopy(q0_list)
 
 q_a_log = []
+q_log = []
 q_a_cmd_log = []
 
 input("start?")
@@ -132,12 +136,29 @@ for q_a_traj, schunk_traj in zip(q_a_traj_list, schunk_traj_list):
 
         q_a_log.append(np.concatenate(q_list[-1]))
         q_a_cmd_log.append(q_a_cmd)
+        q_log.append(copy.deepcopy(q_list))
 
         # input("step?")
 
+
 #%%
+def extract_log_for_object(i: int):
+    n = len(q_log)
+    m = len(q_log[0][i])
+    q_i_log = np.zeros((n, m))
+    for t, q_t in enumerate(q_log):
+        q_i_log[t] = q_t[i]
+    return q_i_log
+
 q_a_log = np.array(q_a_log)
 q_a_cmd_log = np.array(q_a_cmd_log)
+q_u0_log = extract_log_for_object(0)
+
+
+for i in range(len(q_log[0])):
+    print(i, q_log[0][i][-3:], q_log[-1][i][-3:])
+
+# np.save("q_10box_box0_h{}".format(h), q_u0_log)
 
 #%%
 for i in range(9):
@@ -145,3 +166,8 @@ for i in range(9):
     plt.plot(q_a_cmd_log[:, i], label="q_cmd")
     plt.legend()
     plt.show()
+
+
+#%%
+from iiwa_block_stacking_mbp import run_sim
+

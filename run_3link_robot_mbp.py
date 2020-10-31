@@ -2,7 +2,7 @@
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.meshcat_visualizer import (
     MeshcatVisualizer, MeshcatContactVisualizer)
-from pydrake.systems.primitives import TrajectorySource
+from pydrake.systems.primitives import TrajectorySource, LogOutput
 from pydrake.systems.analysis import Simulator
 
 from contact_aware_control.plan_runner.robot_internal_controller import (
@@ -15,18 +15,22 @@ from sim_params_3link_arm import *
 
 #%%
 # object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
-object_sdf_path = box3d_sdf_path
+object_sdf_path = box3d_big_sdf_path
 # object_sdf_path = os.path.join("models", "sphere_yz_rotation_big.sdf")
 
 q_a0 = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])
 # q_u0 = np.array([1.7, 0.5, 0])
+q_u0 = np.array([1, 0, 0, 0, 0, 1.7, 0.5])
 q0 = np.hstack([q_u0, q_a0])
 
 
 #%%  Build diagram.
 builder = DiagramBuilder()
-plant, scene_graph, robot_model, object_model = \
-    CreatePlantFor2dArmWithObject(builder, object_sdf_path)
+plant, scene_graph, robot_models, object_models = \
+    Create2dArmPlantWithMultipleObjects(builder, [object_sdf_path])
+
+robot_model = robot_models[0]
+object_model = object_models[0]
 
 # robot controller
 plant_robot = Create3LinkArmControllerPlant()
@@ -63,6 +67,10 @@ builder.Connect(
     plant.GetOutputPort("contact_results"),
     contact_viz.GetInputPort("contact_results"))
 
+# log robot states
+qa_log_sys = LogOutput(plant.get_state_output_port(robot_model), builder)
+qa_log_sys.set_publish_period(0.01)
+
 diagram = builder.Build()
 
 #%% Run simulation.
@@ -78,7 +86,18 @@ plant.SetPositions(context_plant, robot_model, q_a0)
 
 #%%
 sim.Initialize()
-sim.set_target_realtime_rate(0.5)
+sim.set_target_realtime_rate(1.0)
 sim.AdvanceTo(t_final)
 
+#%% compare tracking error
+na = 3
+t_s = qa_log_sys.sample_times()
+qa_log = qa_log_sys.data()[0:na].T
+error_qa = np.zeros_like(qa_log)
+
+for i, t in enumerate(t_s):
+    error_qa[i] = q_a_traj.value(t).squeeze() - qa_log[i]
+
+np.save("3link_box_error_mbp", error_qa)
+np.save("3link_box_qa_mbp", qa_log)
 

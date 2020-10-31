@@ -10,7 +10,7 @@ from contact_aware_control.plan_runner.setup_iiwa import (
 
 from quasistatic_simulator import *
 from setup_environments import (
-    CreateIiwaPlantWithMultipleObjects, CreateIiwaPlantWithSchunk)
+    CreateIiwaPlantWithMultipleObjects, create_iiwa_plant_with_schunk)
 from setup_environments import (
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path)
 

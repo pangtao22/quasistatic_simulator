@@ -10,7 +10,7 @@ from pydrake.common.eigen_geometry import Quaternion
 from pydrake.math import RigidTransform
 
 #%%
-box_sdf_path = os.path.join("models", "box.sdf")
+box_sdf_path = os.path.join("models", "box_1m.sdf")
 
 plant = MultibodyPlant(1e-3)
 parser = Parser(plant=plant)
@@ -20,7 +20,7 @@ plant.Finalize()
 
 #%%
 context = plant.CreateDefaultContext()
-body_frame = plant.GetFrameByName("base_link")
+body_frame = plant.GetFrameByName("box")
 angle = 0.5
 axis = np.array([1, 2, 3.])
 axis /= np.linalg.norm(axis)

@@ -24,6 +24,7 @@ box3d_small_sdf_path = os.path.join("models", "box_0.5m.sdf")
 box3d_8cm_sdf_path = os.path.join("models", "box_0.08m.sdf")
 box3d_7cm_sdf_path = os.path.join("models", "box_0.07m.sdf")
 
+
 def Create3LinkArmControllerPlant():
     # creates plant that includes only the robot, used for controllers.
     plant = MultibodyPlant(1e-3)
@@ -60,7 +61,7 @@ def Create2dArmPlantWithMultipleObjects(
     robot_model = parser.AddModelFromFile(robot_sdf_path)
     plant.WeldFrames(
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
-    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+    plant.mutable_gravity_field().set_gravity_vector([0, 0, -10])
 
     # Add objects
     object_models_list = []
@@ -126,7 +127,7 @@ def CreateIiwaPlantWithMultipleObjects(builder,
             object_models_list)
 
 
-def CreateIiwaPlantWithSchunk(builder, object_sdf_paths: List[str]):
+def create_iiwa_plant_with_schunk(builder, object_sdf_paths: List[str]):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
@@ -162,7 +163,7 @@ def CreateIiwaPlantWithSchunk(builder, object_sdf_paths: List[str]):
                      B=plant.GetFrameByName("body", schunk_model),
                      X_AB=X_L7E)
 
-    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+    plant.mutable_gravity_field().set_gravity_vector([0, 0, -10])
 
     # Add objects
     object_models_list = []
