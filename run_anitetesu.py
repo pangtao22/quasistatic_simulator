@@ -24,6 +24,7 @@ qa_cmd_log = []
 beta_log = []
 constraint_values_log = []
 
+input("start")
 for i in range(n_steps):
     q_a_cmd = q_traj.value((i + 1) * h).squeeze()
     dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu(q, q_a_cmd)
@@ -37,7 +38,7 @@ for i in range(n_steps):
     beta_log.append(beta)
     qa_cmd_log.append(q_a_cmd)
     constraint_values_log.append(constraint_values)
-    # time.sleep(h * 10)
+    time.sleep(h * 10)
 
 
 q_log = np.array(q_log)

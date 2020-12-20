@@ -19,21 +19,21 @@ class QuasistaticSimulator:
                 color=0xffffff, opacity=0.5))
         self.vis["cylinder"].set_transform(
             meshcat.transformations.euler_matrix(np.pi / 2, 0, 0))
-        self.finger_thickness = 0.05
+        self.finger_thickness = 0.02
         self.vis["left_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.5, 0.2]),
+            meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
             meshcat.geometry.MeshLambertMaterial(
                 color=0xff0000, opacity=1.0))
         self.vis["right_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.5, 0.2]),
+            meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
             meshcat.geometry.MeshLambertMaterial(
                 color=0xff0000, opacity=1.0))
         self.vis["support"].set_object(
-            meshcat.geometry.Box([0.16, 0.16, 0.2]),
+            meshcat.geometry.Box([1, 1, 0.1]),
             meshcat.geometry.MeshLambertMaterial(
                 color=0x00ff00, opacity=1.0))
         self.vis["support"].set_transform(
-            meshcat.transformations.translation_matrix([0, -0.08, 0]))
+            meshcat.transformations.translation_matrix([0, -0.5, 0]))
 
         SetOrthographicCameraXY(self.vis)
 
@@ -236,10 +236,10 @@ class QuasistaticSimulator:
         xl, xr, yg = qa
         self.vis["left_finger"].set_transform(
             meshcat.transformations.translation_matrix(
-                [xl - self.finger_thickness / 2, yg, 0]))
+                [xl - self.finger_thickness / 2, yg + 0.1, 0]))
         self.vis["right_finger"].set_transform(
             meshcat.transformations.translation_matrix(
-                [xr + self.finger_thickness / 2, yg, 0]))
+                [xr + self.finger_thickness / 2, yg + 0.1, 0]))
         X_WC = meshcat.transformations.euler_matrix(np.pi / 2, 0, 0)
         X_WC[0:3, 3] = [xc, yc, 0]
         self.vis["cylinder"].set_transform(X_WC)

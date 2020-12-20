@@ -203,7 +203,7 @@ class QuasistaticSimulator:
         self.context_meshcat_contact.FixInputPort(
             self.contact_viz.GetInputPort("contact_results").get_index(),
             AbstractValue.Make(self.contact_results))
-        self.contact_viz.DoPublish(self.context_meshcat_contact, [])
+        # self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
     def UpdateNormalAndTangentialJacobianRows(
             self, body, pC_D: np.array, n_W: np.array, d_W: np.array,

@@ -1,2 +1,5 @@
 .idea
 __pycache__
+*.pdf
+*.npy
+.DS_Store

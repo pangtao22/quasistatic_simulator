@@ -49,7 +49,7 @@ for i in range(n_steps):
 
     # logging
     # time.sleep(h)
-    input("next?")
+    print("next?")
 
 #%%
 (n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,

@@ -10,36 +10,36 @@
        these two DOFs. The ghost body has negligible mass.
   -->
   <!-- world->ghost_body_y->ghost_body_z_sphere-->
-  <model name="simple_cuboid0.08m">
+  <model name="simple_cuboid0.06m">
     <!-- The model for a solid box of uniform density. -->
     <link name="box">
       <inertial>
-        <mass>5.0</mass>
+        <mass>0.5</mass>
         <inertia>
-          <ixx>0.166666666666667</ixx>
+          <ixx>3e-6</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.166666666666667</iyy>
+          <iyy>3e-6</iyy>
           <iyz>0</iyz>
-          <izz>0.166666666666667</izz>
+          <izz>3e-6</izz>
         </inertia>
       </inertial>
 
       <visual name="box_visual">
         <geometry>
           <box>
-            <size>0.079 0.079 0.079</size>
+            <size>0.059 0.059 0.059</size>
           </box>
         </geometry>
         <material>
-          <diffuse>0.9 0.9 0.9 0.9</diffuse>
+          <diffuse>1.0 0. 0. 1.0</diffuse>
         </material>
       </visual>
 
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.079 0.079 0.079</size>
+            <size>0.059 0.059 0.059</size>
           </box>
         </geometry>
         <surface>
@@ -53,7 +53,7 @@
       </collision>
 
       <collision name="minus_x_lower_left_corner">
-        <pose> -0.04 -0.04 -0.04 0 0 0</pose>
+        <pose> -0.03 -0.03 -0.03 0 0 0</pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -62,7 +62,7 @@
       </collision>
 
       <collision name="minus_x_lower_right_corner">
-        <pose> -0.04 0.04 -0.04 0 0 0 </pose>
+        <pose> -0.03 0.03 -0.03 0 0 0 </pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -71,7 +71,7 @@
       </collision>
 
       <collision name="plus_x_lower_left_corner">
-        <pose> 0.04 -0.04 -0.04 0 0 0</pose>
+        <pose> 0.03 -0.03 -0.03 0 0 0</pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -80,7 +80,7 @@
       </collision>
 
       <collision name="plus_x_lower_right_corner">
-        <pose> 0.04 0.04 -0.04 0 0 0 </pose>
+        <pose> 0.03 0.03 -0.03 0 0 0 </pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -89,7 +89,7 @@
       </collision>
 
       <collision name="minus_x_upper_left_corner">
-        <pose> -0.04 -0.04 0.04 0 0 0</pose>
+        <pose> -0.03 -0.03 0.03 0 0 0</pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -98,7 +98,7 @@
       </collision>
 
       <collision name="minus_x_upper_right_corner">
-        <pose> -0.04 0.04 0.04 0 0 0 </pose>
+        <pose> -0.03 0.03 0.03 0 0 0 </pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -107,7 +107,7 @@
       </collision>
 
       <collision name="plus_x_upper_left_corner">
-        <pose> 0.04 -0.04 0.04 0 0 0</pose>
+        <pose> 0.03 -0.03 0.03 0 0 0</pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
@@ -116,7 +116,7 @@
       </collision>
 
       <collision name="plus_x_upper_right_corner">
-        <pose> 0.04 0.04 0.04 0 0 0 </pose>
+        <pose> 0.03 0.03 0.03 0 0 0 </pose>
         <geometry>
           <sphere>
             <radius>1e-7</radius>
