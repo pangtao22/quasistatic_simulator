@@ -16,6 +16,7 @@ from contact_aware_control.plan_runner.setup_iiwa import (
 # transform between robot base frame and world frame
 X_WR = RigidTransform()
 X_WR.set_translation([0, 0, 0.1])
+gravity = np.array([0., 0, -10])
 
 module_path = pathlib.Path(__file__).parent.absolute()
 box3d_big_sdf_path = os.path.join("models", "box_1m.sdf")
@@ -24,6 +25,7 @@ box3d_small_sdf_path = os.path.join("models", "box_0.5m.sdf")
 box3d_8cm_sdf_path = os.path.join("models", "box_0.08m.sdf")
 box3d_7cm_sdf_path = os.path.join("models", "box_0.07m.sdf")
 box3d_6cm_sdf_path = os.path.join("models", "box_0.06m.sdf")
+
 
 def Create3LinkArmControllerPlant():
     # creates plant that includes only the robot, used for controllers.
@@ -111,7 +113,7 @@ def CreateIiwaPlantWithMultipleObjects(builder,
                      B=plant.GetFrameByName("body", ee_model),
                      X_AB=X_L7E)
 
-    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
 
     # Add objects
     object_models_list = []
@@ -125,6 +127,24 @@ def CreateIiwaPlantWithMultipleObjects(builder,
             scene_graph,
             [[robot_model, ee_model]],
             object_models_list)
+
+
+def create_iiwa_plant(builder, object_sdf_paths: List[str], time_step=1e-3):
+    # MultibodyPlant
+    plant = MultibodyPlant(time_step)
+    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
+    parser = Parser(plant=plant, scene_graph=scene_graph)
+
+    # fix robot to world
+    iiwa_model = parser.AddModelFromFile(iiwa_sdf_path_drake)
+    plant.WeldFrames(A=plant.world_frame(),
+                     B=plant.GetFrameByName("iiwa_link_0"),
+                     X_AB=RigidTransform.Identity())
+
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
+    plant.Finalize()
+
+    return plant, scene_graph, [iiwa_model], []
 
 
 def create_iiwa_plant_with_schunk(
@@ -164,7 +184,7 @@ def create_iiwa_plant_with_schunk(
                      B=plant.GetFrameByName("body", schunk_model),
                      X_AB=X_L7E)
 
-    plant.mutable_gravity_field().set_gravity_vector([0, 0, -10])
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
 
     # Add objects
     object_models_list = []
@@ -227,7 +247,7 @@ def create_iiwa_plant_with_schunk_and_bin(
             parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
 
     # Gravity.
-    plant.mutable_gravity_field().set_gravity_vector([0, 0, -10])
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
     plant.Finalize()
 
     return (plant,

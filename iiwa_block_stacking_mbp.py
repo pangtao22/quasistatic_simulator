@@ -1,16 +1,11 @@
 
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.meshcat_visualizer import (
-    MeshcatVisualizer, MeshcatContactVisualizer)
+    ConnectMeshcatVisualizer, MeshcatContactVisualizer)
 from pydrake.systems.primitives import TrajectorySource, LogOutput
 from pydrake.systems.analysis import Simulator
 from pydrake.systems.controllers import PidController
 from pydrake.all import PiecewisePolynomial
-
-from contact_aware_control.plan_runner.robot_internal_controller import (
-    RobotInternalController)
-from contact_aware_control.plan_runner.setup_three_link_arm import (
-    Create3LinkArmControllerPlant)
 
 from quasistatic_simulator import *
 from meshcat_camera_utils import SetOrthographicCameraYZ
@@ -21,8 +16,10 @@ from setup_environments import (
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path,
     box3d_8cm_sdf_path, box3d_7cm_sdf_path)
 
-from contact_aware_control.plan_runner.setup_iiwa import (
+from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
+from iiwa_controller.iiwa_controller.robot_internal_controller import (
+    RobotInternalController)
 
 
 def run_sim(q_traj_iiwa: PiecewisePolynomial,
@@ -79,12 +76,8 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
         controller_schunk.get_input_port_desired_state())
 
     # meshcat visualizer
-    viz = MeshcatVisualizer(
+    viz = ConnectMeshcatVisualizer(builder,
         scene_graph, frames_to_draw={"three_link_arm": {"link_ee"}})
-    builder.AddSystem(viz)
-    builder.Connect(
-        scene_graph.get_pose_bundle_output_port(),
-        viz.GetInputPort("lcm_visualization"))
 
     # meshcat contact visualizer
     # contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)

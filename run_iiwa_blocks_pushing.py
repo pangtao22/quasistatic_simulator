@@ -37,7 +37,7 @@ Kq_a = np.array([800., 600, 600, 600, 400, 200, 200])
 q_sim = QuasistaticSimulator(
     CreateIiwaPlantWithMultipleObjects,
     nd_per_contact=4,
-    object_sdf_path=[box3d_medium_sdf_path, box3d_small_sdf_path],
+    object_sdf_paths=[box3d_medium_sdf_path, box3d_small_sdf_path],
     joint_stiffness=Kq_a)
 
 #%%

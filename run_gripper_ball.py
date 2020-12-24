@@ -7,7 +7,7 @@ from meshcat_camera_utils import SetOrthographicCameraYZ
 #%%
 Kq_a = np.ones(3) * 1000
 q_sim = QuasistaticSimulator(CreatePlantFor2dGripper, nd_per_contact=2,
-                             object_sdf_path=None,
+                             object_sdf_paths=None,
                              joint_stiffness=Kq_a)
 # SetOrthographicCameraYZ(q_sim.viz.vis)
 

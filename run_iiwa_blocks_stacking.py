@@ -7,7 +7,7 @@ from pydrake.common.eigen_geometry import Quaternion
 from pydrake.trajectories import PiecewisePolynomial, PiecewiseQuaternionSlerp
 
 from contact_aware_control.plan_runner.contact_utils import CalcIiwaQTrajectory
-from contact_aware_control.plan_runner.setup_iiwa import (
+from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 
 from quasistatic_simulator import *
@@ -15,13 +15,14 @@ from setup_environments import (
     CreateIiwaPlantWithMultipleObjects, create_iiwa_plant_with_schunk,
     box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path,
     box3d_8cm_sdf_path, box3d_7cm_sdf_path, box3d_6cm_sdf_path)
+from iiwa_block_stacking_mbp import run_sim
 
 import matplotlib.pyplot as plt
 
 #%% Create trajectory
 q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
 
-plant_iiwa, _ = create_iiwa_controller_plant()
+plant_iiwa, _ = create_iiwa_controller_plant(gravity=[0, 0, 0])
 
 durations = np.array([1.0, 2.0, 2.0, 1.0, 1.0, 3.0]) * 2
 n_blocks_to_stack = 3
@@ -128,7 +129,7 @@ object_sdf_paths = [box3d_6cm_sdf_path,
 q_sim = QuasistaticSimulator(
     create_iiwa_plant_with_schunk,
     nd_per_contact=4,
-    object_sdf_path=object_sdf_paths,
+    object_sdf_paths=object_sdf_paths,
     joint_stiffness=Kq_a)
 
 #%%
@@ -215,7 +216,6 @@ for i in range(0, len(q_log), stride):
 
 
 #%%
-from iiwa_block_stacking_mbp import run_sim
 h_mbp = 0.001
 # h_mbp = 0.001088
 iiwa_log, schunk_log, object0_log = run_sim(q_iiwa_traj, x_schunk_traj,

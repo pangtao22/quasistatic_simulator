@@ -1,12 +1,13 @@
 from typing import List
 
 from pydrake.common.value import AbstractValue
-from pydrake.systems.meshcat_visualizer import (
-    MeshcatVisualizer, MeshcatContactVisualizer)
+from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
+    MeshcatContactVisualizer)
 from pydrake.systems.framework import DiagramBuilder, LeafSystem
 from pydrake.multibody.tree import JacobianWrtVariable
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
+from pydrake.solvers.osqp import OsqpSolver
 from pydrake.multibody.plant import (PointPairContactInfo, ContactResults,
                                      CalcContactFrictionFromSurfaceProperties)
 from pydrake.geometry import PenetrationAsPointPair
@@ -36,11 +37,10 @@ class MyContactInfo(object):
 
 
 class QuasistaticSimulator:
-    def __init__(self, setup_environment, nd_per_contact, object_sdf_path,
+    def __init__(self, setup_environment, nd_per_contact, object_sdf_paths,
                  joint_stiffness):
         """
         Let's assume that
-        - There's only one unactuated and one actuated model instance.
         - Each rigid body has one contact geometry.
         :param joint_stiffness: a 1D vector of length n_a. The stiffness of
         all joints of the robot.
@@ -50,13 +50,10 @@ class QuasistaticSimulator:
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
-            setup_environment(builder, object_sdf_path)
-        viz = MeshcatVisualizer(
-            scene_graph, frames_to_draw={"three_link_arm": {"link_ee"}})
-        builder.AddSystem(viz)
-        builder.Connect(
-            scene_graph.get_pose_bundle_output_port(),
-            viz.GetInputPort("lcm_visualization"))
+            setup_environment(builder, object_sdf_paths)
+        viz = ConnectMeshcatVisualizer(
+            builder, scene_graph,
+            frames_to_draw={"three_link_arm": {"link_ee"}})
 
         # ContactVisualizer
         contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
@@ -200,9 +197,10 @@ class QuasistaticSimulator:
         self.viz.DoPublish(self.context_meshcat, [])
 
         # Contact forces
-        self.context_meshcat_contact.FixInputPort(
-            self.contact_viz.GetInputPort("contact_results").get_index(),
+        self.contact_viz.GetInputPort("contact_results").FixValue(
+            self.context_meshcat_contact,
             AbstractValue.Make(self.contact_results))
+
         # self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
     def UpdateNormalAndTangentialJacobianRows(
@@ -519,8 +517,8 @@ class QuasistaticSimulator:
             J, -phi_constraints, np.full_like(phi_constraints, np.inf), vh)
 
         result = self.solver.Solve(prog, None, None)
-        self.optimizer_time_log.append(
-            result.get_solver_details().optimizer_time)
+        # self.optimizer_time_log.append(
+        #     result.get_solver_details().optimizer_time)
         assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()

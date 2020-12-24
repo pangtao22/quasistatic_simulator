@@ -14,7 +14,7 @@ object_sdf_path = os.path.join("models", "box_yz_rotation_big.sdf")
 
 q_sim = QuasistaticSimulator(Create2dArmPlantWithMultipleObjects,
                              nd_per_contact=2,
-                             object_sdf_path=[object_sdf_path],
+                             object_sdf_paths=[object_sdf_path],
                              joint_stiffness=Kq_a)
 SetOrthographicCameraYZ(q_sim.viz.vis)
 

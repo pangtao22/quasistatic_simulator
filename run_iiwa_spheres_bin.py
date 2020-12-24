@@ -61,7 +61,7 @@ for i, object_model in enumerate(object_models):
 q_sim = QuasistaticSimulator(
     create_iiwa_plant_with_schunk_and_bin,
     nd_per_contact=8,
-    object_sdf_path=object_sdf_paths,
+    object_sdf_paths=object_sdf_paths,
     joint_stiffness=Kq_a)
 
 #%%

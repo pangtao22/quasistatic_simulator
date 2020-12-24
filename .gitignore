@@ -1,5 +1,6 @@
 .idea
 __pycache__
+.ipynb_checkpoints
 *.pdf
 *.npy
 .DS_Store
