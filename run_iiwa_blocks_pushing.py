@@ -46,8 +46,8 @@ q_u2_0 = np.array([1, 0, 0, 0, 1.5, 0.4, 0.25])
 q0_list = [q_u1_0, q_u2_0, [q_a_traj.value(0).squeeze(), []]]
 
 q_sim.viz.vis["drake"]["contact_forces"].delete()
-q_sim.UpdateConfiguration(q0_list)
-q_sim.DrawCurrentConfiguration()
+q_sim.update_configuration(q0_list)
+q_sim.draw_current_configuration()
 
 #%%
 h = 0.01
@@ -65,15 +65,15 @@ for i in range(n_steps):
     tau_u_ext_list = [tau_u_ext, tau_u_ext, None]
     # q_a_cmd_list = [q_a_cmd]
     # tau_u_ext_list = []
-    dq_u_list, dq_a_list = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.step_anitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=False,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
-    q_sim.UpdateConfiguration(q_list)
-    q_sim.DrawCurrentConfiguration()
+    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.update_configuration(q_list)
+    q_sim.draw_current_configuration()
 
     q_a_log.append(q_list[2][0].copy())
     q_a_cmd_log.append(q_a_cmd)

@@ -3,6 +3,8 @@ import pathlib
 from typing import List
 
 import numpy as np
+
+from pydrake.all import ModelInstanceIndex
 from pydrake.common import FindResourceOrThrow
 from pydrake.multibody.parsing import Parser
 from pydrake.multibody.plant import MultibodyPlant, AddMultibodyPlantSceneGraph
@@ -196,7 +198,7 @@ def create_iiwa_plant_with_schunk(
 
     return (plant,
             scene_graph,
-            [[robot_model, schunk_model]],
+            [robot_model, schunk_model],
             object_models_list)
 
 

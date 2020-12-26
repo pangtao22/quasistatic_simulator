@@ -1,15 +1,16 @@
-from typing import List
+from typing import List, Union, Dict
+import copy
 
-from pydrake.common.value import AbstractValue
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
-from pydrake.systems.framework import DiagramBuilder, LeafSystem
-from pydrake.multibody.tree import JacobianWrtVariable
+from pydrake.systems.framework import DiagramBuilder
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
 from pydrake.solvers.osqp import OsqpSolver
-from pydrake.multibody.plant import (PointPairContactInfo, ContactResults,
-                                     CalcContactFrictionFromSurfaceProperties)
+from pydrake.multibody.tree import JacobianWrtVariable, RigidBody
+from pydrake.multibody.plant import (
+    PointPairContactInfo, ContactResults,
+    CalcContactFrictionFromSurfaceProperties)
 from pydrake.geometry import PenetrationAsPointPair
 from pydrake.common.value import AbstractValue
 
@@ -18,7 +19,6 @@ from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
 
 
-# %%
 class MyContactInfo(object):
     """
     Used as an intermediate storage structure for constructing
@@ -28,9 +28,12 @@ class MyContactInfo(object):
     contact point.
     """
 
-    def __init__(self, bodyA_index, bodyB_index, p_WC_W, n_W, dC_W):
+    def __init__(self, bodyA_index, bodyB_index, geometry_id_A, geometry_id_B,
+                 p_WC_W, n_W, dC_W):
         self.bodyA_index = bodyA_index
         self.bodyB_index = bodyB_index
+        self.geometry_id_A = geometry_id_A
+        self.geometry_id_B = geometry_id_B
         self.p_WC_W = p_WC_W
         self.n_W = n_W
         self.dC_W = dC_W
@@ -45,7 +48,6 @@ class QuasistaticSimulator:
         :param joint_stiffness: a 1D vector of length n_a. The stiffness of
         all joints of the robot.
         """
-        self.Kq_a = np.diag(joint_stiffness).astype(float)
 
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
@@ -58,9 +60,6 @@ class QuasistaticSimulator:
         # ContactVisualizer
         contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
         builder.AddSystem(contact_viz)
-        builder.Connect(
-            scene_graph.get_pose_bundle_output_port(),
-            contact_viz.GetInputPort("pose_bundle"))
 
         diagram = builder.Build()
         viz.vis.delete()
@@ -83,66 +82,35 @@ class QuasistaticSimulator:
         self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
             self.contact_viz, self.context)
 
-        '''
-        Models list: [unactuated_model1, ...unactuated_model_n, 
-            actuated_model1, actuated_modeln]. The order in this list must be 
-            consistent with the order in q_list passed to other functions in 
-            this class.
-        '''
-        # TODO: if an element of robot_model_list is a list itself,
-        #  it is assumed that the models
-        #  in robot_model_list are fixed into one kinematic chain. For
-        #  example, a robot and a gripper fixed to the last link of the robot.
-        #  It would be nice to handle this more gracefully, but I don't know
-        #  how to do that yet...
-        models_list = object_model_list + robot_model_list
-        n_u_models = len(object_model_list)
-        n_a_models = len(robot_model_list)
-        self.models_unactuated_indices = np.arange(n_u_models)
-        self.models_actuated_indices = n_u_models + np.arange(n_a_models)
-
-        self.models_list_expanded = []
-        for model in models_list:
-            if isinstance(model, list):
-                for m in model:
-                    self.models_list_expanded.append(m)
-            else:
-                self.models_list_expanded.append(model)
+        self.models_unactuated = object_model_list
+        self.models_actuated = robot_model_list
+        self.models_all = object_model_list + robot_model_list
 
         # body indices for each model in self.models_list.
-        self.body_indices_list = []
+        self.body_indices_dict = dict()
         # velocity indices (into the generalized velocity vector of the MBP)
-        self.velocity_indices_list = []
-        n_v_list = []
+        self.velocity_indices_dict = dict()
+        self.n_v_dict = dict()
+        self.n_v = plant.num_velocities()
 
-        for model in models_list:
-            if isinstance(model, list):
-                # model is a list of model instances... yes I know it can be
-                # less confusing...
-                body_indices = []
-                velocity_indices = []
-                for m in model:
-                    body_indices += plant.GetBodyIndices(m)
-                    velocity_indices += \
-                        self.GetVelocityIndicesForModel(m).tolist()
-                self.body_indices_list.append(body_indices)
-                self.velocity_indices_list.append(velocity_indices)
-                n_v_list.append(len(velocity_indices))
-            else:
-                body_indices = plant.GetBodyIndices(model)
-                velocity_indices = self.GetVelocityIndicesForModel(model)
-                self.body_indices_list.append(body_indices)
-                self.velocity_indices_list.append(velocity_indices)
-                n_v_list.append(len(velocity_indices))
+        n_v = 0
+        for model in self.models_all:
+            velocity_indices = self.GetVelocityIndicesForModel(model)
+            self.velocity_indices_dict[model] = velocity_indices
+            self.n_v_dict[model] = len(velocity_indices)
+            self.body_indices_dict[model] = plant.GetBodyIndices(model)
 
-        self.n_v_list = np.array(n_v_list)
-        self.models_list = models_list
+            n_v += len(velocity_indices)
+
         self.nd_per_contact = nd_per_contact
+        # Sanity check.
+        assert plant.num_velocities() == n_v
 
-        # TODO: One actuated bodies for now.
-        assert len(self.models_actuated_indices) == 1
-        assert self.n_v_list[self.models_actuated_indices].sum() == \
-               self.Kq_a.diagonal().size
+        # stiffness matrices.
+        self.Kq_a = dict()
+        for i, model in enumerate(self.models_actuated):
+            assert self.n_v_dict[model] == joint_stiffness[i].size
+            self.Kq_a[model] = np.diag(joint_stiffness[i]).astype(float)
 
         # solver
         self.solver = GurobiSolver()
@@ -156,43 +124,26 @@ class QuasistaticSimulator:
         self.nd_log = []
         self.optimizer_time_log = []
 
-    def ExpandQlist(self, q_list):
-        q_list_expanded = []
-        for q in q_list:
-            if isinstance(q, list):
-                for qi in q:
-                    q_list_expanded.append(qi)
-            else:
-                q_list_expanded.append(q)
+    def get_model_instance_indices(self):
+        return (copy.copy(self.models_unactuated),
+                copy.copy(self.models_actuated))
 
-        return q_list_expanded
-
-    def ConcatenatetQlist(self, q_list):
-        q_list_concatenated = []
-        for q in q_list:
-            if isinstance(q, list):
-                q_list_concatenated.append(np.concatenate(q))
-            else:
-                q_list_concatenated.append(q)
-        return q_list_concatenated
-
-    def UpdateConfiguration(self, q_list: List):
+    def update_configuration(
+            self, q_dict: Dict[ModelInstanceIndex, np.array]):
         """
-        :param q_list = [q_u0, q_u1, ..., q_a0, q_a1... q_an].
-            A list of np arrays, each array
-            is the configuration of a model instance in self.models_list
+        :param q_dict: A dict of np arrays keyed by model instance indices.
+            Each array is the configuration of a model instance in
+            self.models_list.
         :return:
         """
         # Update state in plant_context
-        q_list_expanded = self.ExpandQlist(q_list)
-        assert len(q_list_expanded) == len(self.models_list_expanded)
+        assert len(q_dict) == len(self.models_all)
 
-        for i in range(len(q_list_expanded)):
-            model = self.models_list_expanded[i]
+        for model_instance_idx, q in q_dict.items():
             self.plant.SetPositions(
-                self.context_plant, model, q_list_expanded[i])
+                self.context_plant, model_instance_idx, q)
 
-    def DrawCurrentConfiguration(self):
+    def draw_current_configuration(self):
         # Body poses
         self.viz.DoPublish(self.context_meshcat, [])
 
@@ -201,15 +152,23 @@ class QuasistaticSimulator:
             self.context_meshcat_contact,
             AbstractValue.Make(self.contact_results))
 
-        # self.contact_viz.DoPublish(self.context_meshcat_contact, [])
+        self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
-    def UpdateNormalAndTangentialJacobianRows(
-            self, body, pC_D: np.array, n_W: np.array, d_W: np.array,
-            i_c: int, n_di: int, i_f_start: int, position_indices: List[int],
-            Jn: np.array, Jf: np.array,
+    def update_normal_and_tangential_jacobian_rows(
+            self,
+            body: RigidBody,
+            pC_D: np.array,
+            n_W: np.array,
+            d_W: np.array,
+            i_c: int,
+            n_di: int,
+            i_f_start: int,
+            position_indices: Union[List[int], None],
+            Jn: np.array,
+            Jf: np.array,
             jacobian_wrt_variable: JacobianWrtVariable):
         """
-        Updates corresonding rows of Jn and Jf.
+        Updates corresponding rows of Jn and Jf.
         :param body: a RigidBody object that belongs to either
             self.body_indices_actuated or self.body_indices_unactuated.
             D is the body frame of body.
@@ -232,20 +191,18 @@ class QuasistaticSimulator:
             p_BoBi_B=pC_D,
             frame_A=self.plant.world_frame(),
             frame_E=self.plant.world_frame())
-        J_WBi = J_WBi[:, position_indices]
+        if position_indices is not None:
+            J_WBi = J_WBi[:, position_indices]
 
-        Jn[i_c] = n_W.dot(J_WBi)
-        Jf[i_f_start: i_f_start + n_di] = d_W.dot(J_WBi)
+        Jn[i_c] += n_W.dot(J_WBi)
+        Jf[i_f_start: i_f_start + n_di] += d_W.dot(J_WBi)
 
-    def FindModelInstanceIndexForBody(self, body):
-        i_model = None
-        for i, body_indices in enumerate(self.body_indices_list):
+    def find_model_instance_index_for_body(self, body):
+        for model, body_indices in self.body_indices_dict.items():
             if body.index() in body_indices:
-                i_model = i
-                break
-        return i_model
+                return model
 
-    def CalcContactJacobians(self, contact_detection_tolerance):
+    def calc_contact_jacobians(self, contact_detection_tolerance):
         """
         For all contact detected by scene graph, computes Jn and Jf.
         q = [q_u, q_a]
@@ -268,11 +225,8 @@ class QuasistaticSimulator:
         self.nd_log.append(n_d.sum())
 
         phi = np.zeros(n_c)
-        Jn_v_list = []
-        Jf_v_list = []
-        for i, n_v in enumerate(self.n_v_list):
-            Jn_v_list.append(np.zeros((n_c, n_v)))
-            Jf_v_list.append(np.zeros((n_f, n_v)))
+        Jn = np.zeros((n_c, self.n_v))
+        Jf = np.zeros((n_f, self.n_v))
 
         contact_info_list = []
 
@@ -296,8 +250,8 @@ class QuasistaticSimulator:
 
             phi[i_c] = sdp.distance
             U[i_c] = self.GetFrictionCoefficientFromSignedDistancePair(sdp)
-            bodyA = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_A)
-            bodyB = self.GetMbpBodyFromSceneGraphGeometry(sdp.id_B)
+            bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
+            bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AFa = self.inspector.GetPoseInFrame(sdp.id_A)
             X_BFb = self.inspector.GetPoseInFrame(sdp.id_B)
             p_AcA_A = X_AFa.multiply(sdp.p_ACa)
@@ -305,10 +259,10 @@ class QuasistaticSimulator:
 
             # TODO: it is assumed contact exists only between model
             #  instances, not between bodies within the same model instance.
-            i_model_A = self.FindModelInstanceIndexForBody(bodyA)
-            i_model_B = self.FindModelInstanceIndexForBody(bodyB)
-            is_A_in = i_model_A is not None
-            is_B_in = i_model_B is not None
+            model_A = self.find_model_instance_index_for_body(bodyA)
+            model_B = self.find_model_instance_index_for_body(bodyB)
+            is_A_in = model_A is not None
+            is_B_in = model_B is not None
 
             if is_A_in and is_B_in:
                 '''
@@ -327,39 +281,41 @@ class QuasistaticSimulator:
                 n_B_W = -n_A_W
                 d_B_W = -d_A_W
 
-                self.UpdateNormalAndTangentialJacobianRows(
+                # new Jn and Jf
+                self.update_normal_and_tangential_jacobian_rows(
                     body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
-                    position_indices=self.velocity_indices_list[i_model_A],
-                    Jn=Jn_v_list[i_model_A], Jf=Jf_v_list[i_model_A],
+                    position_indices=None,
+                    Jn=Jn, Jf=Jf,
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
 
-                self.UpdateNormalAndTangentialJacobianRows(
+                self.update_normal_and_tangential_jacobian_rows(
                     body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
-                    position_indices=self.velocity_indices_list[i_model_B],
-                    Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
+                    position_indices=None,
+                    Jn=Jn, Jf=Jf,
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
 
             elif is_B_in:
                 n_B_W = -sdp.nhat_BA_W
                 d_B_W = CalcTangentVectors(n_B_W, n_d[i_c])
 
-                self.UpdateNormalAndTangentialJacobianRows(
+                self.update_normal_and_tangential_jacobian_rows(
                     body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
-                    position_indices=self.velocity_indices_list[i_model_B],
-                    Jn=Jn_v_list[i_model_B], Jf=Jf_v_list[i_model_B],
+                    position_indices=None,
+                    Jn=Jn, Jf=Jf,
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
+
             elif is_A_in:
                 n_A_W = sdp.nhat_BA_W
                 d_A_W = CalcTangentVectors(n_A_W, n_d[i_c])
 
-                self.UpdateNormalAndTangentialJacobianRows(
+                self.update_normal_and_tangential_jacobian_rows(
                     body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
-                    position_indices=self.velocity_indices_list[i_model_A],
-                    Jn=Jn_v_list[i_model_A], Jf=Jf_v_list[i_model_A],
+                    position_indices=None,
+                    Jn=Jn, Jf=Jf,
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
             else:
                 # either A or B is in self.body_indices_list
@@ -368,58 +324,65 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
-            # TODO: think this through...
-            #  PointPairContactInfo stores the contact force for its bodyB.
-            #  For convenience, I assign bodyB_index to bodyA_index in the
-            #  PointPairContactInfo, which is wrong, but has no bad
-            #  consequence because bodyA_index is not used for contact force
-            #  visualization anyway.
-
-            # If bodyB is not None, the contact force for bodyB is always shown.
+            # Store contact positions in order to draw contact forces later.
             if is_A_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
                     self.context_plant, bodyA)
                 contact_info_list.append(
-                    MyContactInfo(bodyA.index(), bodyA.index(),
-                                X_WD.multiply(p_AcA_A), n_A_W, d_A_W))
+                    MyContactInfo(
+                        bodyA_index=bodyB.index(),
+                        bodyB_index=bodyA.index(),
+                        geometry_id_A=sdp.id_B,
+                        geometry_id_B=sdp.id_A,
+                        p_WC_W=X_WD.multiply(p_AcA_A),
+                        n_W=n_A_W,
+                        dC_W=d_A_W))
             elif is_B_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
                     self.context_plant, bodyB)
                 contact_info_list.append(
-                    MyContactInfo(bodyB.index(), bodyB.index(),
-                                X_WD.multiply(p_BcB_B), n_B_W, d_B_W))
-
+                    MyContactInfo(
+                        bodyA_index=bodyA.index(),
+                        bodyB_index=bodyB.index(),
+                        geometry_id_A=sdp.id_A,
+                        geometry_id_B=sdp.id_B,
+                        p_WC_W=X_WD.multiply(p_BcB_B),
+                        n_W=n_B_W,
+                        dC_W=d_B_W))
             else:
                 raise RuntimeError("At least one body in a contact pair "
                                    "should be unactuated.")
 
-        return n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi, U, contact_info_list
+        return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
 
-    def CalcContactResults(self, contact_info_list: List[MyContactInfo],
-                           beta: np.array, h: float, n_c: int, n_d: np.array,
-                           friction_coefficient: np.array):
-        assert len(contact_info_list) == n_c
+    def calc_contact_results(self, my_contact_info_list: List[MyContactInfo],
+                             beta: np.array, h: float, n_c: int, n_d: np.array,
+                             mu_list: np.array):
+        assert len(my_contact_info_list) == n_c
         contact_results = ContactResults()
         i_f_start = 0
-        for i_c, contact_info in enumerate(contact_info_list):
+        for i_c, my_contact_info in enumerate(my_contact_info_list):
             i_f_end = i_f_start + n_d[i_c]
             beta_i = beta[i_f_start: i_f_end]
-            f_normal_W = contact_info.n_W * beta_i.sum() / h
+            f_normal_W = my_contact_info.n_W * beta_i.sum() / h
             f_tangential_W = \
-                contact_info.dC_W.T.dot(beta_i) * friction_coefficient[i_c] / h
+                my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h
+            point_pair = PenetrationAsPointPair()
+            point_pair.id_A = my_contact_info.geometry_id_A
+            point_pair.id_B = my_contact_info.geometry_id_B
             contact_results.AddContactInfo(
                 PointPairContactInfo(
-                    contact_info.bodyA_index,
-                    contact_info.bodyB_index,
+                    my_contact_info.bodyA_index,
+                    my_contact_info.bodyB_index,
                     f_normal_W + f_tangential_W,
-                    contact_info.p_WC_W,
-                    0, 0, PenetrationAsPointPair()))
+                    my_contact_info.p_WC_W,
+                    0, 0, point_pair))
 
             i_f_start += n_d[i_c]
 
         return contact_results
 
-    def GetMbpBodyFromSceneGraphGeometry(self, g_id):
+    def get_mbp_body_from_scene_graph_geometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
         return self.plant.GetBodyFromFrameId(f_id)
 
@@ -441,19 +404,18 @@ class QuasistaticSimulator:
         cf = CalcContactFrictionFromSurfaceProperties(cf_A, cf_B)
         return cf.static_friction()
 
-    # TODO: tau_u_ext and h should probably come from elsewhere...
-    def StepAnitescu(self,
-                     q_list: List[np.array],
-                     q_a_cmd_list: List[np.array],
-                     tau_u_ext_list: List[np.array],
-                     h: float, is_planar: bool,
-                     contact_detection_tolerance: float):
+    def step_anitescu(self,
+                      q_dict: Dict[ModelInstanceIndex, np.array],
+                      q_a_cmd_dict: Dict[ModelInstanceIndex, np.array],
+                      tau_ext_dict: Dict[ModelInstanceIndex, np.array],
+                      h: float, is_planar: bool,
+                      contact_detection_tolerance: float):
         """
 
-        :param q_list: [q_u0, q_u1, ..., q_a0, q_a1... q_an]
-        :param q_a_cmd_list: same length as q. If a model is not actuated,
+        :param q_list.
+        :param q_a_cmd_dict: same length as q. If a model is not actuated,
             the corresponding entry is set to a zero-length np array.
-        :param tau_u_ext_list: same length as q. If a model is actuated,
+        :param tau_ext_dict: same length as q. If a model is actuated,
             the corresponding entry is set to a zero-length np array.
         :param h: simulation time step.
         :param is_planar:
@@ -462,45 +424,33 @@ class QuasistaticSimulator:
         """
         # TODO: remove this ad hoc check to support more general 3D objects.
         if not is_planar:
-            for unactuated_model_idx in self.models_unactuated_indices:
-                assert self.n_v_list[unactuated_model_idx] == 6
-                assert len(q_list[unactuated_model_idx]) == 7
+            for model in self.models_unactuated:
+                assert self.n_v_dict[model] == 6
+                assert len(q_dict[model]) == 7
 
-        self.UpdateConfiguration(q_list)
-        q_list = self.ConcatenatetQlist(q_list)
-        n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi_l, U, contact_info_list = \
-            self.CalcContactJacobians(contact_detection_tolerance)
-        nv = self.n_v_list.sum()
-        n_models = self.n_v_list.size
+        self.update_configuration(q_dict)
+        (n_c, n_d, n_f, Jn, Jf, phi_l, U,
+         contact_info_list) = self.calc_contact_jacobians(
+            contact_detection_tolerance)
 
         prog = mp.MathematicalProgram()
 
-        v_h_list = []
-        for i_model, nv_i in enumerate(self.n_v_list):
+        vh = prog.NewContinuousVariables(self.n_v, "v_h")
+        v_h_dict = dict()
+        for model in self.models_all:
             # generalized velocity times time step.
-            v_h_i = prog.NewContinuousVariables(nv_i, "v_h%d" % i_model)
-            v_h_list.append(v_h_i)
-        vh = np.concatenate(v_h_list)
+            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
 
-        for i_model in self.models_unactuated_indices:
-            P_ext_i = tau_u_ext_list[i_model] * h
-            prog.AddLinearCost(-P_ext_i, 0, v_h_list[i_model])
+        for model in self.models_unactuated:
+            P_ext_i = tau_ext_dict[model] * h
+            prog.AddLinearCost(-P_ext_i, 0, v_h_dict[model])
 
-        for i_model in self.models_actuated_indices:
-            dq_a_cmd = q_a_cmd_list[i_model] - q_list[i_model]
+        for model in self.models_actuated:
+            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
             prog.AddQuadraticCost(
-                self.Kq_a * h, -self.Kq_a.dot(dq_a_cmd) * h, v_h_list[i_model])
-
-        Jn = np.zeros((n_c, nv))
-        Jf = np.zeros((n_f, nv))
-
-        j_start = 0
-        for i_model in range(n_models):
-            j_end = j_start + self.n_v_list[i_model]
-            Jn[:, j_start: j_end] = Jn_v_list[i_model]
-            Jf[:, j_start: j_end] = Jf_v_list[i_model]
-
-            j_start = j_end
+                self.Kq_a[model] * h,
+                -self.Kq_a[model].dot(dq_a_cmd) * h,
+                v_h_dict[model])
 
         phi_constraints = np.zeros(n_f)
         J = np.zeros_like(Jf)
@@ -523,73 +473,59 @@ class QuasistaticSimulator:
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
 
-        v_h_value_list = []
-        for v_h in v_h_list:
-            v_h_value_list.append(result.GetSolution(v_h))
+        dq_dict = dict()
+        for model in self.models_actuated:
+            v_h_value = result.GetSolution(v_h_dict[model])
+            dq_dict[model] = v_h_value
 
-        n_u_models = len(self.models_unactuated_indices)
-        dq_a_list = v_h_value_list[n_u_models:]
-
-        dq_u_list = []
-        for i_model in self.models_unactuated_indices:
-            v_u_h_value = v_h_value_list[i_model]
+        for model in self.models_unactuated:
+            v_h_value = result.GetSolution(v_h_dict[model])
             if is_planar:
-                dq_u_list.append(v_u_h_value)
+                dq_dict[model] = v_h_value
             else:
-                q_u = q_list[i_model]
+                q_u = q_dict[model]
                 Q = q_u[:4]  # Quaternion Q_WB
                 E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
                               [-Q[2], Q[3], Q[0], -Q[1]],
                               [-Q[3], -Q[2], Q[1], Q[0]]])
 
                 dq_u = np.zeros(7)
-                dq_u[:4] = 0.5 * E.T.dot(v_u_h_value[:3])
-                dq_u[4:] = v_u_h_value[3:]
-                dq_u_list.append(dq_u)
+                dq_u[:4] = 0.5 * E.T.dot(v_h_value[:3])
+                dq_u[4:] = v_h_value[3:]
+                dq_dict[model] = dq_u
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
-        contact_results = self.CalcContactResults(
+        self.contact_results = self.calc_contact_results(
             contact_info_list, beta, h, n_c, n_d, U)
-        self.contact_results = contact_results
-        return dq_u_list, dq_a_list
+        return dq_dict
 
-    def StepConfiguration(self,
-                          q_list: List[np.array],
-                          dq_u_list: List[np.array],
-                          dq_a_list: List[np.array],
-                          is_planar: bool):
+    def step_configuration(self,
+                           q_dict: Dict[ModelInstanceIndex, np.array],
+                           dq_dict: Dict[ModelInstanceIndex, np.array],
+                           is_planar: bool):
         """
         Adds the delta of each model state, e.g. dq_u_list[i], to the
             corresponding model configuration in q_list. If q_list[i]
             includes a quaternion, the quaternion (usually the first four
             numbers of a seven-number array) is normalized.
-        :param q_list:
+        :param q_dict:
             [q_unactuated0, q_unactuated1, ... q_actuated0, q_actuated1, ...]
-        :param dq_u_list: [dq_unactuated0, dq_unactuated1, ...]
-        :param dq_a_list: [dq_actuated0, dq_actuated1, ...]
+        :param dq_u_dict: [dq_unactuated0, dq_unactuated1, ...]
+        :param dq_a_dict: [dq_actuated0, dq_actuated1, ...]
         :param is_planar: whether unactuated models has quaternions in their
             configuration.
         :return: None.
         """
-        dq_list = dq_u_list + dq_a_list
-        for i_model in self.models_unactuated_indices:
-            if is_planar:
-                q_list[i_model] += dq_list[i_model]
-            else:
-                q_u = q_list[i_model]
-                q_u += dq_list[i_model]
-                if q_u.size == 7:
-                    q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+        for model in self.models_unactuated:
+            q_u = q_dict[model]
+            q_u += dq_dict[model]
+            if not is_planar and q_u.size == 7:
+                q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
 
-        # TODO: this is hard-coded for IIWA with end effectors
-        for i_model in self.models_actuated_indices:
-            if isinstance(q_list[i_model], list):
-                q_list[i_model][0] += dq_list[i_model][:7]
-                q_list[i_model][1] += dq_list[i_model][7:]
-            else:
-                q_list[i_model] += dq_list[i_model]
+        for model in self.models_actuated:
+            q_dict[model] += dq_dict[model]
 
-    def PrintSimStatcs(self):
+    def print_sim_statcs(self):
         solver_time = np.array(self.optimizer_time_log)
         n_c_s = np.array(self.nc_log)
         n_d_s = np.array(self.nd_log)

@@ -24,8 +24,8 @@ q_a = np.array([np.pi / 2, -np.pi / 2, -np.pi / 2])
 q_u = np.array([1.7, 0.5, 0])
 q_list = [q_u, q_a]
 tau_u_ext = np.array([0., -10, 0])
-q_sim.UpdateConfiguration(q_list)
-q_sim.DrawCurrentConfiguration()
+q_sim.update_configuration(q_list)
+q_sim.draw_current_configuration()
 
 #%%
 h = 0.01
@@ -37,15 +37,15 @@ for i in range(n_steps):
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
 
-    dq_u_list, dq_a_list = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.step_anitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=True,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
-    q_sim.UpdateConfiguration(q_list)
-    q_sim.DrawCurrentConfiguration()
+    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.update_configuration(q_list)
+    q_sim.draw_current_configuration()
 
     # logging
     # time.sleep(h)
@@ -53,7 +53,7 @@ for i in range(n_steps):
 
 #%%
 (n_c, n_d, n_f, Jn_u_q, Jn_u_v, Jn_a, Jf_u_q, Jf_u_v, Jf_a, phi,
-    contact_info_list) = q_sim.CalcContactJacobians(0.01)
+    contact_info_list) = q_sim.calc_contact_jacobians(0.01)
 query_object = q_sim.scene_graph.get_query_output_port().Eval(q_sim.context_sg)
 signed_distance_pairs = \
     query_object.ComputeSignedDistancePairwiseClosestPoints(0.01)

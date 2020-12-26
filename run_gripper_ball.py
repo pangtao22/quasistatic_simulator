@@ -18,8 +18,8 @@ r = 0.1
 q_a = np.array([0.1, -1.05*r, 1.05*r])
 q_u = np.array([0, r])
 q_list = [q_u, q_a]
-q_sim.UpdateConfiguration(q_list)
-q_sim.DrawCurrentConfiguration()
+q_sim.update_configuration(q_list)
+q_sim.draw_current_configuration()
 
 #%%
 h = 0.01
@@ -31,25 +31,25 @@ for i in range(n_steps):
     q_a_cmd = np.array([0.1 + np.max([-0.002 * i, -0.03]), -r * 0.9, r * 0.9])
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
-    dq_u_list, dq_a_list = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.step_anitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=True,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
-    q_sim.UpdateConfiguration(q_list)
-    q_sim.DrawCurrentConfiguration()
+    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.update_configuration(q_list)
+    q_sim.draw_current_configuration()
 
     # logging
     # time.sleep(h * 10)
     # input("next?")
 
-q_sim.PrintSimStatcs()
+q_sim.print_sim_statcs()
 
 #%% Print contact information for one configuration.
 n_c, n_d, n_f, Jn_v_list, Jf_v_list, phi, U, contact_info_list \
-    = q_sim.CalcContactJacobians(0.01)
+    = q_sim.calc_contact_jacobians(0.01)
 
 query_object = q_sim.scene_graph.get_query_output_port().Eval(
     q_sim.context_sg)

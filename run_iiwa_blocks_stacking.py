@@ -95,6 +95,30 @@ q_iiwa_traj = concatenate_traj_list(q_iiwa_traj_list)
 q_schunk_traj = concatenate_traj_list(q_schunk_traj_list)
 x_schunk_traj = concatenate_traj_list(x_schunk_traj_list)
 
+#%%
+Kq_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
+Kq_schunk = np.array([500., 500])
+Kq_a = [Kq_iiwa, Kq_schunk]
+
+object_sdf_paths = [box3d_6cm_sdf_path,
+                    box3d_8cm_sdf_path,
+                    box3d_7cm_sdf_path,
+                    box3d_8cm_sdf_path,
+                    box3d_8cm_sdf_path,
+                    box3d_7cm_sdf_path,
+                    box3d_8cm_sdf_path,
+                    box3d_8cm_sdf_path,
+                    box3d_7cm_sdf_path,
+                    box3d_8cm_sdf_path]
+
+q_sim = QuasistaticSimulator(
+    create_iiwa_plant_with_schunk,
+    nd_per_contact=4,
+    object_sdf_paths=object_sdf_paths,
+    joint_stiffness=Kq_a)
+
+(model_instance_indices_u,
+ model_instance_indices_a) = q_sim.get_model_instance_indices()
 
 #%%
 q_u0_list = np.zeros((10, 7))
@@ -111,43 +135,36 @@ q_u0_list[7] = [1, 0, 0, 0, 0.45, 0.2, 0.04]
 q_u0_list[8] = [1, 0, 0, 0, 0.45, 0.2, 0.115]
 q_u0_list[9] = [1, 0, 0, 0, 0.48, 0.3, 0.04]
 
-Kq_a = np.array([800., 600, 600, 600, 400, 200, 200, 500, 500])
-Kq_iiwa = Kq_a[:7]
-Kq_schunk = Kq_a[7:]
-object_sdf_paths = [box3d_6cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path]
+# Unactuated objects.
+q0_dict = dict()
+
+for i in range(len(q_u0_list)):
+    q0_dict[model_instance_indices_u[i]] = q_u0_list[i]
+
+# Actuated objects.
+idx_iiwa, idx_schunk = model_instance_indices_a
+q0_dict[idx_iiwa] = q_iiwa_traj_list[0].value(0).squeeze()
+q0_dict[idx_schunk] = q_schunk_traj_list[0].value(0).squeeze()
+
+# Gravity on objects.
+tau_u0_ext = np.array([0, 0, 0, 0., 0, -5])
+tau_u_other_ext = np.array([0, 0, 0, 0., 0, -50])
+tau_ext_dict = dict()
+for i, model_idx in enumerate(model_instance_indices_u):
+    if i == 0:
+        tau_ext_dict[model_idx] = tau_u0_ext
+    else:
+        tau_ext_dict[model_idx] = tau_u_other_ext
 
 #%%
-q_sim = QuasistaticSimulator(
-    create_iiwa_plant_with_schunk,
-    nd_per_contact=4,
-    object_sdf_paths=object_sdf_paths,
-    joint_stiffness=Kq_a)
-
-#%%
-q0_list = [q_u0_i for q_u0_i in q_u0_list]
-q0_list.append([q_iiwa_traj_list[0].value(0).squeeze(),
-                q_schunk_traj_list[0].value(0).squeeze()])
-
 q_sim.viz.vis["drake"]["contact_forces"].delete()
-q_sim.UpdateConfiguration(q0_list)
-q_sim.DrawCurrentConfiguration()
+q_sim.update_configuration(q0_dict)
+q_sim.draw_current_configuration()
 
 #%%
 h = 0.2
-tau_u0_ext = np.array([0, 0, 0, 0., 0, -5])
-tau_u_other_ext = np.array([0, 0, 0, 0., 0, -50])
 
-q_list = copy.deepcopy(q0_list)
-
+q_dict = q0_dict
 q_a_log = []
 q_log = []
 q_a_cmd_log = []
@@ -156,25 +173,21 @@ input("start?")
 n_steps = int(q_iiwa_traj.end_time() / h)
 
 for i in range(n_steps):
-    q_a_cmd = np.concatenate(
-        [q_iiwa_traj.value(h * i).squeeze(),
-         q_schunk_traj.value(h * i).squeeze()])
-    q_a_cmd_list = [None] * len(q_u0_list) + [q_a_cmd]
-    tau_u_ext_list = \
-        [tau_u0_ext] + [tau_u_other_ext] * (len(q_u0_list)-1) + [None]
-    dq_u_list, dq_a_list = q_sim.StepAnitescu(
-            q_list, q_a_cmd_list, tau_u_ext_list, h,
+    q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(h * i).squeeze(),
+                    idx_schunk: q_schunk_traj.value(h * i).squeeze()}
+    dq_dict = q_sim.step_anitescu(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h,
             is_planar=False,
             contact_detection_tolerance=0.005)
 
     # Update q
-    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
-    q_sim.UpdateConfiguration(q_list)
-    q_sim.DrawCurrentConfiguration()
+    q_sim.step_configuration(q_dict, dq_dict, is_planar=False)
+    q_sim.update_configuration(q_dict)
+    q_sim.draw_current_configuration()
 
-    q_a_log.append(np.concatenate(q_list[-1]))
-    q_a_cmd_log.append(q_a_cmd)
-    q_log.append(copy.deepcopy(q_list))
+    # q_a_log.append(np.concatenate(q_dict[-1]))
+    # q_a_cmd_log.append(q_a_cmd_dict)
+    # q_log.append(copy.deepcopy(q_dict))
 
     # time.sleep(h)
     # print("t = ", i * h)
@@ -210,8 +223,8 @@ np.save("cube0_10cube_q_h{}".format(h), q_u0_log)
 #%% log playback
 stride = 500
 for i in range(0, len(q_log), stride):
-    q_sim.UpdateConfiguration(q_log[i])
-    q_sim.DrawCurrentConfiguration()
+    q_sim.update_configuration(q_log[i])
+    q_sim.draw_current_configuration()
     time.sleep(h * stride)
 
 

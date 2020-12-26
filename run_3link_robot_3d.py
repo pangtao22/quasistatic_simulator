@@ -19,8 +19,8 @@ q_u1_0 = np.array([1, 0, 0, 0, 0, 1.7, 0.5])
 # q_u2_0 = np.array([1, 0, 0, 0, 0.4, 2.5, 0.25])
 q0_list = [q_u1_0, q_a0]
 
-q_sim.UpdateConfiguration(q0_list)
-q_sim.DrawCurrentConfiguration()
+q_sim.update_configuration(q0_list)
+q_sim.draw_current_configuration()
 
 #%%
 h = 0.005
@@ -34,15 +34,15 @@ for i in range(n_steps):
     q_a_cmd = q_a_traj.value(h * i).squeeze()
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
-    dq_u_list, dq_a_list = q_sim.StepAnitescu(
+    dq_u_list, dq_a_list = q_sim.step_anitescu(
             q_list, q_a_cmd_list, tau_u_ext_list, h,
             is_planar=False,
             contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.StepConfiguration(q_list, dq_u_list, dq_a_list, is_planar=False)
-    q_sim.UpdateConfiguration(q_list)
-    q_sim.DrawCurrentConfiguration()
+    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.update_configuration(q_list)
+    q_sim.draw_current_configuration()
     # print("qu: ", q[:7])
     # print("dq_u", dq_u)
     # logging
