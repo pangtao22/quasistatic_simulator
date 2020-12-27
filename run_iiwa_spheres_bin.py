@@ -1,12 +1,7 @@
-import numpy as np
-import copy
-from pydrake.common import FindResourceOrThrow
-from pydrake.multibody.parsing import Parser
 from pydrake.trajectories import PiecewisePolynomial
 
-from setup_environments import create_iiwa_plant_with_schunk_and_bin
-from iiwa_block_stacking_mbp import run_sim
-from quasistatic_simulator import *
+from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_sim
+from quasistatic_simulation.quasistatic_simulator import *
 
 #%% object positions
 Kq_a = np.array([800., 600, 600, 600, 400, 200, 200, 1000, 1000])

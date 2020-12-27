@@ -21,12 +21,12 @@ X_WR.set_translation([0, 0, 0.1])
 gravity = np.array([0., 0, -10])
 
 module_path = pathlib.Path(__file__).parent.absolute()
-box3d_big_sdf_path = os.path.join("models", "box_1m.sdf")
-box3d_medium_sdf_path = os.path.join("models", "box_0.6m.sdf")
-box3d_small_sdf_path = os.path.join("models", "box_0.5m.sdf")
-box3d_8cm_sdf_path = os.path.join("models", "box_0.08m.sdf")
-box3d_7cm_sdf_path = os.path.join("models", "box_0.07m.sdf")
-box3d_6cm_sdf_path = os.path.join("models", "box_0.06m.sdf")
+box3d_big_sdf_path = os.path.join(module_path, "models", "box_1m.sdf")
+box3d_medium_sdf_path = os.path.join(module_path, "models", "box_0.6m.sdf")
+box3d_small_sdf_path = os.path.join(module_path, "models", "box_0.5m.sdf")
+box3d_8cm_sdf_path = os.path.join(module_path, "models", "box_0.08m.sdf")
+box3d_7cm_sdf_path = os.path.join(module_path, "models", "box_0.07m.sdf")
+box3d_6cm_sdf_path = os.path.join(module_path, "models", "box_0.06m.sdf")
 
 
 def Create3LinkArmControllerPlant():

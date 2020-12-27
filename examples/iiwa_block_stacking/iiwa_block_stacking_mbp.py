@@ -1,20 +1,12 @@
-
-from pydrake.systems.framework import DiagramBuilder
-from pydrake.systems.meshcat_visualizer import (
-    ConnectMeshcatVisualizer, MeshcatContactVisualizer)
 from pydrake.systems.primitives import TrajectorySource, LogOutput
 from pydrake.systems.analysis import Simulator
 from pydrake.systems.controllers import PidController
 from pydrake.all import PiecewisePolynomial
 
-from quasistatic_simulator import *
-from meshcat_camera_utils import SetOrthographicCameraYZ
+from quasistatic_simulation.quasistatic_simulator import *
 
 from setup_environments import (
-    CreateIiwaPlantWithMultipleObjects, create_iiwa_plant_with_schunk,
-    create_iiwa_plant_with_schunk_and_bin,
-    box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path,
-    box3d_8cm_sdf_path, box3d_7cm_sdf_path)
+    create_iiwa_plant_with_schunk)
 
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
@@ -36,7 +28,7 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
         create_iiwa_plant_with_schunk(
             builder, object_sdf_paths, time_step)
 
-    iiwa_model, schunk_model = robot_models[0]
+    iiwa_model, schunk_model = robot_models
 
     # IIWA controller
     gravity = [0, 0, -10.]

@@ -1,8 +1,4 @@
-import time
-
-from quasistatic_simulator import *
-from meshcat_camera_utils import SetOrthographicCameraYZ
-
+from quasistatic_simulation.quasistatic_simulator import *
 
 #%%
 Kq_a = np.ones(3) * 1000

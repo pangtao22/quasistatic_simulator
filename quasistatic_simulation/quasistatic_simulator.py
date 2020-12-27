@@ -1,6 +1,7 @@
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Callable, Tuple
 import copy
 
+from pydrake.all import QueryObject
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
 from pydrake.systems.framework import DiagramBuilder
@@ -9,14 +10,20 @@ from pydrake.solvers.gurobi import GurobiSolver
 from pydrake.solvers.osqp import OsqpSolver
 from pydrake.multibody.tree import JacobianWrtVariable, RigidBody
 from pydrake.multibody.plant import (
-    PointPairContactInfo, ContactResults,
+    PointPairContactInfo, ContactResults, MultibodyPlant,
     CalcContactFrictionFromSurfaceProperties)
-from pydrake.geometry import PenetrationAsPointPair
+from pydrake.geometry import PenetrationAsPointPair, SceneGraph
 from pydrake.common.value import AbstractValue
 
 from setup_environments import *
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
+
+SetupEnvironmentFunction = Callable[
+    [DiagramBuilder, List[str]],
+    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
+          List[ModelInstanceIndex]]
+]
 
 
 class MyContactInfo(object):
@@ -40,8 +47,12 @@ class MyContactInfo(object):
 
 
 class QuasistaticSimulator:
-    def __init__(self, setup_environment, nd_per_contact, object_sdf_paths,
-                 joint_stiffness):
+    def __init__(self,
+                 setup_environment: SetupEnvironmentFunction,
+                 nd_per_contact: int,
+                 object_sdf_paths: List[str],
+                 joint_stiffness: List[np.array],
+                 internal_vis: bool = False):
         """
         Let's assume that
         - Each rigid body has one contact geometry.
@@ -53,23 +64,24 @@ class QuasistaticSimulator:
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
             setup_environment(builder, object_sdf_paths)
-        viz = ConnectMeshcatVisualizer(
-            builder, scene_graph,
-            frames_to_draw={"three_link_arm": {"link_ee"}})
 
-        # ContactVisualizer
-        contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
-        builder.AddSystem(contact_viz)
+        # visualization.
+        self.internal_vis = internal_vis
+        if internal_vis:
+            viz = ConnectMeshcatVisualizer(
+                builder, scene_graph,
+                frames_to_draw={"three_link_arm": {"link_ee"}})
+            # ContactVisualizer
+            contact_viz = MeshcatContactVisualizer(
+                meshcat_viz=viz, plant=plant)
+            builder.AddSystem(contact_viz)
+            self.viz = viz
+            self.contact_viz = contact_viz
 
         diagram = builder.Build()
-        viz.vis.delete()
-        viz.load()
-
         self.diagram = diagram
         self.plant = plant
         self.scene_graph = scene_graph
-        self.viz = viz
-        self.contact_viz = contact_viz
         self.inspector = scene_graph.model_inspector()
 
         self.context = diagram.CreateDefaultContext()
@@ -77,10 +89,14 @@ class QuasistaticSimulator:
             plant, self.context)
         self.context_sg = diagram.GetMutableSubsystemContext(
             scene_graph, self.context)
-        self.context_meshcat = diagram.GetMutableSubsystemContext(
-            self.viz, self.context)
-        self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
-            self.contact_viz, self.context)
+
+        if internal_vis:
+            self.viz.vis.delete()
+            self.viz.load()
+            self.context_meshcat = diagram.GetMutableSubsystemContext(
+                self.viz, self.context)
+            self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
+                self.contact_viz, self.context)
 
         self.models_unactuated = object_model_list
         self.models_actuated = robot_model_list
@@ -95,7 +111,7 @@ class QuasistaticSimulator:
 
         n_v = 0
         for model in self.models_all:
-            velocity_indices = self.GetVelocityIndicesForModel(model)
+            velocity_indices = self.get_velocity_indices_for_model(model)
             self.velocity_indices_dict[model] = velocity_indices
             self.n_v_dict[model] = len(velocity_indices)
             self.body_indices_dict[model] = plant.GetBodyIndices(model)
@@ -116,8 +132,17 @@ class QuasistaticSimulator:
         self.solver = GurobiSolver()
         assert self.solver.available()
 
-        # For contact force visualization.
+        '''
+        Both self.contact_results and self.query_object are updated by calling
+        self.step_anitescu.
+        '''
+        # For contact force visualization. It is updated when
+        #   self.calc_contact_results is called.
         self.contact_results = ContactResults()
+
+        # For system state visualization. It is updated when
+        #   self.calc_contact_jacobians is called.
+        self.query_object = QueryObject()
 
         # Logging num of contacts and solver time.
         self.nc_log = []
@@ -142,6 +167,10 @@ class QuasistaticSimulator:
         for model_instance_idx, q in q_dict.items():
             self.plant.SetPositions(
                 self.context_plant, model_instance_idx, q)
+
+    def update_query_object(self):
+        self.query_object = self.scene_graph.get_query_output_port().Eval(
+            self.context_sg)
 
     def draw_current_configuration(self):
         # Body poses
@@ -202,6 +231,12 @@ class QuasistaticSimulator:
             if body.index() in body_indices:
                 return model
 
+    def calc_gravity_for_unactuated_models(self):
+        gravity_all = self.plant.CalcGravityGeneralizedForces(
+            self.context_plant)
+        return {model: gravity_all[self.velocity_indices_dict[model]]
+                for model in self.models_unactuated}
+
     def calc_contact_jacobians(self, contact_detection_tolerance):
         """
         For all contact detected by scene graph, computes Jn and Jf.
@@ -210,8 +245,8 @@ class QuasistaticSimulator:
         :return:
         """
         # Evaluate contacts.
-        query_object = self.scene_graph.get_query_output_port().Eval(
-            self.context_sg)
+        self.update_query_object()
+        query_object = self.query_object
         signed_distance_pairs = \
             query_object.ComputeSignedDistancePairwiseClosestPoints(
                 contact_detection_tolerance)
@@ -249,7 +284,8 @@ class QuasistaticSimulator:
             '''
 
             phi[i_c] = sdp.distance
-            U[i_c] = self.GetFrictionCoefficientFromSignedDistancePair(sdp)
+            U[i_c] = self.get_friction_coefficient_from_signed_distance_pair(
+                sdp)
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AFa = self.inspector.GetPoseInFrame(sdp.id_A)
@@ -355,9 +391,9 @@ class QuasistaticSimulator:
 
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
 
-    def calc_contact_results(self, my_contact_info_list: List[MyContactInfo],
-                             beta: np.array, h: float, n_c: int, n_d: np.array,
-                             mu_list: np.array):
+    def update_contact_results(self, my_contact_info_list: List[MyContactInfo],
+                               beta: np.array, h: float, n_c: int, n_d: np.array,
+                               mu_list: np.array):
         assert len(my_contact_info_list) == n_c
         contact_results = ContactResults()
         i_f_start = 0
@@ -380,23 +416,23 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
-        return contact_results
+        self.contact_results = contact_results
 
     def get_mbp_body_from_scene_graph_geometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
         return self.plant.GetBodyFromFrameId(f_id)
 
-    def GetPositionIndicesForModel(self, model_instance_index):
+    def get_position_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_positions())
         return self.plant.GetPositionsFromArray(
             model_instance_index, selector).astype(np.int)
 
-    def GetVelocityIndicesForModel(self, model_instance_index):
+    def get_velocity_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_velocities())
         return self.plant.GetVelocitiesFromArray(
             model_instance_index, selector).astype(np.int)
 
-    def GetFrictionCoefficientFromSignedDistancePair(self, sdp):
+    def get_friction_coefficient_from_signed_distance_pair(self, sdp):
         props_A = self.inspector.GetProximityProperties(sdp.id_A)
         props_B = self.inspector.GetProximityProperties(sdp.id_B)
         cf_A = props_A.GetProperty("material", "coulomb_friction")
@@ -495,8 +531,7 @@ class QuasistaticSimulator:
                 dq_dict[model] = dq_u
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
-        self.contact_results = self.calc_contact_results(
-            contact_info_list, beta, h, n_c, n_d, U)
+        self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
         return dq_dict
 
     def step_configuration(self,
@@ -509,9 +544,8 @@ class QuasistaticSimulator:
             includes a quaternion, the quaternion (usually the first four
             numbers of a seven-number array) is normalized.
         :param q_dict:
-            [q_unactuated0, q_unactuated1, ... q_actuated0, q_actuated1, ...]
-        :param dq_u_dict: [dq_unactuated0, dq_unactuated1, ...]
-        :param dq_a_dict: [dq_actuated0, dq_actuated1, ...]
+        :param dq_u_dict:
+        :param dq_a_dict:
         :param is_planar: whether unactuated models has quaternions in their
             configuration.
         :return: None.

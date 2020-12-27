@@ -1,8 +1,4 @@
-import time
-
-from pydrake.multibody.plant import CalcContactFrictionFromSurfaceProperties
-
-from quasistatic_simulator import *
+from quasistatic_simulation.quasistatic_simulator import *
 from meshcat_camera_utils import SetOrthographicCameraYZ
 
 from sim_params_3link_arm import *

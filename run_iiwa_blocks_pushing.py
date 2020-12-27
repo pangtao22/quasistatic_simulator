@@ -1,18 +1,12 @@
-import copy
-import time
-import numpy as np
-
-from pydrake.math import RollPitchYaw, RotationMatrix, RigidTransform
-
 from contact_aware_control.plan_runner.contact_utils import CalcIiwaQTrajectory
 from contact_aware_control.plan_runner.setup_iiwa import (
     CreateIiwaControllerPlant)
 
-from quasistatic_simulator import *
+from quasistatic_simulation.quasistatic_simulator import *
 from setup_environments import (
-    CreateIiwaPlantWithMultipleObjects, create_iiwa_plant_with_schunk)
+    CreateIiwaPlantWithMultipleObjects)
 from setup_environments import (
-    box3d_big_sdf_path, box3d_medium_sdf_path, box3d_small_sdf_path)
+    box3d_medium_sdf_path, box3d_small_sdf_path)
 
 import matplotlib.pyplot as plt
 

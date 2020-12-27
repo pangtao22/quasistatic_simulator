@@ -8,10 +8,7 @@ from pydrake.all import (ConnectMeshcatVisualizer,
     Simulator, SpatialForce, AbstractValue, BodyIndex)
 from pydrake.trajectories import PiecewisePolynomial
 from pydrake.systems.framework import DiagramBuilder, LeafSystem
-from pydrake.multibody.plant import (MultibodyPlant,
-                                     ExternallyAppliedSpatialForce)
-from pydrake.multibody.parsing import Parser
-from pydrake.math import RigidTransform
+from pydrake.multibody.plant import (ExternallyAppliedSpatialForce)
 from pydrake.systems.primitives import TrajectorySource, LogOutput
 
 from setup_environments import (create_iiwa_plant, gravity)
@@ -24,7 +21,7 @@ from iiwa_controller.iiwa_controller.robot_internal_controller import (
 from contact_aware_control.plan_runner.plan_utils import (
     RenderSystemWithGraphviz)
 
-from quasistatic_simulator import QuasistaticSimulator
+from quasistatic_simulation.quasistatic_simulator import QuasistaticSimulator
 
 
 #%%
