@@ -168,9 +168,18 @@ class QuasistaticSimulator:
             self.plant.SetPositions(
                 self.context_plant, model_instance_idx, q)
 
-    def update_query_object(self):
+        # Update query object.
         self.query_object = self.scene_graph.get_query_output_port().Eval(
             self.context_sg)
+
+    def get_current_configuration(self):
+        """
+        :return: a dictionary containing the current positions of all model
+            instances stored in self.context_plant, keyed by
+            ModelInstanceIndex.
+        """
+        return {model: self.plant.GetPositions(self.context_plant, model)
+                for model in self.models_all}
 
     def draw_current_configuration(self):
         # Body poses
@@ -245,7 +254,6 @@ class QuasistaticSimulator:
         :return:
         """
         # Evaluate contacts.
-        self.update_query_object()
         query_object = self.query_object
         signed_distance_pairs = \
             query_object.ComputeSignedDistancePairwiseClosestPoints(
@@ -361,6 +369,8 @@ class QuasistaticSimulator:
             i_f_start += n_d[i_c]
 
             # Store contact positions in order to draw contact forces later.
+            #TODO: contact forces at step (l+1) is drawn with the
+            # configuration at step l.
             if is_A_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
                     self.context_plant, bodyA)
@@ -392,7 +402,8 @@ class QuasistaticSimulator:
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
 
     def update_contact_results(self, my_contact_info_list: List[MyContactInfo],
-                               beta: np.array, h: float, n_c: int, n_d: np.array,
+                               beta: np.array, h: float, n_c: int,
+                               n_d: np.array,
                                mu_list: np.array):
         assert len(my_contact_info_list) == n_c
         contact_results = ContactResults()
@@ -441,23 +452,31 @@ class QuasistaticSimulator:
         return cf.static_friction()
 
     def step_anitescu(self,
-                      q_dict: Dict[ModelInstanceIndex, np.array],
                       q_a_cmd_dict: Dict[ModelInstanceIndex, np.array],
                       tau_ext_dict: Dict[ModelInstanceIndex, np.array],
                       h: float, is_planar: bool,
                       contact_detection_tolerance: float):
         """
-
-        :param q_list.
-        :param q_a_cmd_dict: same length as q. If a model is not actuated,
-            the corresponding entry is set to a zero-length np array.
-        :param tau_ext_dict: same length as q. If a model is actuated,
-            the corresponding entry is set to a zero-length np array.
+        This function does the following:
+        1. Extracts q_dict, a dictionary containing current system
+            configuration, from self.plant_context.
+        2. Runs collision query by calling self.calc_contact_jacobians.
+        3. Constructs and solves the quasistatic QP described in the paper.
+        4. Integrates q_dict to the next time step.
+        5. Calls self.update_configuration with the new q_dict.
+            self.update_configuration updates self.context_plant and
+            self.query_object.
+        6. Updates self.contact_results.
+        :param q_a_cmd_dict:
+        :param tau_ext_dict:
         :param h: simulation time step.
         :param is_planar:
         :param contact_detection_tolerance:
-        :return:
+        :return: system configuration at the next time step, stored in a
+            dictionary keyed by ModelInstanceIndex.
         """
+        q_dict = self.get_current_configuration()
+
         # TODO: remove this ad hoc check to support more general 3D objects.
         if not is_planar:
             for model in self.models_unactuated:
@@ -531,8 +550,10 @@ class QuasistaticSimulator:
                 dq_dict[model] = dq_u
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
+        self.step_configuration(q_dict, dq_dict, is_planar=is_planar)
+        self.update_configuration(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
-        return dq_dict
+        return q_dict
 
     def step_configuration(self,
                            q_dict: Dict[ModelInstanceIndex, np.array],

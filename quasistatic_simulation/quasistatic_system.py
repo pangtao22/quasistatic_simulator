@@ -15,8 +15,10 @@ class QuasistaticSystem(LeafSystem):
         self.set_name("quasistatic_system")
 
         # State updates are triggered by publish events.
-        self.DeclarePeriodicPublish(time_step_seconds)
         self.h = time_step_seconds
+        self.DeclarePeriodicDiscreteUpdate(self.h)
+        # need at least one state to call self.DoCalcDiscreteVariableUpdates.
+        self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
         self.q_sim = QuasistaticSimulator(
@@ -28,14 +30,14 @@ class QuasistaticSystem(LeafSystem):
         self.state_output_ports = dict()
         for model in self.q_sim.models_all:
             port_name = self.plant.GetModelInstanceName(model) + "_state"
-            nv = self.q_sim.n_v_dict[model]
-
-            def output(context, y_data):
-                y = y_data.get_mutable_value()
-                y[:] = self.copy_model_state_out(model)
+            nq = self.plant.num_positions(model)
 
             self.state_output_ports[model] = \
-                self.DeclareVectorOutputPort(port_name, BasicVector(nv), output)
+                self.DeclareVectorOutputPort(
+                    port_name,
+                    BasicVector(nq),
+                    lambda context, output, model=model:
+                        output.SetFromVector(self.copy_model_state_out(model)))
 
         # query object output port.
         self.query_object_output_port = \
@@ -60,14 +62,6 @@ class QuasistaticSystem(LeafSystem):
             self.commanded_positions_input_ports[model] = \
                 self.DeclareInputPort(port_name, PortDataType.kVectorValued, nv)
 
-        # def on_initialize(context, event):
-        #     pass
-        #
-        # self.DeclareInitializationEvent(
-        #     event=PublishEvent(
-        #         trigger_type=TriggerType.kInitialization,
-        #         callback=on_initialize))
-
     def get_state_output_port(self, model: ModelInstanceIndex):
         return self.state_output_ports[model]
 
@@ -86,25 +80,18 @@ class QuasistaticSystem(LeafSystem):
 
     def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
         self.q_sim.update_configuration(q0_dict)
-        self.q_sim.update_query_object()
 
-    def DoPublish(self, context, event):
-        LeafSystem.DoPublish(self, context, event)
+    def DoCalcDiscreteVariableUpdates(self, context, events, discrete_state):
+        LeafSystem.DoCalcDiscreteVariableUpdates(
+            self, context, events, discrete_state)
+
         q_a_cmd_dict = {
             model: self.commanded_positions_input_ports[model].Eval(context)
             for model in self.q_sim.models_actuated}
 
-        q_dict = {model: self.copy_model_state_out(model)
-                  for model in self.q_sim.models_all}
-
         tau_ext_dict = self.q_sim.calc_gravity_for_unactuated_models()
 
-        dq_dict = self.q_sim.step_anitescu(
-            q_dict, q_a_cmd_dict, tau_ext_dict, self.h,
+        self.q_sim.step_anitescu(
+            q_a_cmd_dict, tau_ext_dict, self.h,
             is_planar=False,
             contact_detection_tolerance=0.005)
-
-        self.q_sim.step_configuration(q_dict, dq_dict, is_planar=False)
-        self.q_sim.update_configuration(q_dict)
-
-

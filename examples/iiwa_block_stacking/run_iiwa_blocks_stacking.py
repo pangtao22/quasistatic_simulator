@@ -16,9 +16,10 @@ q_sim = QuasistaticSimulator(
 (model_instance_indices_u,
  model_instance_indices_a) = q_sim.get_model_instance_indices()
 
+t_start = q_iiwa_traj.start_time()
 q0_dict = create_initial_state_dictionary(
-    q0_iiwa=q_iiwa_traj.value(0).squeeze(),
-    q0_schunk=q_schunk_traj.value(0).squeeze(),
+    q0_iiwa=q_iiwa_traj.value(t_start).squeeze(),
+    q0_schunk=q_schunk_traj.value(t_start).squeeze(),
     q_u0_list=q_u0_list,
     model_instance_indices_u=model_instance_indices_u,
     model_instance_indices_a=model_instance_indices_a)
@@ -31,33 +32,28 @@ q_sim.update_configuration(q0_dict)
 q_sim.draw_current_configuration()
 
 #%%
-h = 0.3
+h = 0.2
+q_iiwa_traj.shiftRight(-h)
+q_schunk_traj.shiftRight(-h)
 
-q_dict = q0_dict
-q_a_log = []
-q_log = []
+q_log = [q0_dict]
 q_a_cmd_log = []
 
 input("start?")
-n_steps = int(q_iiwa_traj.end_time() / h)
+n_steps = round(q_iiwa_traj.end_time() / h)
 
 for i in range(n_steps):
     q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(h * i).squeeze(),
                     idx_schunk: q_schunk_traj.value(h * i).squeeze()}
     tau_ext_dict = q_sim.calc_gravity_for_unactuated_models()
-    dq_dict = q_sim.step_anitescu(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h,
+    q_dict = q_sim.step_anitescu(
+            q_a_cmd_dict, tau_ext_dict, h,
             is_planar=False,
             contact_detection_tolerance=0.005)
-
-    # Update q
-    q_sim.step_configuration(q_dict, dq_dict, is_planar=False)
-    q_sim.update_configuration(q_dict)
     q_sim.draw_current_configuration()
 
-    # q_a_log.append(np.concatenate(q_dict[-1]))
-    # q_a_cmd_log.append(q_a_cmd_dict)
-    # q_log.append(copy.deepcopy(q_dict))
+    q_a_cmd_log.append(q_a_cmd_dict)
+    q_log.append(q_dict)
 
     # time.sleep(h)
     # print("t = ", i * h)
@@ -65,18 +61,24 @@ for i in range(n_steps):
 
 
 #%%
-def extract_log_for_object(i: int):
+def extract_log_for_object(
+        q_log: List[Dict[ModelInstanceIndex, np.array]],
+        model: ModelInstanceIndex):
     n = len(q_log)
-    m = len(q_log[0][i])
+    m = len(q_log[0][model])
     q_i_log = np.zeros((n, m))
     for t, q_t in enumerate(q_log):
-        q_i_log[t] = q_t[i]
+        q_i_log[t] = q_t[model]
     return q_i_log
 
-q_a_log = np.array(q_a_log)
-q_a_cmd_log = np.array(q_a_cmd_log)
-q_u0_log = extract_log_for_object(0)
+q_iiwa_log = extract_log_for_object(q_log, idx_iiwa)
+q_schunk_log = extract_log_for_object(q_log, idx_schunk)
+q_iiwa_cmd_log = extract_log_for_object(q_a_cmd_log, idx_iiwa)
+q_schunk_cmd_log = extract_log_for_object(q_a_cmd_log, idx_schunk)
+q_u0_log = extract_log_for_object(q_log, q_sim.models_unactuated[0])
 
+
+#%%
 #
 # for i in range(len(q_log[0])):
 #     print(i, q_log[0][i][-3:], q_log[-1][i][-3:])

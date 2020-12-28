@@ -1,4 +1,6 @@
-from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator)
+
+from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
+                         LogOutput)
 
 from contact_aware_control.plan_runner.plan_utils import (
     RenderSystemWithGraphviz)
