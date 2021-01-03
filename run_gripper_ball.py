@@ -2,7 +2,7 @@ from quasistatic_simulation.quasistatic_simulator import *
 
 #%%
 Kq_a = np.ones(3) * 1000
-q_sim = QuasistaticSimulator(CreatePlantFor2dGripper, nd_per_contact=2,
+q_sim = QuasistaticSimulator(create_2d_gripper_plant, nd_per_contact=2,
                              object_sdf_paths=None,
                              joint_stiffness=Kq_a)
 # SetOrthographicCameraYZ(q_sim.viz.vis)
@@ -27,13 +27,12 @@ for i in range(n_steps):
     q_a_cmd = np.array([0.1 + np.max([-0.002 * i, -0.03]), -r * 0.9, r * 0.9])
     q_a_cmd_list = [None, q_a_cmd]
     tau_u_ext_list = [tau_u_ext, None]
-    dq_u_list, dq_a_list = q_sim.step_anitescu(
-            q_list, q_a_cmd_list, tau_u_ext_list, h,
-            is_planar=True,
-            contact_detection_tolerance=0.01)
+    dq_u_list, dq_a_list = q_sim.step_anitescu(q_list, q_a_cmd_list,
+                                               tau_u_ext_list,
+                                               contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.step_configuration(q_list, dq_u_list)
     q_sim.update_configuration(q_list)
     q_sim.draw_current_configuration()
 

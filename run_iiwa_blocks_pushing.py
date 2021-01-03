@@ -4,7 +4,7 @@ from contact_aware_control.plan_runner.setup_iiwa import (
 
 from quasistatic_simulation.quasistatic_simulator import *
 from setup_environments import (
-    CreateIiwaPlantWithMultipleObjects)
+    create_iiwa_plant_with_multiple_objects)
 from setup_environments import (
     box3d_medium_sdf_path, box3d_small_sdf_path)
 
@@ -29,7 +29,7 @@ q_a_traj, q_knots = CalcIiwaQTrajectory(
 Kq_a = np.array([800., 600, 600, 600, 400, 200, 200])
 
 q_sim = QuasistaticSimulator(
-    CreateIiwaPlantWithMultipleObjects,
+    create_iiwa_plant_with_multiple_objects,
     nd_per_contact=4,
     object_sdf_paths=[box3d_medium_sdf_path, box3d_small_sdf_path],
     joint_stiffness=Kq_a)
@@ -59,13 +59,12 @@ for i in range(n_steps):
     tau_u_ext_list = [tau_u_ext, tau_u_ext, None]
     # q_a_cmd_list = [q_a_cmd]
     # tau_u_ext_list = []
-    dq_u_list, dq_a_list = q_sim.step_anitescu(
-            q_list, q_a_cmd_list, tau_u_ext_list, h,
-            is_planar=False,
-            contact_detection_tolerance=0.01)
+    dq_u_list, dq_a_list = q_sim.step_anitescu(q_list, q_a_cmd_list,
+                                               tau_u_ext_list,
+                                               contact_detection_tolerance=0.01)
 
     # Update q
-    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.step_configuration(q_list, dq_u_list)
     q_sim.update_configuration(q_list)
     q_sim.draw_current_configuration()
 

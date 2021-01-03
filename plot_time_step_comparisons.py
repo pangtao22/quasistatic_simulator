@@ -35,6 +35,7 @@ qa_logs = [np.load(file_name) for file_name in file_names]
 time_steps_real = time_steps + time_steps_mbp
 time_steps += [1e-2] * len(time_steps_mbp)
 
+
 def get_angle_from_quaternion(q: np.array):
     q /= np.linalg.norm(q)
     a = AngleAxis(Quaternion(q))

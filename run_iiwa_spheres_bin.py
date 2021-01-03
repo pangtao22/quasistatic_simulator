@@ -87,13 +87,12 @@ for i in range(n_steps):
          q_schunk_traj.value(h * i).squeeze()])
     q_a_cmd_list = [None] * len(q_u0_list) + [q_a_cmd]
     tau_u_ext_list = [tau_u_ext] * len(q_u0_list) + [None]
-    dq_u_list, dq_a_list = q_sim.step_anitescu(
-            q_list, q_a_cmd_list, tau_u_ext_list, h,
-            is_planar=False,
-            contact_detection_tolerance=0.005)
+    dq_u_list, dq_a_list = q_sim.step_anitescu(q_list, q_a_cmd_list,
+                                               tau_u_ext_list,
+                                               contact_detection_tolerance=0.005)
 
     # Update q
-    q_sim.step_configuration(q_list, dq_u_list, dq_a_list, is_planar=False)
+    q_sim.step_configuration(q_list, dq_u_list)
     q_sim.update_configuration(q_list)
     q_sim.draw_current_configuration()
 
