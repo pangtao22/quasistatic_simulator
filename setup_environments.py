@@ -212,7 +212,7 @@ def create_iiwa_plant_with_schunk(
                      B=plant.GetFrameByName("iiwa_link_0"),
                      X_AB=RigidTransform.Identity())
 
-    # fix ee_sphere to l7
+    # fix schunk to l7
     schunk_model = parser.AddModelFromFile(schunk_sdf_path)
     X_L7E = RigidTransform(
         RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))

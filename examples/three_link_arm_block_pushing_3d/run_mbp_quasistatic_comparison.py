@@ -90,7 +90,7 @@ plt.show()
 shift_q_traj_to_start_at_minus_h(q_robot_traj, 0)
 qa_mbp_traj = PiecewisePolynomial.ZeroOrderHold(t_mbp, q_robot_log_mbp.T)
 
-e_robot, e_vec_robot, t_e_robot = compute_error_integral(
+e_robot, e_vec_robot, t_e_robot = calc_error_integral(
     q_knots=q_robot_log_quasistatic,
     t=t_quasistatic,
     q_gt_traj=qa_mbp_traj)
@@ -109,7 +109,7 @@ quaternion_box_mbp_traj = convert_quaternion_array_to_eigen_quaternion_traj(
 
 
 #%% Orientation.
-e_quat_box, e_vec_quat_box, t_quat_box = compute_quaternion_error_integral(
+e_quat_box, e_vec_quat_box, t_quat_box = calc_quaternion_error_integral(
     q_list=q_box_log_quasistatic[:, :4],
     t=t_quasistatic,
     q_traj=quaternion_box_mbp_traj)
@@ -122,7 +122,7 @@ plt.show()
 #%% Position.
 xyz_box_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp,
                                                       q_box_log_mbp[:, 4:].T)
-e_xyz_box, e_vec_xyz_box, t_xyz_box = compute_error_integral(
+e_xyz_box, e_vec_xyz_box, t_xyz_box = calc_error_integral(
     q_knots=q_box_log_quasistatic[:, 4:],
     t=t_quasistatic,
     q_gt_traj=xyz_box_mbp_traj)

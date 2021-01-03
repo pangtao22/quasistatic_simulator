@@ -13,7 +13,7 @@ from quasistatic_simulation.setup_simulation_diagram import (
 # Simulation time step.
 h = 0.2
 gravity = np.array([0, 0, -10.])
-builder, loggers_dict, q_sys = setup_quasistatic_sim_diagram(
+diagram, loggers_dict, q_sys = setup_quasistatic_sim_diagram(
     q_a_traj_list=[q_iiwa_traj, q_schunk_traj],
     Kp_list=[Kp_iiwa, Kp_schunk],
     setup_environment=create_iiwa_plant_with_schunk,
@@ -23,7 +23,6 @@ builder, loggers_dict, q_sys = setup_quasistatic_sim_diagram(
     is_visualizing=True)
 
 #%%
-diagram = builder.Build()
 RenderSystemWithGraphviz(diagram)
 
 #%% initial conditions.

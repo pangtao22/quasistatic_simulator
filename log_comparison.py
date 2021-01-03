@@ -7,7 +7,7 @@ from pydrake.all import PiecewiseQuaternionSlerp, PiecewisePolynomial
 from pydrake.common.eigen_geometry import Quaternion, AngleAxis
 
 
-def compute_error_integral(q_knots, t, q_gt_traj):
+def calc_error_integral(q_knots, t, q_gt_traj):
 
     n = len(t)
     assert len(q_knots) == len(t)
@@ -44,7 +44,7 @@ def convert_quaternion_array_to_eigen_quaternion_traj(q_array: np.array,
     return PiecewiseQuaternionSlerp(t, quaternion_list)
 
 
-def compute_quaternion_error_integral(
+def calc_quaternion_error_integral(
         q_list: Union[List[Quaternion], np.array],
         t: np.array,
         q_traj: PiecewiseQuaternionSlerp):
@@ -62,10 +62,10 @@ def compute_quaternion_error_integral(
 
     zero_traj = PiecewisePolynomial.ZeroOrderHold(
         [t[0], t[-1]], np.array([[0, 0.]]))
-    return compute_error_integral(angle_diff_list, t, zero_traj)
+    return calc_error_integral(angle_diff_list, t, zero_traj)
 
 
-def compute_pose_error_integral(pose_list_1, pose_list_2, t):
+def calc_pose_error_integral(pose_list_1, pose_list_2, t):
     """
     :param pose_list is a 2D numpy array of shape (n, 7).
         pose_list[i] is a (7,) array representing the pose of a rigid body at
@@ -73,9 +73,9 @@ def compute_pose_error_integral(pose_list_1, pose_list_2, t):
         pose_list[i, 4:] is a point in R^3.
     :return:
     """
-    q_diff_list = compute_quaternion_difference(
+    q_diff_list = calc_quaternion_difference(
         pose_list_1[:, :4], pose_list_2[:, :4])
 
     angles_diff = np.array([AngleAxis(q).angle() for q in q_diff_list])
     xyz_diff = pose_list_1[:, 4:] - pose_list_2[:, 4:]
-    e_angles, e_angles_vec, t_e = compute_error_integral()
+    e_angles, e_angles_vec, t_e = calc_error_integral()
