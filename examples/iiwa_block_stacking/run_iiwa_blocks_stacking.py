@@ -8,6 +8,7 @@ from examples.iiwa_block_stacking.trajectory_generation import *
 #%%
 q_sim = QuasistaticSimulator(
     create_iiwa_plant_with_schunk,
+    gravity=np.array([0, 0, -10.]),
     nd_per_contact=4,
     object_sdf_paths=object_sdf_paths,
     joint_stiffness=Kq_a,
@@ -46,10 +47,8 @@ for i in range(n_steps):
     q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(h * i).squeeze(),
                     idx_schunk: q_schunk_traj.value(h * i).squeeze()}
     tau_ext_dict = q_sim.calc_gravity_for_unactuated_models()
-    q_dict = q_sim.step_anitescu(
-            q_a_cmd_dict, tau_ext_dict, h,
-            is_planar=False,
-            contact_detection_tolerance=0.005)
+    q_dict = q_sim.step_anitescu(q_a_cmd_dict, tau_ext_dict, h,
+                                 contact_detection_tolerance=0.005)
     q_sim.draw_current_configuration()
 
     q_a_cmd_log.append(q_a_cmd_dict)

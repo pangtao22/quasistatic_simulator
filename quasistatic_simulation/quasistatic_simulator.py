@@ -1,29 +1,22 @@
-from typing import List, Union, Dict, Callable, Tuple
+from typing import List, Union, Dict
 import copy
 
-from pydrake.all import QueryObject
+import numpy as np
+
+from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
+                         OsqpSolver, AbstractValue, DiagramBuilder)
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
-from pydrake.systems.framework import DiagramBuilder
 from pydrake.solvers import mathematicalprogram as mp
-from pydrake.solvers.gurobi import GurobiSolver
-from pydrake.solvers.osqp import OsqpSolver
 from pydrake.multibody.tree import JacobianWrtVariable, RigidBody
 from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults, MultibodyPlant,
     CalcContactFrictionFromSurfaceProperties)
 from pydrake.geometry import PenetrationAsPointPair, SceneGraph
-from pydrake.common.value import AbstractValue
 
-from setup_environments import *
+from setup_environments import SetupEnvironmentFunction
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
-
-SetupEnvironmentFunction = Callable[
-    [DiagramBuilder, List[str]],
-    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
-          List[ModelInstanceIndex]]
-]
 
 
 class MyContactInfo(object):
@@ -49,6 +42,7 @@ class MyContactInfo(object):
 class QuasistaticSimulator:
     def __init__(self,
                  setup_environment: SetupEnvironmentFunction,
+                 gravity: np.array,
                  nd_per_contact: int,
                  object_sdf_paths: List[str],
                  joint_stiffness: List[np.array],
@@ -63,7 +57,7 @@ class QuasistaticSimulator:
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
-            setup_environment(builder, object_sdf_paths)
+            setup_environment(builder, object_sdf_paths, 1e-3, gravity)
 
         # visualization.
         self.internal_vis = internal_vis
@@ -90,6 +84,8 @@ class QuasistaticSimulator:
         self.context_sg = diagram.GetMutableSubsystemContext(
             scene_graph, self.context)
 
+        # Internal visualization is used when QuasistaticSimulator is used
+        # outside the Systems framework.
         if internal_vis:
             self.viz.vis.delete()
             self.viz.load()
@@ -127,6 +123,22 @@ class QuasistaticSimulator:
         for i, model in enumerate(self.models_actuated):
             assert self.n_v_dict[model] == joint_stiffness[i].size
             self.Kq_a[model] = np.diag(joint_stiffness[i]).astype(float)
+
+        # Find planar model instances.
+        # TODO: it is assumed that each unactuated model instance contains
+        #  only one rigid body.
+        self.is_planar_dict = dict()
+        for model in self.models_unactuated:
+            n_v = self.n_v_dict[model]
+            n_q = plant.num_positions(model)
+
+            if n_v == 6 and n_q == 7:
+                body_indices = self.plant.GetBodyIndices(model)
+                assert len(body_indices) == 1
+                assert self.plant.get_body(body_indices[0]).is_floating()
+                self.is_planar_dict[model] = False
+            else:
+                self.is_planar_dict[model] = True
 
         # solver
         self.solver = GurobiSolver()
@@ -451,11 +463,9 @@ class QuasistaticSimulator:
         cf = CalcContactFrictionFromSurfaceProperties(cf_A, cf_B)
         return cf.static_friction()
 
-    def step_anitescu(self,
-                      q_a_cmd_dict: Dict[ModelInstanceIndex, np.array],
+    def step_anitescu(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.array],
                       tau_ext_dict: Dict[ModelInstanceIndex, np.array],
-                      h: float, is_planar: bool,
-                      contact_detection_tolerance: float):
+                      h: float, contact_detection_tolerance: float):
         """
         This function does the following:
         1. Extracts q_dict, a dictionary containing current system
@@ -470,18 +480,11 @@ class QuasistaticSimulator:
         :param q_a_cmd_dict:
         :param tau_ext_dict:
         :param h: simulation time step.
-        :param is_planar:
         :param contact_detection_tolerance:
         :return: system configuration at the next time step, stored in a
             dictionary keyed by ModelInstanceIndex.
         """
         q_dict = self.get_current_configuration()
-
-        # TODO: remove this ad hoc check to support more general 3D objects.
-        if not is_planar:
-            for model in self.models_unactuated:
-                assert self.n_v_dict[model] == 6
-                assert len(q_dict[model]) == 7
 
         self.update_configuration(q_dict)
         (n_c, n_d, n_f, Jn, Jf, phi_l, U,
@@ -535,7 +538,7 @@ class QuasistaticSimulator:
 
         for model in self.models_unactuated:
             v_h_value = result.GetSolution(v_h_dict[model])
-            if is_planar:
+            if self.is_planar_dict[model]:
                 dq_dict[model] = v_h_value
             else:
                 q_u = q_dict[model]
@@ -550,15 +553,13 @@ class QuasistaticSimulator:
                 dq_dict[model] = dq_u
 
         # constraint_values = phi_constraints + result.EvalBinding(constraints)
-        self.step_configuration(q_dict, dq_dict, is_planar=is_planar)
+        self.step_configuration(q_dict, dq_dict)
         self.update_configuration(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
         return q_dict
 
-    def step_configuration(self,
-                           q_dict: Dict[ModelInstanceIndex, np.array],
-                           dq_dict: Dict[ModelInstanceIndex, np.array],
-                           is_planar: bool):
+    def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.array],
+                           dq_dict: Dict[ModelInstanceIndex, np.array]):
         """
         Adds the delta of each model state, e.g. dq_u_list[i], to the
             corresponding model configuration in q_list. If q_list[i]
@@ -567,14 +568,13 @@ class QuasistaticSimulator:
         :param q_dict:
         :param dq_u_dict:
         :param dq_a_dict:
-        :param is_planar: whether unactuated models has quaternions in their
-            configuration.
         :return: None.
         """
         for model in self.models_unactuated:
             q_u = q_dict[model]
             q_u += dq_dict[model]
-            if not is_planar and q_u.size == 7:
+
+            if self.is_planar_dict[model]:
                 q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
 
         for model in self.models_actuated:

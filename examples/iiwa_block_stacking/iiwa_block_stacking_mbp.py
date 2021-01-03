@@ -32,9 +32,9 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
 
     # IIWA controller
     gravity = [0, 0, -10.]
-    plant_robot, _ = create_iiwa_controller_plant(gravity)
+    plant_iiwa, _ = create_iiwa_controller_plant(gravity)
     controller_iiwa = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=Kp_iiwa,
+        plant_robot=plant_iiwa, joint_stiffness=Kp_iiwa,
         controller_mode="impedance")
     builder.AddSystem(controller_iiwa)
     builder.Connect(controller_iiwa.GetOutputPort("joint_torques"),
@@ -52,6 +52,7 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
     # Schunk controller
     controller_schunk = PidController(
         Kp_schunk, np.zeros(2), 2 * 0.7 * np.sqrt(Kp_schunk))
+
     builder.AddSystem(controller_schunk)
     builder.Connect(
         controller_schunk.get_output_port_control(),

@@ -7,6 +7,7 @@ from .quasistatic_simulator import *
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
                  setup_environment: SetupEnvironmentFunction,
+                 gravity: np.array,
                  nd_per_contact: int,
                  object_sdf_paths: List[str],
                  joint_stiffness: List[np.array],
@@ -22,7 +23,7 @@ class QuasistaticSystem(LeafSystem):
 
         # Quasistatic simulator instance.
         self.q_sim = QuasistaticSimulator(
-            setup_environment, nd_per_contact, object_sdf_paths,
+            setup_environment, gravity, nd_per_contact, object_sdf_paths,
             joint_stiffness, internal_vis=False)
         self.plant = self.q_sim.plant
 
@@ -91,7 +92,5 @@ class QuasistaticSystem(LeafSystem):
 
         tau_ext_dict = self.q_sim.calc_gravity_for_unactuated_models()
 
-        self.q_sim.step_anitescu(
-            q_a_cmd_dict, tau_ext_dict, self.h,
-            is_planar=False,
-            contact_detection_tolerance=0.005)
+        self.q_sim.step_anitescu(q_a_cmd_dict, tau_ext_dict, self.h,
+                                 contact_detection_tolerance=0.005)

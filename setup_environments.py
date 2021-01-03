@@ -1,13 +1,13 @@
 import os
 import pathlib
-from typing import List
+from typing import List, Tuple, Callable
 
 import numpy as np
 
-from pydrake.all import ModelInstanceIndex
+from pydrake.all import (ModelInstanceIndex, DiagramBuilder, SceneGraph,
+                         Parser, MultibodyPlant, AddMultibodyPlantSceneGraph,
+                         FrameIndex)
 from pydrake.common import FindResourceOrThrow
-from pydrake.multibody.parsing import Parser
-from pydrake.multibody.plant import MultibodyPlant, AddMultibodyPlantSceneGraph
 from pydrake.math import RigidTransform, RollPitchYaw, RotationMatrix
 
 from contact_aware_control.plan_runner.setup_three_link_arm import (
@@ -15,12 +15,45 @@ from contact_aware_control.plan_runner.setup_three_link_arm import (
 from contact_aware_control.plan_runner.setup_iiwa import (
     iiwa_sdf_path_drake, ee_sdf_path)
 
+"""
+Input:
+    DiagramBuilder: diagram builder. 
+    List[str]: A list of paths to unactuated bodies.
+    float: simulation time step in seconds, useful only for simulations using 
+        MBP. For quasistatic simulations, time step is specified in 
+        QuasistaticSimulator instead.
+    np.array: (3,) gravity vector.
+"""
+SetupEnvironmentFunction = Callable[
+    [DiagramBuilder, List[str], float, np.array],
+    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
+          List[ModelInstanceIndex]]
+]
+
+"""
+Input:
+    np.array: (3,) gravity vector.
+    
+:returns
+    MultibodyPlant: the MBP containing the robot and objects.
+    List[FrameIndex]: a list containing all indices of all body frames of the 
+        robot.
+"""
+CreateControllerPlantFunction = Callable[
+    [np.array], Tuple[MultibodyPlant, List[FrameIndex]]]
+
+
+schunk_sdf_path = FindResourceOrThrow(
+    "drake/manipulation/models/wsg_50_description/sdf"
+    "/schunk_wsg_50_ball_contact.sdf")
+
 # transform between robot base frame and world frame
 X_WR = RigidTransform()
 X_WR.set_translation([0, 0, 0.1])
-gravity = np.array([0., 0, -10])
 
 module_path = pathlib.Path(__file__).parent.absolute()
+box2d_big_sdf_path = os.path.join(
+    module_path, "models", "box_yz_rotation_big.sdf")
 box3d_big_sdf_path = os.path.join(module_path, "models", "box_1m.sdf")
 box3d_medium_sdf_path = os.path.join(module_path, "models", "box_0.6m.sdf")
 box3d_small_sdf_path = os.path.join(module_path, "models", "box_0.5m.sdf")
@@ -29,27 +62,28 @@ box3d_7cm_sdf_path = os.path.join(module_path, "models", "box_0.07m.sdf")
 box3d_6cm_sdf_path = os.path.join(module_path, "models", "box_0.06m.sdf")
 
 
-def Create3LinkArmControllerPlant():
+def create_3link_arm_controller_plant(gravity: np.array):
     # creates plant that includes only the robot, used for controllers.
     plant = MultibodyPlant(1e-3)
     parser = Parser(plant=plant)
     parser.AddModelFromFile(robot_sdf_path)
-    # plant.mutable_gravity_field().set_gravity_vector([0, 0, 0])
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
     plant.WeldFrames(
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
     plant.Finalize()
-    return plant
+    return plant, None
 
 
-def Create2dArmPlantWithMultipleObjects(
-        builder, object_sdf_paths: List[str]):
+def create_3link_arm_plant_with_multiple_objects(
+        builder, object_sdf_paths: List[str], time_step: float,
+        gravity: np.array):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
     :return:
     """
     # MultibodyPlant
-    plant = MultibodyPlant(1e-3)
+    plant = MultibodyPlant(time_step)
     _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
     parser = Parser(plant=plant, scene_graph=scene_graph)
 
@@ -73,6 +107,9 @@ def Create2dArmPlantWithMultipleObjects(
         object_models_list.append(
             parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
 
+    # gravity
+    plant.mutable_gravity_field().set_gravity_vector(gravity)
+
     plant.Finalize()
 
     return (plant,
@@ -81,12 +118,10 @@ def Create2dArmPlantWithMultipleObjects(
             object_models_list)
 
 
-def CreateIiwaPlantWithMultipleObjects(builder,
-                                       object_sdf_paths: List[str]):
+def create_iiwa_plant_with_multiple_objects(builder,
+                                            object_sdf_paths: List[str]):
     """
-    :param builder: a DiagramBuilder object.
-    :param object_sdf_paths: list of absolute paths to object.sdf files.
-    :return:
+    A SetupEnvironmentFunction.
     """
     # MultibodyPlant
     plant = MultibodyPlant(1e-3)
@@ -127,11 +162,12 @@ def CreateIiwaPlantWithMultipleObjects(builder,
 
     return (plant,
             scene_graph,
-            [[robot_model, ee_model]],
+            [robot_model, ee_model],
             object_models_list)
 
 
-def create_iiwa_plant(builder, object_sdf_paths: List[str], time_step=1e-3):
+def create_iiwa_plant(builder, object_sdf_paths: List[str],
+                      time_step: float, gravity: np.array):
     # MultibodyPlant
     plant = MultibodyPlant(time_step)
     _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
@@ -150,7 +186,8 @@ def create_iiwa_plant(builder, object_sdf_paths: List[str], time_step=1e-3):
 
 
 def create_iiwa_plant_with_schunk(
-        builder, object_sdf_paths: List[str], time_step=1e-3):
+        builder, object_sdf_paths: List[str], time_step: float,
+        gravity: np.array):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
@@ -176,9 +213,6 @@ def create_iiwa_plant_with_schunk(
                      X_AB=RigidTransform.Identity())
 
     # fix ee_sphere to l7
-    schunk_sdf_path = FindResourceOrThrow(
-          "drake/manipulation/models/wsg_50_description/sdf"
-          "/schunk_wsg_50_ball_contact.sdf")
     schunk_model = parser.AddModelFromFile(schunk_sdf_path)
     X_L7E = RigidTransform(
         RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
@@ -258,7 +292,7 @@ def create_iiwa_plant_with_schunk_and_bin(
             object_models_list)
 
 
-def CreatePlantFor2dGripper(builder, *args):
+def create_2d_gripper_plant(builder, *args):
     """
     This function should be called when constructing a Diagram in RobotSimulator.
     :param builder: a reference to the DiagramBuilder.
