@@ -1,8 +1,6 @@
-import numpy as np
-
 from quasistatic_simulation.setup_simulation_diagram import *
-from log_comparison import *
-from setup_environments import (
+from examples.log_comparison import *
+from examples.setup_environments import (
     box2d_big_sdf_path,
     create_3link_arm_plant_with_multiple_objects,
     create_3link_arm_controller_plant)

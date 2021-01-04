@@ -11,7 +11,7 @@ from pydrake.systems.framework import DiagramBuilder, LeafSystem
 from pydrake.multibody.plant import (ExternallyAppliedSpatialForce)
 from pydrake.systems.primitives import TrajectorySource, LogOutput
 
-from setup_environments import (create_iiwa_plant, gravity)
+from examples.setup_environments import (create_iiwa_plant, gravity)
 
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)

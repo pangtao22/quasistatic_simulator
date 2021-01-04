@@ -1,10 +1,8 @@
-import numpy as np
-
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
-                         LogOutput, ModelInstanceIndex)
+                         LogOutput)
 
 from quasistatic_simulation.quasistatic_system import *
-from setup_environments import CreateControllerPlantFunction
+from examples.setup_environments import CreateControllerPlantFunction
 from iiwa_controller.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 

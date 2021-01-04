@@ -17,21 +17,6 @@ from contact_aware_control.plan_runner.setup_iiwa import (
 
 """
 Input:
-    DiagramBuilder: diagram builder. 
-    List[str]: A list of paths to unactuated bodies.
-    float: simulation time step in seconds, useful only for simulations using 
-        MBP. For quasistatic simulations, time step is specified in 
-        QuasistaticSimulator instead.
-    np.array: (3,) gravity vector.
-"""
-SetupEnvironmentFunction = Callable[
-    [DiagramBuilder, List[str], float, np.array],
-    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
-          List[ModelInstanceIndex]]
-]
-
-"""
-Input:
     np.array: (3,) gravity vector.
     
 :returns
@@ -51,15 +36,15 @@ schunk_sdf_path = FindResourceOrThrow(
 X_WR = RigidTransform()
 X_WR.set_translation([0, 0, 0.1])
 
-module_path = pathlib.Path(__file__).parent.absolute()
-box2d_big_sdf_path = os.path.join(
-    module_path, "models", "box_yz_rotation_big.sdf")
-box3d_big_sdf_path = os.path.join(module_path, "models", "box_1m.sdf")
-box3d_medium_sdf_path = os.path.join(module_path, "models", "box_0.6m.sdf")
-box3d_small_sdf_path = os.path.join(module_path, "models", "box_0.5m.sdf")
-box3d_8cm_sdf_path = os.path.join(module_path, "models", "box_0.08m.sdf")
-box3d_7cm_sdf_path = os.path.join(module_path, "models", "box_0.07m.sdf")
-box3d_6cm_sdf_path = os.path.join(module_path, "models", "box_0.06m.sdf")
+model_dir_path = os.path.join(
+    pathlib.Path(__file__).parent.absolute(), "..", "models")
+box2d_big_sdf_path = os.path.join(model_dir_path, "box_yz_rotation_big.sdf")
+box3d_big_sdf_path = os.path.join(model_dir_path, "box_1m.sdf")
+box3d_medium_sdf_path = os.path.join(model_dir_path, "box_0.6m.sdf")
+box3d_small_sdf_path = os.path.join(model_dir_path, "box_0.5m.sdf")
+box3d_8cm_sdf_path = os.path.join(model_dir_path, "box_0.08m.sdf")
+box3d_7cm_sdf_path = os.path.join(model_dir_path, "box_0.07m.sdf")
+box3d_6cm_sdf_path = os.path.join(model_dir_path, "box_0.06m.sdf")
 
 
 def create_3link_arm_controller_plant(gravity: np.array):
@@ -313,11 +298,11 @@ def create_2d_gripper_plant(builder, *args):
                      X_AB=X_WG)
 
     # Add robot.
-    gripper_sdf_path = os.path.join(module_path, "models", "gripper.sdf")
+    gripper_sdf_path = os.path.join(model_dir_path, "models", "gripper.sdf")
     robot_model = parser.AddModelFromFile(gripper_sdf_path)
 
     # Add object
-    object_sdf_path = os.path.join(module_path, "models", "sphere_yz.sdf")
+    object_sdf_path = os.path.join(model_dir_path, "models", "sphere_yz.sdf")
     object_model = parser.AddModelFromFile(object_sdf_path)
 
     plant.Finalize()

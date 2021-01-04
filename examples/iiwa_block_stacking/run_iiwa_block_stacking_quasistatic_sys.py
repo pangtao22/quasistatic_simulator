@@ -4,7 +4,7 @@ from pydrake.all import Simulator
 from contact_aware_control.plan_runner.plan_utils import (
     RenderSystemWithGraphviz)
 
-from setup_environments import create_iiwa_plant_with_schunk
+from examples.setup_environments import create_iiwa_plant_with_schunk
 from examples.iiwa_block_stacking.trajectory_generation import *
 from quasistatic_simulation.setup_simulation_diagram import (
     setup_quasistatic_sim_diagram)

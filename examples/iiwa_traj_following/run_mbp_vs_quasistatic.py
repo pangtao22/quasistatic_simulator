@@ -1,11 +1,8 @@
-import numpy as np
-
-from pydrake.all import PiecewisePolynomial, Simulator
 import matplotlib.pyplot as plt
 
 from quasistatic_simulation.setup_simulation_diagram import *
-from setup_environments import create_iiwa_plant
-from log_comparison import calc_error_integral
+from examples.setup_environments import create_iiwa_plant
+from examples.log_comparison import calc_error_integral
 from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
 
 # Simulation parameters.

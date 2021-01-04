@@ -10,8 +10,8 @@ from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from contact_aware_control.plan_runner.contact_utils import (
     CalcIiwaQTrajectory)
-from setup_environments import (box3d_8cm_sdf_path, box3d_7cm_sdf_path,
-                                box3d_6cm_sdf_path)
+from examples.setup_environments import (box3d_8cm_sdf_path, box3d_7cm_sdf_path,
+                                         box3d_6cm_sdf_path)
 
 
 def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):

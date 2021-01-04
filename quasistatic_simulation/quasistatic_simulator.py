@@ -1,22 +1,37 @@
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Callable, Tuple
 import copy
 
 import numpy as np
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
-                         OsqpSolver, AbstractValue, DiagramBuilder)
+                         AbstractValue, DiagramBuilder, MultibodyPlant,
+                         SceneGraph)
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.multibody.tree import JacobianWrtVariable, RigidBody
 from pydrake.multibody.plant import (
-    PointPairContactInfo, ContactResults, MultibodyPlant,
+    PointPairContactInfo, ContactResults,
     CalcContactFrictionFromSurfaceProperties)
-from pydrake.geometry import PenetrationAsPointPair, SceneGraph
+from pydrake.geometry import PenetrationAsPointPair
 
-from setup_environments import SetupEnvironmentFunction
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
+
+"""
+Input:
+    DiagramBuilder: diagram builder. 
+    List[str]: A list of paths to unactuated bodies.
+    float: simulation time step in seconds, useful only for simulations using 
+        MBP. For quasistatic simulations, time step is specified in 
+        QuasistaticSimulator instead.
+    np.array: (3,) gravity vector.
+"""
+SetupEnvironmentFunction = Callable[
+    [DiagramBuilder, List[str], float, np.array],
+    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
+          List[ModelInstanceIndex]]
+]
 
 
 class MyContactInfo(object):

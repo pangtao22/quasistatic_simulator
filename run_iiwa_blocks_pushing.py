@@ -3,9 +3,9 @@ from contact_aware_control.plan_runner.setup_iiwa import (
     CreateIiwaControllerPlant)
 
 from quasistatic_simulation.quasistatic_simulator import *
-from setup_environments import (
+from examples.setup_environments import (
     create_iiwa_plant_with_multiple_objects)
-from setup_environments import (
+from examples.setup_environments import (
     box3d_medium_sdf_path, box3d_small_sdf_path)
 
 import matplotlib.pyplot as plt

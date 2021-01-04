@@ -1,7 +1,5 @@
-import time
-
 from quasistatic_simulation.quasistatic_simulator import *
-from setup_environments import create_iiwa_plant_with_schunk
+from examples.setup_environments import create_iiwa_plant_with_schunk
 from examples.iiwa_block_stacking.trajectory_generation import *
 
 
