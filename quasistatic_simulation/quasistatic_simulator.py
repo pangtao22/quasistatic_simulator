@@ -604,5 +604,3 @@ class QuasistaticSimulator:
         print("Solver time std: ", solver_time.std())
         print("Average num. contacts: ", n_c_s.mean())
         print("Average num. constraints: ", n_d_s.mean())
-
-

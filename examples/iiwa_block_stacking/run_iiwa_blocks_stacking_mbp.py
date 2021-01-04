@@ -1,6 +1,6 @@
 import time
 
-from examples.iiwa_block_stacking.trajectory_generation import *
+from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_sim
 
 

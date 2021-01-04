@@ -29,33 +29,12 @@ def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
     return traj
 
 
-def create_initial_state_dictionary(
-        q0_iiwa: np.array,
-        q0_schunk: np.array,
-        q_u0_list: np.array,
-        model_instance_indices_u: List[ModelInstanceIndex],
-        model_instance_indices_a: List[ModelInstanceIndex]
-) -> Dict[ModelInstanceIndex, np.array]:
-    q0_dict = dict()
-
-    # Unactuated objects.
-    for i in range(len(q_u0_list)):
-        q0_dict[model_instance_indices_u[i]] = q_u0_list[i]
-
-    # Actuated objects.
-    idx_iiwa, idx_schunk = model_instance_indices_a
-    q0_dict[idx_iiwa] = q0_iiwa
-    q0_dict[idx_schunk] = q0_schunk
-
-    return q0_dict
-
-
 #%% Create trajectories.
 q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
 
 plant_iiwa, _ = create_iiwa_controller_plant(gravity=[0, 0, 0])
 
-durations = np.array([1.0, 2.0, 2.0, 1.0, 1.0, 3.0]) * 2
+durations = np.array([1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0]) * 2
 n_blocks_to_stack = 3
 l = 0.075
 p_WQ_list = np.array([
@@ -65,9 +44,10 @@ p_WQ_list = np.array([
     [0.69, 0, 0.17 + n_blocks_to_stack * l],
     [0.69, 0, 0.17 + (n_blocks_to_stack - 1) * l + 0.005],
     [0.69, 0, 0.17 + (n_blocks_to_stack - 1) * l + 0.005],
-    [0.60, 0, 0.25 + n_blocks_to_stack * l],
+    [0.69, 0, 0.25 + n_blocks_to_stack * l],
+    [0.555, 0, 0.25 + n_blocks_to_stack * l],
 ])
-schunk_setpoints = [0.05, 0.02, 0.02, 0.02, 0.02, 0.05, 0.05]
+schunk_setpoints = [0.05, 0.02, 0.02, 0.02, 0.02, 0.05, 0.05, 0.05]
 # schunk_setpoints = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
 
 q_iiwa_traj_list = []
@@ -75,8 +55,8 @@ q_schunk_traj_list = []
 x_schunk_traj_list = []
 
 num_knot_points = 10
-q_iiwa_all = np.zeros((len(durations) * num_knot_points, 7))
-q_schunk_all = np.zeros((len(durations) * num_knot_points, 2))
+# q_iiwa_all = np.zeros((len(durations) * num_knot_points, 7))
+# q_schunk_all = np.zeros((len(durations) * num_knot_points, 2))
 
 # EE orientation
 R_WL7_0 = RollPitchYaw(0, np.pi, 0).ToRotationMatrix()
@@ -85,7 +65,7 @@ R_WL7_1 = RollPitchYaw(0, np.pi, np.pi/2).ToRotationMatrix()
 R_WL7_traj = PiecewiseQuaternionSlerp(
     [0, durations[2]], [R_WL7_0.ToQuaternion(), R_WL7_1.ToQuaternion()])
 
-R_WL7_list = [R_WL7_0, R_WL7_0, R_WL7_traj, R_WL7_1, R_WL7_1, R_WL7_1]
+R_WL7_list = [R_WL7_0, R_WL7_0, R_WL7_traj, R_WL7_1, R_WL7_1, R_WL7_1, R_WL7_1]
 
 for i, duration in enumerate(durations):
     q_iiwa_traj, q_knots = CalcIiwaQTrajectory(
@@ -147,3 +127,15 @@ q_u0_list[6] = [1, 0, 0, 0, 0.50, -0.2, 0.19]
 q_u0_list[7] = [1, 0, 0, 0, 0.45, 0.2, 0.04]
 q_u0_list[8] = [1, 0, 0, 0, 0.45, 0.2, 0.115]
 q_u0_list[9] = [1, 0, 0, 0, 0.48, 0.3, 0.04]
+
+gravity = np.array([0, 0, -10.])
+
+iiwa_name = "iiwa7"
+schunk_name = "Schunk_Gripper"
+
+q0_dict_str = {"box%i" % i: q_u0_i for i, q_u0_i in enumerate(q_u0_list)}
+t_start = q_iiwa_traj.start_time()
+q0_dict_str[iiwa_name] = q_iiwa_traj.value(t_start).ravel()
+q0_dict_str[schunk_name] = q_schunk_traj.value(t_start).ravel()
+
+q_a_traj_dict_str = {iiwa_name: q_iiwa_traj, schunk_name: q_schunk_traj}
