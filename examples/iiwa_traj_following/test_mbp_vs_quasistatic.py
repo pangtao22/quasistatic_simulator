@@ -10,13 +10,13 @@ class TestIiwaTrajectoryFollowing(unittest.TestCase):
          to a non-zero value, even with long trajectory duration (100s) and
          small MBP time step (1e-5).
 
-        On the otherhand, integral error of quasistatic-simulated
+        On the other hand, integral error of quasistatic-simulated
          trajectories approaches 0 as h_quasistatic decreases.
         """
         q_iiwa_log_mbp, t_mbp, q_iiwa_log_quasistatic, t_quasistatic = \
             run_comparison(is_visualizing=False, real_time_rate=0.0)
 
-        # convert q_gt_knots to a piecewise polynomial.
+        # Set q_iiwa_traj to start at t=0.
         shift_q_traj_to_start_at_minus_h(q_iiwa_traj, 0)
 
         # MBP vs commanded.

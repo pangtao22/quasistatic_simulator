@@ -5,4 +5,5 @@ __pycache__
 *.pdf
 *.gz
 *.npy
-
+*.ipynb
+.coverage

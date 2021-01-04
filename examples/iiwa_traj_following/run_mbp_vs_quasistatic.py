@@ -84,8 +84,7 @@ if __name__ == "__main__":
 
     plt.show()
 
-    #%%
-    # convert q_gt_knots to a piecewise polynomial.
+    # Set q_iiwa_traj to start at t=0.
     shift_q_traj_to_start_at_minus_h(q_iiwa_traj, 0)
     q_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp, q_iiwa_log_mbp.T)
 
