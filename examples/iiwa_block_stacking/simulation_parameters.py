@@ -100,7 +100,7 @@ x_schunk_traj = concatenate_traj_list(x_schunk_traj_list)
 
 # other constants for simulation.
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
-Kp_schunk = np.array([500., 500])
+Kp_schunk = np.array([1000., 1000])
 Kq_a = [Kp_iiwa, Kp_schunk]
 
 object_sdf_paths = [box3d_6cm_sdf_path,

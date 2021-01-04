@@ -13,7 +13,7 @@ def shift_q_traj_to_start_at_minus_h(q_traj: PiecewisePolynomial, h: float):
     q_traj.shiftRight(-h)
 
 
-def create_q0_dict_keyed_by_model_instance_index(
+def create_dict_keyed_by_model_instance_index(
         plant: MultibodyPlant,
         q_dict_str: Dict[str, Union[np.array, PiecewisePolynomial]]
 ) -> Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]:
@@ -24,7 +24,7 @@ def create_q0_dict_keyed_by_model_instance_index(
     return q_dict
 
 
-def create_q0_dict_keyed_by_string(
+def create_dict_keyed_by_string(
         plant: MultibodyPlant,
         q_dict: Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]
 ) -> Dict[str, Union[np.array, PiecewisePolynomial]]:
@@ -66,9 +66,9 @@ def run_quasistatic_sim(
     builder.AddSystem(q_sys)
 
     # update dictionaries with ModelInstanceIndex keys.
-    q_a_traj_dict = create_q0_dict_keyed_by_model_instance_index(
+    q_a_traj_dict = create_dict_keyed_by_model_instance_index(
         q_sys.plant, q_dict_str=q_a_traj_dict_str)
-    q0_dict = create_q0_dict_keyed_by_model_instance_index(
+    q0_dict = create_dict_keyed_by_model_instance_index(
         q_sys.plant, q_dict_str=q0_dict_str)
 
     # trajectory sources.
@@ -107,7 +107,7 @@ def run_quasistatic_sim(
     sim_quasistatic.set_target_realtime_rate(real_time_rate)
     sim_quasistatic.AdvanceTo(t_final)
 
-    return create_q0_dict_keyed_by_string(q_sys.plant, loggers_dict), q_sys
+    return create_dict_keyed_by_string(q_sys.plant, loggers_dict), q_sys
 
 
 def run_mbp_sim(
@@ -164,7 +164,7 @@ def run_mbp_sim(
 
     diagram = builder.Build()
 
-    q0_dict = create_q0_dict_keyed_by_model_instance_index(
+    q0_dict = create_dict_keyed_by_model_instance_index(
         plant, q_dict_str=q0_dict_str)
 
     # Construct simulator and run simulation.
@@ -188,4 +188,4 @@ def run_mbp_sim(
     sim.set_target_realtime_rate(real_time_rate)
     sim.AdvanceTo(q_a_traj.end_time())
 
-    return create_q0_dict_keyed_by_string(plant, loggers_dict)
+    return create_dict_keyed_by_string(plant, loggers_dict)

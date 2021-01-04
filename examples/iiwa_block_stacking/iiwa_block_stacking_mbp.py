@@ -1,12 +1,13 @@
-from pydrake.systems.primitives import TrajectorySource, LogOutput
-from pydrake.systems.analysis import Simulator
-from pydrake.systems.controllers import PidController
-from pydrake.all import PiecewisePolynomial
+from pydrake.all import (PiecewisePolynomial, Simulator, PidController,
+                         TrajectorySource, LogOutput)
 
 from quasistatic_simulation.quasistatic_simulator import *
 
-from examples.setup_environments import (
-    create_iiwa_plant_with_schunk)
+from examples.setup_environments import create_iiwa_plant_with_schunk
+from examples.setup_simulation_diagram import (
+    shift_q_traj_to_start_at_minus_h,
+    create_dict_keyed_by_model_instance_index,
+    create_dict_keyed_by_string)
 
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
@@ -14,25 +15,28 @@ from iiwa_controller.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
 
-def run_sim(q_traj_iiwa: PiecewisePolynomial,
-            x_traj_schunk: PiecewisePolynomial,
-            Kp_iiwa: np.array,
-            Kp_schunk: np.array,
-            object_sdf_paths: List[str],
-            q_u0_list: np.array,
-            time_step=5e-4):
+def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
+                x_traj_schunk: PiecewisePolynomial,
+                Kp_iiwa: np.array,
+                Kp_schunk: np.array,
+                object_sdf_paths: List[str],
+                q0_dict_str: Dict[str, np.array],
+                gravity: np.array,
+                time_step: float,
+                is_visualizing: bool):
 
     #%%  Build diagram.
     builder = DiagramBuilder()
     plant, scene_graph, robot_models, object_models = \
         create_iiwa_plant_with_schunk(
-            builder, object_sdf_paths, time_step)
+            builder, object_sdf_paths, time_step, gravity)
 
     iiwa_model, schunk_model = robot_models
 
     # IIWA controller
     gravity = [0, 0, -10.]
-    plant_iiwa, _ = create_iiwa_controller_plant(gravity)
+    plant_iiwa, _ = create_iiwa_controller_plant(
+        gravity, add_schunk_inertia=True)
     controller_iiwa = RobotInternalController(
         plant_robot=plant_iiwa, joint_stiffness=Kp_iiwa,
         controller_mode="impedance")
@@ -43,6 +47,7 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
                     controller_iiwa.robot_state_input_port)
 
     # IIWA Trajectory source
+    shift_q_traj_to_start_at_minus_h(q_traj_iiwa, time_step)
     traj_source_iiwa = TrajectorySource(q_traj_iiwa)
     builder.AddSystem(traj_source_iiwa)
     builder.Connect(
@@ -62,6 +67,7 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
         controller_schunk.get_input_port_estimated_state())
 
     # Schunk Trajectory source
+    shift_q_traj_to_start_at_minus_h(x_traj_schunk, time_step)
     traj_source_schunk = TrajectorySource(x_traj_schunk)
     builder.AddSystem(traj_source_schunk)
     builder.Connect(
@@ -69,8 +75,8 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
         controller_schunk.get_input_port_desired_state())
 
     # meshcat visualizer
-    viz = ConnectMeshcatVisualizer(builder,
-        scene_graph, frames_to_draw={"three_link_arm": {"link_ee"}})
+    if is_visualizing:
+        viz = ConnectMeshcatVisualizer(builder, scene_graph)
 
     # meshcat contact visualizer
     # contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
@@ -82,14 +88,17 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
     #     plant.GetOutputPort("contact_results"),
     #     contact_viz.GetInputPort("contact_results"))
 
+    q0_dict = create_dict_keyed_by_model_instance_index(
+        plant, q0_dict_str)
+
     # Logs
-    iiwa_log = LogOutput(plant.get_state_output_port(iiwa_model), builder)
-    iiwa_log.set_publish_period(0.01)
-    object0_log = LogOutput(plant.get_state_output_port(object_models[0]),
-                            builder)
-    object0_log.set_publish_period(0.01)
-    schunk_log = LogOutput(plant.get_state_output_port(schunk_model), builder)
-    schunk_log.set_publish_period(0.01)
+    loggers_dict = dict()
+    for model in q0_dict.keys():
+        logger = LogOutput(
+            plant.get_state_output_port(model), builder)
+        loggers_dict[model] = logger
+        logger.set_publish_period(0.01)
+
     diagram = builder.Build()
 
     #%% Run simulation.
@@ -100,15 +109,11 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
 
     controller_iiwa.tau_feedforward_input_port.FixValue(
         context_controller, np.zeros(7))
-    for qu_0, object_model in zip(q_u0_list, object_models):
-        plant.SetPositions(context_plant, object_model, qu_0)
 
-    q_iiwa_0 = q_traj_iiwa.value(0).squeeze()
-    q_schunk_0 = x_traj_schunk.value(0).squeeze()[:2]
+    for model, q0 in q0_dict.items():
+        plant.SetPositions(context_plant, model, q0)
+
     t_final = q_traj_iiwa.end_time()
-
-    plant.SetPositions(context_plant, iiwa_model, q_iiwa_0)
-    plant.SetPositions(context_plant, schunk_model, q_schunk_0)
 
     #%%
     sim.Initialize()
@@ -118,5 +123,5 @@ def run_sim(q_traj_iiwa: PiecewisePolynomial,
     except RuntimeError as err:
         print(err)
     finally:
-        return iiwa_log, schunk_log, object0_log, #sim, plant, object_models
+        return create_dict_keyed_by_string(plant, loggers_dict)
 

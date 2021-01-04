@@ -3,8 +3,8 @@ from examples.setup_environments import create_iiwa_plant_with_schunk
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulation_diagram import (
     shift_q_traj_to_start_at_minus_h,
-    create_q0_dict_keyed_by_model_instance_index,
-    create_q0_dict_keyed_by_string)
+    create_dict_keyed_by_model_instance_index,
+    create_dict_keyed_by_string)
 
 
 def extract_log_for_object(
@@ -27,7 +27,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         joint_stiffness=Kq_a,
         internal_vis=is_visualizing)
 
-    q0_dict = create_q0_dict_keyed_by_model_instance_index(
+    q0_dict = create_dict_keyed_by_model_instance_index(
         q_sim.plant, q0_dict_str)
 
     #%% show initial configuration before simulation starts.
@@ -64,16 +64,16 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         model: extract_log_for_object(q_log, model)
         for model in q_sim.models_all}
 
-    return (create_q0_dict_keyed_by_string(q_sim.plant, q_logs_dict),
+    return (create_dict_keyed_by_string(q_sim.plant, q_logs_dict),
             np.array(t_log))
 
 
 if __name__ == "__main__":
     # Show that two consecutive simulations have non-deterministic differences.
-    q_quasistatic_logs_dict_str1, t_quasistatic = run_quasistatic_sim_manually(
+    q_quasistatic_logs_dict_str1, t_qs = run_quasistatic_sim_manually(
         h=0.2, is_visualizing=False)
 
-    q_quasistatic_logs_dict_str2, t_quasistatic = run_quasistatic_sim_manually(
+    q_quasistatic_logs_dict_str2, _ = run_quasistatic_sim_manually(
         h=0.2, is_visualizing=False)
 
     for model_name in q0_dict_str.keys():

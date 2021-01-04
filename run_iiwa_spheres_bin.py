@@ -1,6 +1,6 @@
 from pydrake.trajectories import PiecewisePolynomial
 
-from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_sim
+from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_mbp_sim
 from quasistatic_simulation.quasistatic_simulator import *
 
 #%% object positions
@@ -29,12 +29,12 @@ x_schunk_traj = PiecewisePolynomial.FirstOrderHold(
 q_schunk_traj = x_schunk_traj.Block(0, 0, 2, x_schunk_traj.cols())
 
 iiwa_log, object0_log, sim, plant, object_models = \
-    run_sim(q_iiwa_traj,
-            x_schunk_traj,
-            Kp_iiwa=Kq_iiwa,
-            Kp_schunk=Kq_schunk,
-            object_sdf_paths=object_sdf_paths,
-            q_u0_list=q_u00_list)
+    run_mbp_sim(q_iiwa_traj,
+                x_schunk_traj,
+                Kp_iiwa=Kq_iiwa,
+                Kp_schunk=Kq_schunk,
+                object_sdf_paths=object_sdf_paths,
+                q_u0_list=q_u00_list)
 
 
 #%% Extract stationary initial condition

@@ -1,7 +1,7 @@
 import unittest
 
 from examples.setup_simulation_diagram import run_quasistatic_sim
-from examples.iiwa_block_stacking.run_iiwa_blocks_stacking import *
+from examples.iiwa_block_stacking.run_manual_quasistatic import *
 
 
 class TestQuasistaticSystem(unittest.TestCase):

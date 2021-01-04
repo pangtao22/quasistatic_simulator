@@ -68,11 +68,9 @@ if __name__ == "__main__":
 
     # Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
-
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_iiwa_log_mbp[:, i])
         ax.plot(t_quasistatic, q_iiwa_log_quasistatic[:, i])
-
     plt.show()
 
     # Set q_iiwa_traj to start at t=0.

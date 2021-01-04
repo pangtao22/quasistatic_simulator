@@ -28,9 +28,7 @@ def calc_error_integral(q_knots, t, q_gt_traj):
 
 
 def get_angle_from_quaternion(q: np.array):
-    q /= np.linalg.norm(q)
-    a = AngleAxis(Quaternion(q))
-    return a.angle()
+    return AngleAxis(Quaternion(q / np.linalg.norm(q))).angle()
 
 
 def convert_quaternion_array_to_eigen_quaternion_traj(q_array: np.array,
@@ -65,17 +63,38 @@ def calc_quaternion_error_integral(
     return calc_error_integral(angle_diff_list, t, zero_traj)
 
 
-def calc_pose_error_integral(pose_list_1, pose_list_2, t):
+def calc_pose_error_integral(
+        pose_list_1: np.array, t1: np.array,
+        pose_list_2: np.array, t2: np.array):
     """
-    :param pose_list is a 2D numpy array of shape (n, 7).
+    Converts the rotation and translation parts of pose_list_2 to a
+        PiecewiseQuaternionSlerp nad a PiecewisePolynomial, respectively,
+        and computes the integral error of pose_list_1 against the polynomials.
+    :param pose_list is a 2D numpy array of shape (n1, 7).
         pose_list[i] is a (7,) array representing the pose of a rigid body at
         time step i.  pose_list[i, :4] is a quaternion and
         pose_list[i, 4:] is a point in R^3.
+    :param t1: (n1,) array, time of the knots of poses in pose_list_1.
     :return:
     """
-    q_diff_list = calc_quaternion_difference(
-        pose_list_1[:, :4], pose_list_2[:, :4])
+    assert pose_list_1.shape[1] == 7
+    assert pose_list_2.shape[1] == 7
 
-    angles_diff = np.array([AngleAxis(q).angle() for q in q_diff_list])
-    xyz_diff = pose_list_1[:, 4:] - pose_list_2[:, 4:]
-    e_angles, e_angles_vec, t_e = calc_error_integral()
+    # Orientation.
+    quaternion_traj2 = convert_quaternion_array_to_eigen_quaternion_traj(
+        pose_list_2[:, :4], t2)
+
+    e_angle, e_vec_angle, t_angle = calc_quaternion_error_integral(
+        q_list=pose_list_1[:, :4],
+        t=t1,
+        q_traj=quaternion_traj2)
+
+    # Position.
+    xyz_traj2 = PiecewisePolynomial.FirstOrderHold(
+        t2, pose_list_2[:, 4:].T)
+    e_xyz, e_vec_xyz, t_xyz = calc_error_integral(
+        q_knots=pose_list_1[:, 4:],
+        t=t1,
+        q_gt_traj=xyz_traj2)
+
+    return e_angle, e_vec_angle, t_angle, e_xyz, e_vec_xyz, t_xyz

@@ -86,22 +86,10 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
         t=t_quasistatic,
         q_gt_traj=qa_mbp_traj)
 
-    # Object orientation.
-    quaternion_box_mbp_traj = convert_quaternion_array_to_eigen_quaternion_traj(
-        q_box_log_mbp[:, :4], t_mbp)
-
-    e_angle_box, e_vec_angle_box, t_angle_box = calc_quaternion_error_integral(
-        q_list=q_box_log_quasistatic[:, :4],
-        t=t_quasistatic,
-        q_traj=quaternion_box_mbp_traj)
-
-    # Object position.
-    xyz_box_mbp_traj = PiecewisePolynomial.FirstOrderHold(
-        t_mbp, q_box_log_mbp[:, 4:].T)
-    e_xyz_box, e_vec_xyz_box, t_xyz_box = calc_error_integral(
-        q_knots=q_box_log_quasistatic[:, 4:],
-        t=t_quasistatic,
-        q_gt_traj=xyz_box_mbp_traj)
+    # Object pose.
+    (e_angle_box, e_vec_angle_box, t_angle_box,  e_xyz_box, e_vec_xyz_box,
+     t_xyz_box) = calc_pose_error_integral(
+        q_box_log_quasistatic, t_quasistatic, q_box_log_mbp, t_mbp)
 
     return (e_robot, e_vec_robot, t_e_robot,
             e_angle_box, e_vec_angle_box, t_angle_box,
