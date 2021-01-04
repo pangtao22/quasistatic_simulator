@@ -13,14 +13,47 @@ def shift_q_traj_to_start_at_minus_h(q_traj: PiecewisePolynomial, h: float):
     q_traj.shiftRight(-h)
 
 
-def setup_quasistatic_sim_diagram(
-        q_a_traj_list: List[PiecewisePolynomial],
+def create_q0_dict_keyed_by_model_instance_index(
+        plant: MultibodyPlant,
+        q_dict_str: Dict[str, Union[np.array, PiecewisePolynomial]]
+) -> Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]:
+    q_dict = dict()
+    for model_name, value in q_dict_str.items():
+        model = plant.GetModelInstanceByName(model_name)
+        q_dict[model] = value
+    return q_dict
+
+
+def create_q0_dict_keyed_by_string(
+        plant: MultibodyPlant,
+        q_dict: Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]
+) -> Dict[str, Union[np.array, PiecewisePolynomial]]:
+    q_dict_str = dict()
+    for model, value in q_dict.items():
+        model_name = plant.GetModelInstanceName(model)
+        q_dict_str[model_name] = value
+    return q_dict_str
+
+
+def find_t_final_from_commanded_trajectories(
+        q_a_traj_dict: Dict[any, PiecewisePolynomial]):
+    t_finals = [q_a_traj.end_time() for q_a_traj in q_a_traj_dict.values()]
+
+    # Make sure that all commanded trajectories have the same length.
+    assert all([t_i == t_finals[0] for t_i in t_finals])
+    return t_finals[0]
+
+
+def run_quasistatic_sim(
+        q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
+        q0_dict_str: Dict[str, PiecewisePolynomial],
         Kp_list: List[np.array],
         object_sdf_paths: List[str],
         setup_environment: SetupEnvironmentFunction,
         h: float,
         gravity: np.array,
-        is_visualizing: bool):
+        is_visualizing: bool,
+        real_time_rate: float):
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
@@ -32,11 +65,17 @@ def setup_quasistatic_sim_diagram(
         time_step_seconds=h)
     builder.AddSystem(q_sys)
 
+    # update dictionaries with ModelInstanceIndex keys.
+    q_a_traj_dict = create_q0_dict_keyed_by_model_instance_index(
+        q_sys.plant, q_dict_str=q_a_traj_dict_str)
+    q0_dict = create_q0_dict_keyed_by_model_instance_index(
+        q_sys.plant, q_dict_str=q0_dict_str)
 
     # trajectory sources.
-    assert len(q_sys.q_sim.models_actuated) == len(q_a_traj_list)
-    for model, q_traj in zip(q_sys.q_sim.models_actuated, q_a_traj_list):
+    assert len(q_sys.q_sim.models_actuated) == len(q_a_traj_dict)
+    for model in q_sys.q_sim.models_actuated:
         # Make sure that q_traj start at 0.
+        q_traj = q_a_traj_dict[model]
         shift_q_traj_to_start_at_minus_h(q_traj, h)
         traj_source = TrajectorySource(q_traj)
         builder.AddSystem(traj_source)
@@ -60,28 +99,31 @@ def setup_quasistatic_sim_diagram(
 
     diagram = builder.Build()
 
-    return diagram, loggers_dict, q_sys
+    # Construct simulator and run simulation.
+    t_final = find_t_final_from_commanded_trajectories(q_a_traj_dict)
+    sim_quasistatic = Simulator(diagram)
+    q_sys.set_initial_state(q0_dict)
+    sim_quasistatic.Initialize()
+    sim_quasistatic.set_target_realtime_rate(real_time_rate)
+    sim_quasistatic.AdvanceTo(t_final)
+
+    return create_q0_dict_keyed_by_string(q_sys.plant, loggers_dict), q_sys
 
 
-def setup_mbp_sim_diagram(
+def run_mbp_sim(
         q_a_traj: PiecewisePolynomial,
         Kp_a: np.array,
+        q0_dict_str: Dict[str, PiecewisePolynomial],
         object_sdf_paths: List[str],
         setup_environment: SetupEnvironmentFunction,
         create_controller_plant: CreateControllerPlantFunction,
         h: float,
         gravity: np.array,
-        is_visualizing: bool):
+        is_visualizing: bool,
+        real_time_rate: float):
     """
     Only supports one actuated model instance, which must have an accompanying
         CreateControllerPlantFunction function.
-    :param q_a_traj_list:
-    :param Kp_a:
-    :param object_sdf_paths:
-    :param setup_environment:
-    :param h:
-    :param is_visualizing:
-    :return:
     """
 
     builder = DiagramBuilder()
@@ -120,16 +162,12 @@ def setup_mbp_sim_diagram(
         logger.set_publish_period(0.01)
         loggers_dict[model] = logger
 
-    # initialize simulation.
     diagram = builder.Build()
 
-    return (diagram, plant, controller_robot, loggers_dict, robot_model,
-            object_models)
+    q0_dict = create_q0_dict_keyed_by_model_instance_index(
+        plant, q_dict_str=q0_dict_str)
 
-
-def initialize_mbp_diagram(diagram, plant, controller_robot,
-                           q0_dict: Dict[ModelInstanceIndex, np.array]):
-
+    # Construct simulator and run simulation.
     sim = Simulator(diagram)
     context = sim.get_context()
     context_controller = diagram.GetSubsystemContext(
@@ -143,10 +181,11 @@ def initialize_mbp_diagram(diagram, plant, controller_robot,
     # robot initial configuration.
     # Makes sure that q0_dict has enough initial conditions for every model
     # instance in plant.
-    # assert plant.num_model_instances() - 2 == len(q0_dict)
     for model, q0 in q0_dict.items():
         plant.SetPositions(context_plant, model, q0)
 
-    return sim
+    sim.Initialize()
+    sim.set_target_realtime_rate(real_time_rate)
+    sim.AdvanceTo(q_a_traj.end_time())
 
-
+    return create_q0_dict_keyed_by_string(plant, loggers_dict)

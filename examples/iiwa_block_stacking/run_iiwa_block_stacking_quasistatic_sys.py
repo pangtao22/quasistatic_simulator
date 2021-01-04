@@ -6,15 +6,15 @@ from contact_aware_control.plan_runner.plan_utils import (
 
 from examples.setup_environments import create_iiwa_plant_with_schunk
 from examples.iiwa_block_stacking.trajectory_generation import *
-from quasistatic_simulation.setup_simulation_diagram import (
-    setup_quasistatic_sim_diagram)
+from examples.setup_simulation_diagram import (
+    run_quasistatic_sim)
 
 #%%
 # Simulation time step.
 h = 0.2
 gravity = np.array([0, 0, -10.])
-diagram, loggers_dict, q_sys = setup_quasistatic_sim_diagram(
-    q_a_traj_list=[q_iiwa_traj, q_schunk_traj],
+diagram, loggers_dict, q_sys = run_quasistatic_sim(
+    q_a_traj_dict_str=[q_iiwa_traj, q_schunk_traj],
     Kp_list=[Kp_iiwa, Kp_schunk],
     setup_environment=create_iiwa_plant_with_schunk,
     object_sdf_paths=object_sdf_paths,

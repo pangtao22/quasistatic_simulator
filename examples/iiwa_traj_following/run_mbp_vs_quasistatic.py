@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from quasistatic_simulation.setup_simulation_diagram import *
+from examples.setup_simulation_diagram import *
 from examples.setup_environments import create_iiwa_plant
 from examples.log_comparison import calc_error_integral
 from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
@@ -9,6 +9,7 @@ from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
 nq_a = 7
 gravity = np.array([0, 0, -10.])
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
+robot_name = "iiwa7"
 
 qa_knots = np.zeros((2, nq_a))
 qa_knots[0] = [0, 0, 0, -1.70, 0, 1.0, 0]
@@ -19,51 +20,44 @@ q_iiwa_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
     sample_dot_at_start=np.zeros(nq_a),
     sample_dot_at_end=np.zeros(nq_a))
 
+q0_dict_str = {robot_name: qa_knots[0]}
+
 h_quasistatic = 0.2
 h_mbp = 1e-4
 
 
 def run_comparison(is_visualizing=False, real_time_rate=0.):
-    # Quasistatic sim.
-    diagram, loggers_dict_quasistatic, q_sys = setup_quasistatic_sim_diagram(
-        q_a_traj_list=[q_iiwa_traj],
+    #%% Quasistatic
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_a_traj_dict_str={robot_name: q_iiwa_traj},
+        q0_dict_str=q0_dict_str,
         Kp_list=[Kp_iiwa],
         setup_environment=create_iiwa_plant,
         object_sdf_paths=[],
         h=h_quasistatic,
         gravity=gravity,
-        is_visualizing=is_visualizing)
+        is_visualizing=is_visualizing,
+        real_time_rate=real_time_rate)
 
-    q0_dict = {q_sys.q_sim.models_actuated[0]: qa_knots[0]}
-    sim_quasistatic = Simulator(diagram)
-    q_sys.set_initial_state(q0_dict)
-    sim_quasistatic.Initialize()
-    sim_quasistatic.set_target_realtime_rate(real_time_rate)
-    sim_quasistatic.AdvanceTo(q_iiwa_traj.end_time())
-
-    # MBP sim.
-    (diagram, plant, controller_iiwa, loggers_dict_mbp, robot_model,
-        object_models) = setup_mbp_sim_diagram(
+    #%% MBP
+    loggers_dict_mbp_str = run_mbp_sim(
         q_a_traj=q_iiwa_traj,
+        q0_dict_str=q0_dict_str,
         Kp_a=Kp_iiwa,
         object_sdf_paths=[],
         setup_environment=create_iiwa_plant,
         create_controller_plant=create_iiwa_controller_plant,
         h=h_mbp,
         gravity=gravity,
-        is_visualizing=is_visualizing)
-
-    sim_mbp = initialize_mbp_diagram(diagram, plant, controller_iiwa, q0_dict)
-    sim_mbp.Initialize()
-    sim_mbp.set_target_realtime_rate(real_time_rate)
-    sim_mbp.AdvanceTo(q_iiwa_traj.end_time())
+        is_visualizing=is_visualizing,
+        real_time_rate=real_time_rate)
 
     # Extracting iiwa configuration logs.
-    q_iiwa_log_mbp = loggers_dict_mbp[robot_model].data()[:nq_a].T
-    t_mbp = loggers_dict_mbp[robot_model].sample_times()
+    q_iiwa_log_mbp = loggers_dict_mbp_str[robot_name].data()[:nq_a].T
+    t_mbp = loggers_dict_mbp_str[robot_name].sample_times()
 
-    q_iiwa_log_quasistatic = loggers_dict_quasistatic[robot_model].data().T
-    t_quasistatic = loggers_dict_quasistatic[robot_model].sample_times()
+    q_iiwa_log_quasistatic = loggers_dict_quasistatic_str[robot_name].data().T
+    t_quasistatic = loggers_dict_quasistatic_str[robot_name].sample_times()
 
     return q_iiwa_log_mbp, t_mbp, q_iiwa_log_quasistatic, t_quasistatic
 

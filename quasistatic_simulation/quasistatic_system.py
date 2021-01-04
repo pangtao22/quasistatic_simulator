@@ -4,6 +4,8 @@ from pydrake.all import (LeafSystem, BasicVector, PortDataType, PublishEvent,
 from .quasistatic_simulator import *
 
 
+#TODO: replace joint_stiffness with a dictionary keyed by model instance names.
+
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
                  setup_environment: SetupEnvironmentFunction,

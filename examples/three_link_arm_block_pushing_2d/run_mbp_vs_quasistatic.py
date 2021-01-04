@@ -1,4 +1,4 @@
-from quasistatic_simulation.setup_simulation_diagram import *
+from examples.setup_simulation_diagram import *
 from examples.log_comparison import *
 from examples.setup_environments import (
     box2d_big_sdf_path,
@@ -26,8 +26,8 @@ q_u0 = np.array([1.7, 0.5, 0])
 
 #%% Quasistatic
 h_quasistatic = 0.01
-diagram, loggers_dict_quasistatic, q_sys = setup_quasistatic_sim_diagram(
-    q_a_traj_list=[q_robot_traj],
+diagram, loggers_dict_quasistatic, q_sys = run_quasistatic_sim(
+    q_a_traj_dict_str=[q_robot_traj],
     Kp_list=[Kp_robot],
     setup_environment=create_3link_arm_plant_with_multiple_objects,
     object_sdf_paths=[box2d_big_sdf_path],
@@ -48,7 +48,7 @@ sim_quasistatic.AdvanceTo(q_robot_traj.end_time())
 #%% MBP
 h_mbp = 1e-4
 (diagram, plant, controller_iiwa, loggers_dict_mbp, robot_model,
-    object_models) = setup_mbp_sim_diagram(
+    object_models) = run_mbp_sim(
     q_a_traj=q_robot_traj,
     Kp_a=Kp_robot,
     object_sdf_paths=[box2d_big_sdf_path],

@@ -16,7 +16,7 @@ class Test3linkArmBoxPushing(unittest.TestCase):
             looks reasonable.
         """
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
-         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic) = \
+         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
             run_comparison(is_visualizing=False, real_time_rate=0.0)
 
         # Set q_iiwa_traj to start at t=0.
