@@ -5,10 +5,11 @@ from .run_mbp_vs_quasistatic import *
 class TestIiwaTrajectoryFollowing(unittest.TestCase):
     def test_traj_following_accuracy(self):
         """
-        For reasons I don't yet understand, the integral error between
-         MBP-simulated trajectories and the commanded trajectories converge
-         to a non-zero value, even with long trajectory duration (100s) and
-         small MBP time step (1e-5).
+        The integral error between MBP-simulated trajectories and the
+         commanded trajectories converge to a non-zero value, even with long
+         trajectory duration (100s) and small MBP time step (1e-5). Possible
+         explanation: a second order system tracking a ramp input has non-zero
+         steady-state error.
 
         On the other hand, integral error of quasistatic-simulated
          trajectories approaches 0 as h_quasistatic decreases.
