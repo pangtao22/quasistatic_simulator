@@ -1,10 +1,10 @@
-from pydrake.all import (LeafSystem, BasicVector, PortDataType, PublishEvent,
-    TriggerType)
+from pydrake.all import LeafSystem, BasicVector, PortDataType
 
 from .quasistatic_simulator import *
 
 
-#TODO: replace joint_stiffness with a dictionary keyed by model instance names.
+#TODO: replace Lists in the constructor arguments with dictionaries keyed by
+# model instance names.
 
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
@@ -65,6 +65,11 @@ class QuasistaticSystem(LeafSystem):
             self.commanded_positions_input_ports[model] = \
                 self.DeclareInputPort(port_name, PortDataType.kVectorValued, nv)
 
+        # input port for externally applied spatial forces.
+        self.spatial_force_input_port = self.DeclareAbstractInputPort(
+            "applied_spatial_force",
+            AbstractValue.Make([ExternallyAppliedSpatialForce()]))
+
     def get_state_output_port(self, model: ModelInstanceIndex):
         return self.state_output_ports[model]
 
@@ -87,12 +92,23 @@ class QuasistaticSystem(LeafSystem):
     def DoCalcDiscreteVariableUpdates(self, context, events, discrete_state):
         LeafSystem.DoCalcDiscreteVariableUpdates(
             self, context, events, discrete_state)
-
+        # Commanded positions.
         q_a_cmd_dict = {
             model: self.commanded_positions_input_ports[model].Eval(context)
             for model in self.q_sim.models_actuated}
 
-        tau_ext_dict = self.q_sim.calc_gravity_for_unactuated_models()
+        # Gravity for unactuated models.
+        tau_ext_u_dict = self.q_sim.calc_gravity_for_unactuated_models()
+
+        # Non-contact external spatial forces for actuated models.
+        easf_list = []
+        if self.spatial_force_input_port.HasValue(context):
+            easf_list = self.spatial_force_input_port.Eval(context)
+
+        tau_ext_a_dict = \
+            self.q_sim.get_generalized_force_from_external_spatial_force(
+                easf_list)
+        tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
 
         self.q_sim.step_anitescu(q_a_cmd_dict, tau_ext_dict, self.h,
                                  contact_detection_tolerance=0.005)

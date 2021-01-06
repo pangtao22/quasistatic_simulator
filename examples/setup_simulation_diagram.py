@@ -1,10 +1,38 @@
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
-                         LogOutput)
+                         LogOutput, SpatialForce, BodyIndex, InputPort)
 
 from quasistatic_simulation.quasistatic_system import *
 from examples.setup_environments import CreateControllerPlantFunction
 from iiwa_controller.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
+
+from contact_aware_control.plan_runner.plan_utils import (
+    RenderSystemWithGraphviz)
+
+
+class LoadApplier(LeafSystem):
+    def __init__(self, F_WB_traj: PiecewisePolynomial, body_idx: BodyIndex):
+        LeafSystem.__init__(self)
+        self.set_name("load_applier")
+
+        self.spatial_force_output_port = \
+            self.DeclareAbstractOutputPort(
+                "external_spatial_force",
+                lambda: AbstractValue.Make([ExternallyAppliedSpatialForce()]),
+                self.CalcOutput)
+
+        self.F_WB_traj = F_WB_traj
+        self.body_idx = body_idx
+
+    def CalcOutput(self, context, spatial_forces_vector):
+        t = context.get_time()
+
+        easf = ExternallyAppliedSpatialForce()
+        F = self.F_WB_traj.value(t).squeeze()
+        easf.F_Bq_W = SpatialForce([0, 0, 0], F)
+        easf.body_index = self.body_idx
+
+        spatial_forces_vector.set_value([easf])
 
 
 def shift_q_traj_to_start_at_minus_h(q_traj: PiecewisePolynomial, h: float):
@@ -44,6 +72,18 @@ def find_t_final_from_commanded_trajectories(
     return t_finals[0]
 
 
+def add_externally_applied_generalized_force(
+        builder: DiagramBuilder,
+        spatial_force_input_port: InputPort,
+        F_WB_traj: PiecewisePolynomial,
+        body_idx: BodyIndex):
+
+    load_applier = LoadApplier(F_WB_traj, body_idx)
+    builder.AddSystem(load_applier)
+    builder.Connect(
+        load_applier.spatial_force_output_port, spatial_force_input_port)
+
+
 def run_quasistatic_sim(
         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
         q0_dict_str: Dict[str, PiecewisePolynomial],
@@ -53,7 +93,7 @@ def run_quasistatic_sim(
         h: float,
         gravity: np.array,
         is_visualizing: bool,
-        real_time_rate: float):
+        real_time_rate: float, **kwargs):
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
@@ -83,6 +123,17 @@ def run_quasistatic_sim(
             traj_source.get_output_port(0),
             q_sys.get_commanded_positions_input_port(model))
 
+    # externally applied spatial force.
+    # TODO: find a better data structure to pass in external spatial forces.
+    if "F_WB_traj" in kwargs.keys():
+        input_port = q_sys.spatial_force_input_port
+        body_idx = q_sys.plant.GetBodyByName(kwargs["body_name"]).index()
+        add_externally_applied_generalized_force(
+            builder=builder,
+            spatial_force_input_port=input_port,
+            F_WB_traj=kwargs["F_WB_traj"],
+            body_idx=body_idx)
+
     # log states.
     loggers_dict = dict()
     for model in q_sys.q_sim.models_all:
@@ -98,6 +149,7 @@ def run_quasistatic_sim(
             draw_period=max(h, 1 / 30.))
 
     diagram = builder.Build()
+    RenderSystemWithGraphviz(diagram)
 
     # Construct simulator and run simulation.
     t_final = find_t_final_from_commanded_trajectories(q_a_traj_dict)
@@ -120,10 +172,16 @@ def run_mbp_sim(
         h: float,
         gravity: np.array,
         is_visualizing: bool,
-        real_time_rate: float):
+        real_time_rate: float, **kwargs):
     """
     Only supports one actuated model instance, which must have an accompanying
         CreateControllerPlantFunction function.
+    kwargs is used to handle externally applied spatial forces. Currently
+        only supports applying one force (no torque) at the origin of the body
+        frame of one body. To apply such forces, kwargs need to have
+            - F_WB_traj: trajectory of the force, and
+            - body_name: the body to which the force is applied.
+
     """
 
     builder = DiagramBuilder()
@@ -150,6 +208,16 @@ def run_mbp_sim(
     builder.Connect(
         traj_source.get_output_port(0),
         controller_robot.joint_angle_commanded_input_port)
+
+    # externally applied spatial force.
+    if "F_WB_traj" in kwargs.keys():
+        input_port = plant.get_applied_spatial_force_input_port()
+        body_idx = plant.GetBodyByName(kwargs["body_name"]).index()
+        add_externally_applied_generalized_force(
+            builder=builder,
+            spatial_force_input_port=input_port,
+            F_WB_traj=kwargs["F_WB_traj"],
+            body_idx=body_idx)
 
     # visualization.
     if is_visualizing:

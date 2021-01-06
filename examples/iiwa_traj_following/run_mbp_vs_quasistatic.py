@@ -66,13 +66,13 @@ if __name__ == "__main__":
     q_iiwa_log_mbp, t_mbp, q_iiwa_log_quasistatic, t_quasistatic = \
         run_comparison(is_visualizing=True, real_time_rate=0.0)
 
-    # Making plots.
+#%% Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_iiwa_log_mbp[:, i])
         ax.plot(t_quasistatic, q_iiwa_log_quasistatic[:, i])
     plt.show()
-
+#%%
     # Set q_iiwa_traj to start at t=0.
     shift_q_traj_to_start_at_minus_h(q_iiwa_traj, 0)
     q_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp, q_iiwa_log_mbp.T)

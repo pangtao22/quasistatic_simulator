@@ -5,7 +5,7 @@ import numpy as np
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
-                         SceneGraph)
+                         SceneGraph, ExternallyAppliedSpatialForce)
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
 from pydrake.solvers import mathematicalprogram as mp
@@ -273,6 +273,31 @@ class QuasistaticSimulator:
         return {model: gravity_all[self.velocity_indices_dict[model]]
                 for model in self.models_unactuated}
 
+    def get_generalized_force_from_external_spatial_force(
+            self, easf_list: List[ExternallyAppliedSpatialForce]):
+        #TODO: test this more thoroughly.
+        tau_ext_actuated = {
+            model: np.zeros(self.n_v_dict[model])
+            for model in self.models_actuated}
+
+        for easf in easf_list:
+            body = self.plant.get_body(easf.body_index)
+            model = body.model_instance()
+            assert model in self.models_actuated
+
+            F_Bq_W = easf.F_Bq_W.get_coeffs()  # [tau, force]
+            J = self.plant.CalcJacobianSpatialVelocity(
+                context=self.context_plant,
+                with_respect_to=JacobianWrtVariable.kV,
+                frame_B=body.body_frame(),
+                p_BP=easf.p_BoBq_B,
+                frame_A=self.plant.world_frame(),
+                frame_E=self.plant.world_frame())
+
+            tau_ext_actuated[model] += J.T.dot(F_Bq_W)
+
+        return tau_ext_actuated
+
     def calc_contact_jacobians(self, contact_detection_tolerance):
         """
         For all contact detected by scene graph, computes Jn and Jf.
@@ -520,10 +545,10 @@ class QuasistaticSimulator:
 
         for model in self.models_actuated:
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
-            prog.AddQuadraticCost(
-                self.Kq_a[model] * h,
-                -self.Kq_a[model].dot(dq_a_cmd) * h,
-                v_h_dict[model])
+            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
+            prog.AddQuadraticCost(self.Kq_a[model] * h,
+                                  -tau_a * h,
+                                  v_h_dict[model])
 
         phi_constraints = np.zeros(n_f)
         J = np.zeros_like(Jf)
