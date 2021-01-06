@@ -294,7 +294,8 @@ class QuasistaticSimulator:
                 frame_A=self.plant.world_frame(),
                 frame_E=self.plant.world_frame())
 
-            tau_ext_actuated[model] += J.T.dot(F_Bq_W)
+            tau_ext_actuated[model] += \
+                J[:, self.velocity_indices_dict[model]].T.dot(F_Bq_W)
 
         return tau_ext_actuated
 
