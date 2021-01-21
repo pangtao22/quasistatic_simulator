@@ -64,13 +64,17 @@ def run_comparison(is_visualizing=False, real_time_rate=0.):
 
 if __name__ == "__main__":
     q_iiwa_log_mbp, t_mbp, q_iiwa_log_quasistatic, t_quasistatic = \
-        run_comparison(is_visualizing=True, real_time_rate=0.0)
+        run_comparison(is_visualizing=True, real_time_rate=1.0)
 
 #%% Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
     for i, ax in enumerate(axes):
-        ax.plot(t_mbp, q_iiwa_log_mbp[:, i])
-        ax.plot(t_quasistatic, q_iiwa_log_quasistatic[:, i])
+        ax.plot(t_mbp, q_iiwa_log_mbp[:, i], label="mbp")
+        ax.plot(t_quasistatic, q_iiwa_log_quasistatic[:, i],
+                label="quasistatic")
+        ax.set_ylabel("joint {} [rad]".format(i + 1))
+        ax.legend()
+    axes[-1].set_xlabel("t [s]")
     plt.show()
 #%%
     # Set q_iiwa_traj to start at t=0.
@@ -102,7 +106,9 @@ if __name__ == "__main__":
     print("MBP vs itself", e4)
 
     #%%
-    plt.plot(t_e1, e_vec1, label="quasistatic")
-    plt.plot(t_e2, e_vec2, label="mbp")
+    plt.plot(t_e3, e_vec3, label="quasistatic vs cmd")
+    plt.plot(t_e2, e_vec2, label="mbp vs cmd")
+    plt.xlabel("t [s]")
+    plt.ylabel("error [rad]")
     plt.legend()
     plt.show()

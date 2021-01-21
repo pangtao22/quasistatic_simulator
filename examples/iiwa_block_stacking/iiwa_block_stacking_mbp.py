@@ -76,7 +76,7 @@ def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
 
     # meshcat visualizer
     if is_visualizing:
-        viz = ConnectMeshcatVisualizer(builder, scene_graph)
+        meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)
 
     # meshcat contact visualizer
     # contact_viz = MeshcatContactVisualizer(meshcat_viz=viz, plant=plant)
@@ -116,10 +116,19 @@ def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
     t_final = q_traj_iiwa.end_time()
 
     #%%
+    if is_visualizing:
+        meshcat_vis.reset_recording()
+        meshcat_vis.start_recording()
+
     sim.Initialize()
     sim.set_target_realtime_rate(0.0)
     try:
         sim.AdvanceTo(t_final)
+        if is_visualizing:
+            meshcat_vis.publish_recording()
+            res = meshcat_vis.vis.static_html()
+            with open("mbp_sim.html", "w") as f:
+                f.write(res)
     except RuntimeError as err:
         print(err)
     finally:

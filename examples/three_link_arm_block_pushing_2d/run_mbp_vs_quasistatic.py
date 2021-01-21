@@ -110,13 +110,16 @@ if __name__ == "__main__":
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
         run_comparison(is_visualizing=True, real_time_rate=0.0)
-
+#%%
     figure, axes = plt.subplots(nq_a, 1, figsize=(4, 10), dpi=200)
+    axes[0].set_title("Joint angles")
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_robot_log_mbp[:, i], label="mbp")
         ax.plot(t_quasistatic, q_robot_log_quasistatic[:, i],
                 label="quasistatic")
+        ax.set_ylabel("[rad]")
         ax.legend()
+    plt.xlabel("t [s]")
     plt.show()
 
     (e_robot, e_vec_robot, t_e_robot,
@@ -131,12 +134,14 @@ if __name__ == "__main__":
     #%% Orientation (angle).
     print("Quasistatic vs MBP, object angle", e_angle_box)
     plt.plot(t_angle_box, e_vec_angle_box)
-    plt.title("Angle difference [rad]")
+    plt.title("Box angle difference, mbp vs. quasistatic [rad]")
+    plt.xlabel("t [s]")
     plt.show()
 
     #%% Position.
     print("Quasistatic vs MBP, object position", e_xyz_box)
     plt.plot(t_xyz_box, e_vec_xyz_box)
-    plt.title("Position difference [m]")
+    plt.title("Box position difference, mbp vs. quasistatic [m]")
+    plt.xlabel("t [s]")
     plt.show()
 

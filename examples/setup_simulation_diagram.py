@@ -142,7 +142,7 @@ def run_quasistatic_sim(
 
     # visualization
     if is_visualizing:
-        ConnectMeshcatVisualizer(
+        meshcat_vis = ConnectMeshcatVisualizer(
             builder=builder,
             scene_graph=q_sys.q_sim.scene_graph,
             output_port=q_sys.query_object_output_port,
@@ -157,8 +157,17 @@ def run_quasistatic_sim(
     q_sys.set_initial_state(q0_dict)
     sim_quasistatic.Initialize()
     sim_quasistatic.set_target_realtime_rate(real_time_rate)
+    if is_visualizing:
+        meshcat_vis.reset_recording()
+        meshcat_vis.start_recording()
+
     sim_quasistatic.AdvanceTo(t_final)
 
+    if is_visualizing:
+        meshcat_vis.publish_recording()
+        res = meshcat_vis.vis.static_html()
+        with open("quasistatic_sim.html", "w") as f:
+            f.write(res)
     return create_dict_keyed_by_string(q_sys.plant, loggers_dict), q_sys
 
 
@@ -221,7 +230,7 @@ def run_mbp_sim(
 
     # visualization.
     if is_visualizing:
-        ConnectMeshcatVisualizer(builder, scene_graph)
+        meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)
 
     # logs.
     loggers_dict = dict()
@@ -252,8 +261,19 @@ def run_mbp_sim(
     for model, q0 in q0_dict.items():
         plant.SetPositions(context_plant, model, q0)
 
+    if is_visualizing:
+        meshcat_vis.reset_recording()
+        meshcat_vis.start_recording()
+
     sim.Initialize()
+
     sim.set_target_realtime_rate(real_time_rate)
     sim.AdvanceTo(q_a_traj.end_time())
+
+    if is_visualizing:
+        meshcat_vis.publish_recording()
+        res = meshcat_vis.vis.static_html()
+        with open("mbp_sim.html", "w") as f:
+            f.write(res)
 
     return create_dict_keyed_by_string(plant, loggers_dict)

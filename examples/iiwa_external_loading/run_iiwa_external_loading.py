@@ -79,6 +79,8 @@ if __name__ == "__main__":
     for i in range(nq):
         axes[i].plot(t_mbp, q_iiwa_mbp[:, i], label="mbp")
         axes[i].plot(t_qs, q_iiwa_qs[:, i], label="quasistatic")
+        axes[i].set_ylabel("joint {} [rad]".format(i + 1))
 
+    axes[-1].set_xlabel("t [s]")
     plt.legend()
     plt.show()

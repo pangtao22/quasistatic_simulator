@@ -84,7 +84,6 @@ def create_3link_arm_plant_with_multiple_objects(
     robot_model = parser.AddModelFromFile(robot_sdf_path)
     plant.WeldFrames(
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
-    plant.mutable_gravity_field().set_gravity_vector([0, 0, -10])
 
     # Add objects
     object_models_list = []

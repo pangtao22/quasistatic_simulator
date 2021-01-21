@@ -9,6 +9,7 @@ from examples.log_comparison import (calc_error_integral,
 
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
+    #%%
     loggers_dict_mbp_str = run_mbp_sim(
         q_traj_iiwa=q_iiwa_traj,
         x_traj_schunk=x_schunk_traj,
@@ -19,7 +20,7 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
         gravity=gravity,
         time_step=h_mbp,
         is_visualizing=is_visualizing)
-
+#%%
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
@@ -82,34 +83,31 @@ if __name__ == "__main__":
 
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
     for i, ax in enumerate(axes):
-        ax.plot(t_mbp, q_iiwa_log_mbp[:, i])
-        ax.plot(t_qs, q_iiwa_log_qs[:, i])
-    plt.title("IIWA joint angles [rad]")
+        if i == 0:
+            ax.set_title("IIWA joint angles [rad]")
+        ax.plot(t_mbp, q_iiwa_log_mbp[:, i], label="mbp")
+        ax.plot(t_qs, q_iiwa_log_qs[:, i], label="quasistatic")
+        ax.legend()
     plt.xlabel("t [s]")
     plt.show()
 
-    #%% IIWA, mbp vs. quasistatic.
+    #%% IIWA, mbp / quasistatic vs. quasistatic.
     e, e_vec, t_e = calc_error_integral(
         q_knots=q_iiwa_log_qs,
         t=t_qs,
         q_gt_traj=q_iiwa_mbp_traj)
 
-    plt.plot(t_e, e_vec)
-    plt.xlabel("t [s]")
-    plt.title("IIWA joint angle error, mbp vs. quasistatic.")
-    plt.show()
-
-    #%% IIWA, commanded vs. quasistatic.
     shift_q_traj_to_start_at_minus_h(q_iiwa_traj, 0)
     e2, e_vec2, t_e2 = calc_error_integral(
         q_knots=q_iiwa_log_qs,
         t=t_qs,
         q_gt_traj=q_iiwa_traj)
 
-    print("IIWA error, commanded vs. quasistatic.", e2)
-    plt.plot(t_e2, e_vec2)
     plt.xlabel("t [s]")
-    plt.title("IIWA joint angle error, commanded vs. quasistatic.")
+    plt.plot(t_e, e_vec, label="mbp")
+    plt.plot(t_e2, e_vec2, label="quasistatic")
+    plt.title("IIWA joint angle error, mbp/quasistatic vs commanded.")
+    plt.legend()
     plt.show()
 
     #%% box0, pose error.
@@ -124,9 +122,9 @@ if __name__ == "__main__":
     print("box angle integral error", e_angle_box)
     print("box position integral error", e_xyz_box)
 
-    plt.plot(t_angle_box, e_vec_angle_box, label="angle")
-    plt.plot(t_xyz_box, e_vec_xyz_box, label="position")
-    plt.title("box0 pose error")
+    plt.plot(t_angle_box, e_vec_angle_box, label="angle [rad]")
+    plt.plot(t_xyz_box, e_vec_xyz_box, label="position [m]")
+    plt.title("box0 pose error, mbp vs. quasistatic.")
     plt.xlabel("t [s]")
     plt.legend()
     plt.show()
