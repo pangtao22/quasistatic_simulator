@@ -47,7 +47,7 @@ box3d_7cm_sdf_path = os.path.join(model_dir_path, "box_0.07m.sdf")
 box3d_6cm_sdf_path = os.path.join(model_dir_path, "box_0.06m.sdf")
 
 
-def create_3link_arm_controller_plant(gravity: np.array):
+def create_3link_arm_controller_plant(gravity: np.ndarray):
     # creates plant that includes only the robot, used for controllers.
     plant = MultibodyPlant(1e-3)
     parser = Parser(plant=plant)
@@ -61,7 +61,7 @@ def create_3link_arm_controller_plant(gravity: np.array):
 
 def create_3link_arm_plant_with_multiple_objects(
         builder, object_sdf_paths: List[str], time_step: float,
-        gravity: np.array):
+        gravity: np.ndarray):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.
@@ -151,7 +151,7 @@ def create_iiwa_plant_with_multiple_objects(builder,
 
 
 def create_iiwa_plant(builder, object_sdf_paths: List[str],
-                      time_step: float, gravity: np.array):
+                      time_step: float, gravity: np.ndarray):
     # MultibodyPlant
     plant = MultibodyPlant(time_step)
     _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
@@ -171,7 +171,7 @@ def create_iiwa_plant(builder, object_sdf_paths: List[str],
 
 def create_iiwa_plant_with_schunk(
         builder, object_sdf_paths: List[str], time_step: float,
-        gravity: np.array):
+        gravity: np.ndarray):
     """
     :param builder: a DiagramBuilder object.
     :param object_sdf_paths: list of absolute paths to object.sdf files.

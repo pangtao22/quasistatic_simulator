@@ -28,7 +28,7 @@ Input:
     np.array: (3,) gravity vector.
 """
 SetupEnvironmentFunction = Callable[
-    [DiagramBuilder, List[str], float, np.array],
+    [DiagramBuilder, List[str], float, np.ndarray],
     Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
           List[ModelInstanceIndex]]
 ]
@@ -57,10 +57,10 @@ class MyContactInfo(object):
 class QuasistaticSimulator:
     def __init__(self,
                  setup_environment: SetupEnvironmentFunction,
-                 gravity: np.array,
+                 gravity: np.ndarray,
                  nd_per_contact: int,
                  object_sdf_paths: List[str],
-                 joint_stiffness: List[np.array],
+                 joint_stiffness: List[np.ndarray],
                  internal_vis: bool = False):
         """
         Let's assume that
@@ -181,7 +181,7 @@ class QuasistaticSimulator:
                 copy.copy(self.models_actuated))
 
     def update_configuration(
-            self, q_dict: Dict[ModelInstanceIndex, np.array]):
+            self, q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
         :param q_dict: A dict of np arrays keyed by model instance indices.
             Each array is the configuration of a model instance in
@@ -222,15 +222,15 @@ class QuasistaticSimulator:
     def update_normal_and_tangential_jacobian_rows(
             self,
             body: RigidBody,
-            pC_D: np.array,
-            n_W: np.array,
-            d_W: np.array,
+            pC_D: np.ndarray,
+            n_W: np.ndarray,
+            d_W: np.ndarray,
             i_c: int,
             n_di: int,
             i_f_start: int,
             position_indices: Union[List[int], None],
-            Jn: np.array,
-            Jf: np.array,
+            Jn: np.ndarray,
+            Jf: np.ndarray,
             jacobian_wrt_variable: JacobianWrtVariable):
         """
         Updates corresponding rows of Jn and Jf.
@@ -455,9 +455,9 @@ class QuasistaticSimulator:
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
 
     def update_contact_results(self, my_contact_info_list: List[MyContactInfo],
-                               beta: np.array, h: float, n_c: int,
-                               n_d: np.array,
-                               mu_list: np.array):
+                               beta: np.ndarray, h: float, n_c: int,
+                               n_d: np.ndarray,
+                               mu_list: np.ndarray):
         assert len(my_contact_info_list) == n_c
         contact_results = ContactResults()
         i_f_start = 0
@@ -504,8 +504,8 @@ class QuasistaticSimulator:
         cf = CalcContactFrictionFromSurfaceProperties(cf_A, cf_B)
         return cf.static_friction()
 
-    def step_anitescu(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.array],
-                      tau_ext_dict: Dict[ModelInstanceIndex, np.array],
+    def step_anitescu(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                      tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                       h: float, contact_detection_tolerance: float):
         """
         This function does the following:
@@ -599,8 +599,8 @@ class QuasistaticSimulator:
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
         return q_dict
 
-    def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.array],
-                           dq_dict: Dict[ModelInstanceIndex, np.array]):
+    def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           dq_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
         Adds the delta of each model state, e.g. dq_u_list[i], to the
             corresponding model configuration in q_list. If q_list[i]

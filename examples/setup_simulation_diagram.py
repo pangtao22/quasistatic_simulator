@@ -43,8 +43,8 @@ def shift_q_traj_to_start_at_minus_h(q_traj: PiecewisePolynomial, h: float):
 
 def create_dict_keyed_by_model_instance_index(
         plant: MultibodyPlant,
-        q_dict_str: Dict[str, Union[np.array, PiecewisePolynomial]]
-) -> Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]:
+        q_dict_str: Dict[str, Union[np.ndarray, PiecewisePolynomial]]
+) -> Dict[ModelInstanceIndex, Union[np.ndarray, PiecewisePolynomial]]:
     q_dict = dict()
     for model_name, value in q_dict_str.items():
         model = plant.GetModelInstanceByName(model_name)
@@ -54,8 +54,8 @@ def create_dict_keyed_by_model_instance_index(
 
 def create_dict_keyed_by_string(
         plant: MultibodyPlant,
-        q_dict: Dict[ModelInstanceIndex, Union[np.array, PiecewisePolynomial]]
-) -> Dict[str, Union[np.array, PiecewisePolynomial]]:
+        q_dict: Dict[ModelInstanceIndex, Union[np.ndarray, PiecewisePolynomial]]
+) -> Dict[str, Union[np.ndarray, PiecewisePolynomial]]:
     q_dict_str = dict()
     for model, value in q_dict.items():
         model_name = plant.GetModelInstanceName(model)
@@ -87,11 +87,11 @@ def add_externally_applied_generalized_force(
 def run_quasistatic_sim(
         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
         q0_dict_str: Dict[str, PiecewisePolynomial],
-        Kp_list: List[np.array],
+        Kp_list: List[np.ndarray],
         object_sdf_paths: List[str],
         setup_environment: SetupEnvironmentFunction,
         h: float,
-        gravity: np.array,
+        gravity: np.ndarray,
         is_visualizing: bool,
         real_time_rate: float, **kwargs):
 
@@ -173,13 +173,13 @@ def run_quasistatic_sim(
 
 def run_mbp_sim(
         q_a_traj: PiecewisePolynomial,
-        Kp_a: np.array,
+        Kp_a: np.ndarray,
         q0_dict_str: Dict[str, PiecewisePolynomial],
         object_sdf_paths: List[str],
         setup_environment: SetupEnvironmentFunction,
         create_controller_plant: CreateControllerPlantFunction,
         h: float,
-        gravity: np.array,
+        gravity: np.ndarray,
         is_visualizing: bool,
         real_time_rate: float, **kwargs):
     """
