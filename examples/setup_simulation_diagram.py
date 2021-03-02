@@ -114,7 +114,7 @@ def run_quasistatic_sim(
     # trajectory sources.
     assert len(q_sys.q_sim.models_actuated) == len(q_a_traj_dict)
     for model in q_sys.q_sim.models_actuated:
-        # Make sure that q_traj start at 0.
+        # Make sure that q_traj start at t=-h.
         q_traj = q_a_traj_dict[model]
         shift_q_traj_to_start_at_minus_h(q_traj, h)
         traj_source = TrajectorySource(q_traj)

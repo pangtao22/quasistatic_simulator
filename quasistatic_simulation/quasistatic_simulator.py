@@ -168,7 +168,7 @@ class QuasistaticSimulator:
         self.contact_results = ContactResults()
 
         # For system state visualization. It is updated when
-        #   self.calc_contact_jacobians is called.
+        #   self.update_configuration is called.
         self.query_object = QueryObject()
 
         # Logging num of contacts and solver time.
@@ -349,10 +349,10 @@ class QuasistaticSimulator:
                 sdp)
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
-            X_AFa = self.inspector.GetPoseInFrame(sdp.id_A)
-            X_BFb = self.inspector.GetPoseInFrame(sdp.id_B)
-            p_AcA_A = X_AFa.multiply(sdp.p_ACa)
-            p_BcB_B = X_BFb.multiply(sdp.p_BCb)
+            X_AGa = self.inspector.GetPoseInFrame(sdp.id_A)
+            X_BGb = self.inspector.GetPoseInFrame(sdp.id_B)
+            p_AcA_A = X_AGa.multiply(sdp.p_ACa)
+            p_BcB_B = X_BGb.multiply(sdp.p_BCb)
 
             # TODO: it is assumed contact exists only between model
             #  instances, not between bodies within the same model instance.
