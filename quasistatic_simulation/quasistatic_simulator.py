@@ -2,6 +2,7 @@ from typing import List, Union, Dict, Callable, Tuple
 import copy
 
 import numpy as np
+import cvxpy as cp
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
@@ -508,20 +509,31 @@ class QuasistaticSimulator:
 
         return phi_constraints, J, contact_info_list, n_c, n_d, n_f, U
 
-    def step_qp(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
+    def step_qp(self,
+                q_dict: Dict[ModelInstanceIndex, np.ndarray],
                 q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
                 tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-                h: float, phi_constraints: np.ndarray, J: np.ndarray):
+                h: float,
+                phi_constraints: np.ndarray,
+                J: np.ndarray):
+
         prog = mp.MathematicalProgram()
+        # generalized velocity times time step.
         vh = prog.NewContinuousVariables(self.n_v, "v_h")
         v_h_dict = dict()
         for model in self.models_all:
-            # generalized velocity times time step.
             v_h_dict[model] = vh[self.velocity_indices_dict[model]]
 
+        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
         for model in self.models_unactuated:
-            P_ext_i = tau_ext_dict[model] * h
-            prog.AddLinearCost(-P_ext_i, 0, v_h_dict[model])
+            idx_v_model = self.velocity_indices_dict[model]
+            ixgrid = np.ix_(idx_v_model, idx_v_model)
+
+            # prog.AddLinearCost(-tau_ext_dict[model] * h, 0, v_h_dict[model])
+            #TODO: need to add M @ v_l to the linear terms.
+            prog.AddQuadraticCost(M[ixgrid] / h,
+                                  -tau_ext_dict[model] * h,
+                                  v_h_dict[model])
 
         for model in self.models_actuated:
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
@@ -545,6 +557,55 @@ class QuasistaticSimulator:
             v_h_value_dict[model] = result.GetSolution(v_h_dict[model])
 
         return v_h_value_dict, beta
+
+    def step_unconstrained(self,
+                           q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           h: float,
+                           phi_constraints: np.ndarray,
+                           J: np.ndarray):
+        vh = cp.Variable(self.n_v)
+        v_h_dict = dict()
+        for model in self.models_all:
+            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
+
+        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
+        Q = np.zeros((self.n_v, self.n_v))
+        idx_i, idx_j = np.diag_indices(self.n_v)
+        tau_h = np.zeros(self.n_v)
+        for model in self.models_unactuated:
+            idx_v_model = self.velocity_indices_dict[model]
+            tau_h[idx_v_model] = tau_ext_dict[model] * h
+
+            ixgrid = np.ix_(idx_v_model, idx_v_model)
+            Q[ixgrid] = M[ixgrid] / h
+
+        for model in self.models_actuated:
+            idx_v_model = self.velocity_indices_dict[model]
+            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
+            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
+            tau_h[idx_v_model] = tau_a * h
+
+            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
+                self.Kq_a[model].diagonal() * h
+
+        t = 1000000
+        log_barriers_sum = 0.
+        if len(phi_constraints) > 0:
+            log_barriers_sum = cp.sum(cp.log(phi_constraints + J @ vh))
+        prob = cp.Problem(
+            cp.Minimize(0.5 * cp.quad_form(vh, Q) - tau_h @ vh -
+                        log_barriers_sum / t))
+
+        prob.solve()
+        assert prob.status == "optimal"
+
+        v_h_value_dict = dict()
+        for model in v_h_dict.keys():
+            v_h_value_dict[model] = v_h_dict[model].value
+
+        return v_h_value_dict, np.zeros_like(phi_constraints)
 
     def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
              tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
