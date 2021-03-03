@@ -491,9 +491,64 @@ class QuasistaticSimulator:
         cf = CalcContactFrictionFromSurfaceProperties(cf_A, cf_B)
         return cf.static_friction()
 
-    def step_anitescu(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                      tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-                      h: float, contact_detection_tolerance: float):
+    def calc_jacobian_and_phi(self, contact_detection_tolerance):
+        (n_c, n_d, n_f, Jn, Jf, phi_l, U,
+         contact_info_list) = self.calc_contact_jacobians(
+            contact_detection_tolerance)
+
+        phi_constraints = np.zeros(n_f)
+        J = np.zeros_like(Jf)
+        j_start = 0
+        for i_c in range(n_c):
+            for j in range(n_d[i_c]):
+                idx = j_start + j
+                J[idx] = Jn[i_c] + U[i_c] * Jf[idx]
+                phi_constraints[idx] = phi_l[i_c]
+            j_start += n_d[i_c]
+
+        return phi_constraints, J, contact_info_list, n_c, n_d, n_f, U
+
+    def step_qp(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                h: float, phi_constraints: np.ndarray, J: np.ndarray):
+        prog = mp.MathematicalProgram()
+        vh = prog.NewContinuousVariables(self.n_v, "v_h")
+        v_h_dict = dict()
+        for model in self.models_all:
+            # generalized velocity times time step.
+            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
+
+        for model in self.models_unactuated:
+            P_ext_i = tau_ext_dict[model] * h
+            prog.AddLinearCost(-P_ext_i, 0, v_h_dict[model])
+
+        for model in self.models_actuated:
+            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
+            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
+            prog.AddQuadraticCost(self.Kq_a[model] * h,
+                                  -tau_a * h,
+                                  v_h_dict[model])
+
+        constraints = prog.AddLinearConstraint(
+            J, -phi_constraints, np.full_like(phi_constraints, np.inf), vh)
+
+        result = self.solver.Solve(prog, None, None)
+        # self.optimizer_time_log.append(
+        #     result.get_solver_details().optimizer_time)
+        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
+        beta = result.GetDualSolution(constraints)
+        beta = np.array(beta).squeeze()
+
+        v_h_value_dict = dict()
+        for model in v_h_dict.keys():
+            v_h_value_dict[model] = result.GetSolution(v_h_dict[model])
+
+        return v_h_value_dict, beta
+
+    def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+             h: float, contact_detection_tolerance: float):
         """
         This function does the following:
         1. Extracts q_dict, a dictionary containing current system
@@ -513,59 +568,21 @@ class QuasistaticSimulator:
             dictionary keyed by ModelInstanceIndex.
         """
         q_dict = self.get_current_configuration()
-
         self.update_configuration(q_dict)
-        (n_c, n_d, n_f, Jn, Jf, phi_l, U,
-         contact_info_list) = self.calc_contact_jacobians(
-            contact_detection_tolerance)
+        phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \
+            self.calc_jacobian_and_phi(contact_detection_tolerance)
 
-        prog = mp.MathematicalProgram()
-
-        vh = prog.NewContinuousVariables(self.n_v, "v_h")
-        v_h_dict = dict()
-        for model in self.models_all:
-            # generalized velocity times time step.
-            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
-
-        for model in self.models_unactuated:
-            P_ext_i = tau_ext_dict[model] * h
-            prog.AddLinearCost(-P_ext_i, 0, v_h_dict[model])
-
-        for model in self.models_actuated:
-            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
-            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
-            prog.AddQuadraticCost(self.Kq_a[model] * h,
-                                  -tau_a * h,
-                                  v_h_dict[model])
-
-        phi_constraints = np.zeros(n_f)
-        J = np.zeros_like(Jf)
-
-        j_start = 0
-        for i_c in range(n_c):
-            for j in range(n_d[i_c]):
-                idx = j_start + j
-                J[idx] = Jn[i_c] + U[i_c] * Jf[idx]
-                phi_constraints[idx] = phi_l[i_c]
-            j_start += n_d[i_c]
-
-        constraints = prog.AddLinearConstraint(
-            J, -phi_constraints, np.full_like(phi_constraints, np.inf), vh)
-
-        result = self.solver.Solve(prog, None, None)
-        # self.optimizer_time_log.append(
-        #     result.get_solver_details().optimizer_time)
-        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
-        beta = result.GetDualSolution(constraints)
-        beta = np.array(beta).squeeze()
+        v_h_value_dict, beta = \
+            self.step_qp(q_dict, q_a_cmd_dict, tau_ext_dict,
+                         h, phi_constraints, J)
 
         dq_dict = dict()
         for model in self.models_actuated:
-            v_h_value = result.GetSolution(v_h_dict[model])
+            v_h_value = v_h_value_dict[model]
             dq_dict[model] = v_h_value
 
         for model in self.models_unactuated:
-            v_h_value = result.GetSolution(v_h_dict[model])
+            v_h_value = v_h_value_dict[model]
             if self.is_planar_dict[model]:
                 dq_dict[model] = v_h_value
             else:
@@ -580,7 +597,6 @@ class QuasistaticSimulator:
                 dq_u[4:] = v_h_value[3:]
                 dq_dict[model] = dq_u
 
-        # constraint_values = phi_constraints + result.EvalBinding(constraints)
         self.step_configuration(q_dict, dq_dict)
         self.update_configuration(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)

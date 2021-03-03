@@ -58,8 +58,8 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
         tau_ext_a_dict = \
             q_sim.get_generalized_force_from_external_spatial_force([])
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
-        q_dict = q_sim.step_anitescu(q_a_cmd_dict, tau_ext_dict, h,
-                                     contact_detection_tolerance=0.005)
+        q_dict = q_sim.step(q_a_cmd_dict, tau_ext_dict, h,
+                            contact_detection_tolerance=0.005)
         if is_visualizing:
             q_sim.draw_current_configuration()
 
