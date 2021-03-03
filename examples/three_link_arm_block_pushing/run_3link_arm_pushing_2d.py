@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 from examples.log_comparison import *
-from examples.setup_environments import box2d_big_sdf_path
+from examples.setup_environments import (box2d_big_sdf_path,
+                                         sphere2d_big_sdf_path)
 from examples.three_link_arm_block_pushing.utils import *
 
 # box initial state.

@@ -10,6 +10,17 @@ from examples.log_comparison import (calc_error_integral,
 
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
+    # %%
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        robot_info_dict=robot_info_dict,
+        object_sdf_paths=object_sdf_paths_dict,
+        h=h_quasistatic,
+        gravity=gravity,
+        is_visualizing=is_visualizing,
+        real_time_rate=0.0)
+
     #%%
     loggers_dict_mbp_str = run_mbp_sim(
         q_traj_iiwa=q_iiwa_traj,
@@ -20,16 +31,6 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
         gravity=gravity,
         time_step=h_mbp,
         is_visualizing=is_visualizing)
-#%%
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_a_traj_dict_str=q_a_traj_dict_str,
-        q0_dict_str=q0_dict_str,
-        robot_info_dict=robot_info_dict,
-        object_sdf_paths=object_sdf_paths_dict,
-        h=h_quasistatic,
-        gravity=gravity,
-        is_visualizing=is_visualizing,
-        real_time_rate=0.0)
 
     return loggers_dict_mbp_str, loggers_dict_quasistatic_str, q_sys.plant
 

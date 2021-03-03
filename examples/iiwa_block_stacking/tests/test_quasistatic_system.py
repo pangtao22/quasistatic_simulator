@@ -67,13 +67,15 @@ class TestQuasistaticSystem(unittest.TestCase):
             run_quasistatic_sim_manually(h=0.2, is_visualizing=False,
                                          gravity=gravity)
 
-        tolerance = 5e-5
+        tolerance = 1e-5
+        duraiton = t_quasistatic[-1]
         for model_name in q0_dict_str.keys():
             q_log_system = loggers_dict_systems_str[model_name].data().T
             q_log_manual = q_logs_dict_str[model_name]
             # print(model_name, np.linalg.norm(q_log_system - q_log_manual))
             self.assertLessEqual(
-                np.linalg.norm(q_log_system - q_log_manual), tolerance,
+                np.linalg.norm(q_log_system - q_log_manual) / duraiton,
+                tolerance,
                 "Trajectory difference between manual and Systems simulations "
                 "is larger than {} for model instance named {}.".format(
                     tolerance, model_name))

@@ -59,7 +59,7 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
             q_sim.get_generalized_force_from_external_spatial_force([])
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
         q_dict = q_sim.step(q_a_cmd_dict, tau_ext_dict, h,
-                            contact_detection_tolerance=0.005)
+                            contact_detection_tolerance=0.01)
         if is_visualizing:
             q_sim.draw_current_configuration()
 
@@ -86,4 +86,5 @@ if __name__ == "__main__":
     for model_name in q0_dict_str.keys():
         q_log1 = q_quasistatic_logs_dict_str1[model_name]
         q_log2 = q_quasistatic_logs_dict_str2[model_name]
-        print(model_name, np.linalg.norm(q_log1 - q_log2))
+        duration = t_qs[-1]
+        print(model_name, np.linalg.norm(q_log1 - q_log2) / duration)

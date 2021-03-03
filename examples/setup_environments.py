@@ -44,6 +44,8 @@ box3d_small_sdf_path = os.path.join(model_dir_path, "box_0.5m.sdf")
 box3d_8cm_sdf_path = os.path.join(model_dir_path, "box_0.08m.sdf")
 box3d_7cm_sdf_path = os.path.join(model_dir_path, "box_0.07m.sdf")
 box3d_6cm_sdf_path = os.path.join(model_dir_path, "box_0.06m.sdf")
+sphere2d_big_sdf_path = os.path.join(model_dir_path,
+                                     "sphere_yz_rotation_big.sdf")
 
 
 def create_3link_arm_controller_plant(gravity: np.ndarray):
