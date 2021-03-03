@@ -3,16 +3,12 @@ from pydrake.all import LeafSystem, BasicVector, PortDataType
 from .quasistatic_simulator import *
 
 
-#TODO: replace Lists in the constructor arguments with dictionaries keyed by
-# model instance names.
-
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
-                 setup_environment: SetupEnvironmentFunction,
+                 robot_info_dict: [str, RobotInfo],
+                 object_sdf_paths: Dict[str, RobotInfo],
                  gravity: np.array,
                  nd_per_contact: int,
-                 object_sdf_paths: List[str],
-                 joint_stiffness: List[np.array],
                  time_step_seconds: float):
         LeafSystem.__init__(self)
         self.set_name("quasistatic_system")
@@ -24,9 +20,9 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        self.q_sim = QuasistaticSimulator(
-            setup_environment, gravity, nd_per_contact, object_sdf_paths,
-            joint_stiffness, internal_vis=False)
+        self.q_sim = QuasistaticSimulator(robot_info_dict,
+                                          object_sdf_paths, gravity,
+                                          nd_per_contact, internal_vis=False)
         self.plant = self.q_sim.plant
 
         # output ports for states of unactuated objects and robots (actuated).

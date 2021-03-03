@@ -4,14 +4,16 @@ import numpy as np
 
 from pydrake.math import RollPitchYaw
 from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
-                         ModelInstanceIndex)
+                         ModelInstanceIndex, RigidTransform)
 
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from contact_aware_control.plan_runner.contact_utils import (
     CalcIiwaQTrajectory)
-from examples.setup_environments import (box3d_8cm_sdf_path, box3d_7cm_sdf_path,
-                                         box3d_6cm_sdf_path)
+from examples.setup_environments import (
+    iiwa_sdf_path_drake, schunk_sdf_path, box3d_8cm_sdf_path,
+    box3d_7cm_sdf_path, box3d_6cm_sdf_path)
+from quasistatic_simulation.quasistatic_simulator import RobotInfo
 
 
 def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
@@ -31,7 +33,6 @@ def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
 
 #%% Create trajectories.
 q_a_initial_guess = np.array([0, 0, 0, -1.75, 0, 1.0, 0])
-
 plant_iiwa, _ = create_iiwa_controller_plant(gravity=[0, 0, 0])
 
 durations = np.array([1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0]) * 2
@@ -55,8 +56,6 @@ q_schunk_traj_list = []
 x_schunk_traj_list = []
 
 num_knot_points = 10
-# q_iiwa_all = np.zeros((len(durations) * num_knot_points, 7))
-# q_schunk_all = np.zeros((len(durations) * num_knot_points, 2))
 
 # EE orientation
 R_WL7_0 = RollPitchYaw(0, np.pi, 0).ToRotationMatrix()
@@ -99,20 +98,43 @@ x_schunk_traj = concatenate_traj_list(x_schunk_traj_list)
 
 
 # other constants for simulation.
+iiwa_name = "iiwa7"
+schunk_name = "Schunk_Gripper"
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
 Kp_schunk = np.array([1000., 1000])
-Kq_a = [Kp_iiwa, Kp_schunk]
 
-object_sdf_paths = [box3d_6cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_8cm_sdf_path,
-                    box3d_7cm_sdf_path,
-                    box3d_8cm_sdf_path]
+iiwa_info = RobotInfo(
+    sdf_path=iiwa_sdf_path_drake,
+    parent_model_name="WorldModelInstance",
+    parent_frame_name="WorldBody",
+    base_frame_name="iiwa_link_0",
+    X_PB=RigidTransform(),
+    joint_stiffness=Kp_iiwa)
+
+X_L7E = RigidTransform(
+    RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
+schunk_info = RobotInfo(
+    sdf_path=schunk_sdf_path,
+    parent_model_name="iiwa7",
+    parent_frame_name="iiwa_link_7",
+    base_frame_name="body",
+    X_PB=X_L7E,
+    joint_stiffness=Kp_schunk)
+
+robot_info_dict = {iiwa_name: iiwa_info, schunk_name: schunk_info}
+
+object_sdf_paths_list = [box3d_6cm_sdf_path,
+                         box3d_8cm_sdf_path,
+                         box3d_7cm_sdf_path,
+                         box3d_8cm_sdf_path,
+                         box3d_8cm_sdf_path,
+                         box3d_7cm_sdf_path,
+                         box3d_8cm_sdf_path,
+                         box3d_8cm_sdf_path,
+                         box3d_7cm_sdf_path,
+                         box3d_8cm_sdf_path]
+object_sdf_paths_dict = {'box{}'.format(i): path
+                         for i, path in enumerate(object_sdf_paths_list)}
 
 q_u0_list = np.zeros((10, 7))
 q_u0_list[0] = [1, 0, 0, 0, 0.55, 0, 0.03]
@@ -130,8 +152,6 @@ q_u0_list[9] = [1, 0, 0, 0, 0.48, 0.3, 0.04]
 
 gravity = np.array([0, 0, -10.])
 
-iiwa_name = "iiwa7"
-schunk_name = "Schunk_Gripper"
 
 q0_dict_str = {"box%i" % i: q_u0_i for i, q_u0_i in enumerate(q_u0_list)}
 t_start = q_iiwa_traj.start_time()

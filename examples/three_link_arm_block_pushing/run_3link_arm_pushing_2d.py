@@ -1,74 +1,12 @@
 import matplotlib.pyplot as plt
 
-from examples.setup_simulation_diagram import *
 from examples.log_comparison import *
-from examples.setup_environments import (
-    box2d_big_sdf_path,
-    create_3link_arm_plant_with_multiple_objects,
-    create_3link_arm_controller_plant)
+from examples.setup_environments import box2d_big_sdf_path
+from examples.three_link_arm_block_pushing.utils import *
 
-# Simulation parameters.
-robot_name = "three_link_arm"
-box_name = "box0"
-
-nq_a = 3
-gravity = np.array([0, 0, -10.])
-Kp_robot = np.array([1000, 1000, 1000], dtype=float)
-
-qa_knots = np.zeros((2, nq_a))
-qa_knots[0] = [np.pi / 2, -np.pi / 2, -np.pi / 2]
-qa_knots[1] = qa_knots[0] + 0.3
-
-q_robot_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
-    breaks=[0, 10], samples=qa_knots.T,
-    sample_dot_at_start=np.zeros(nq_a),
-    sample_dot_at_end=np.zeros(nq_a))
-
+# box initial state.
 q_u0 = np.array([1.7, 0.5, 0])
 q0_dict_str = {robot_name: qa_knots[0], box_name: q_u0}
-
-h_quasistatic = 0.01
-h_mbp = 1e-4
-
-
-def run_comparison(is_visualizing=False, real_time_rate=0.0):
-    #%% Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_a_traj_dict_str={robot_name: q_robot_traj},
-        q0_dict_str=q0_dict_str,
-        Kp_list=[Kp_robot],
-        setup_environment=create_3link_arm_plant_with_multiple_objects,
-        object_sdf_paths=[box2d_big_sdf_path],
-        h=h_quasistatic,
-        gravity=gravity,
-        is_visualizing=is_visualizing,
-        real_time_rate=real_time_rate)
-
-    # %% MBP
-    loggers_dict_mbp_str = run_mbp_sim(
-        q_a_traj=q_robot_traj,
-        q0_dict_str=q0_dict_str,
-        Kp_a=Kp_robot,
-        object_sdf_paths=[box2d_big_sdf_path],
-        setup_environment=create_3link_arm_plant_with_multiple_objects,
-        create_controller_plant=create_3link_arm_controller_plant,
-        h=h_mbp,
-        gravity=gravity,
-        is_visualizing=is_visualizing,
-        real_time_rate=real_time_rate)
-
-    # Extracting iiwa configuration logs.
-    q_box_log_mbp = loggers_dict_mbp_str[box_name].data()[:7].T
-    q_robot_log_mbp = loggers_dict_mbp_str[robot_name].data()[:nq_a].T
-    t_mbp = loggers_dict_mbp_str[robot_name].sample_times()
-
-    q_robot_log_quasistatic = loggers_dict_quasistatic_str[robot_name].data().T
-    q_box_log_quasistatic = loggers_dict_quasistatic_str[box_name].data().T
-    t_quasistatic = loggers_dict_quasistatic_str[robot_name].sample_times()
-
-    return (q_robot_log_mbp, q_box_log_mbp, t_mbp,
-            q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic,
-            q_sys)
 
 
 def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
@@ -109,7 +47,8 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
 if __name__ == "__main__":
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
-        run_comparison(is_visualizing=True, real_time_rate=0.0)
+        run_comparison(box2d_big_sdf_path, q0_dict_str, is_visualizing=True,
+                       real_time_rate=0.0)
 #%%
     figure, axes = plt.subplots(nq_a, 1, figsize=(4, 10), dpi=200)
     axes[0].set_title("Joint angles")

@@ -86,10 +86,9 @@ def add_externally_applied_generalized_force(
 
 def run_quasistatic_sim(
         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
-        q0_dict_str: Dict[str, PiecewisePolynomial],
-        Kp_list: List[np.ndarray],
-        object_sdf_paths: List[str],
-        setup_environment: SetupEnvironmentFunction,
+        q0_dict_str: Dict[str, np.ndarray],
+        robot_info_dict: Dict[str, RobotInfo],
+        object_sdf_paths: Dict[str, str],
         h: float,
         gravity: np.ndarray,
         is_visualizing: bool,
@@ -97,11 +96,10 @@ def run_quasistatic_sim(
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
-        setup_environment=setup_environment,
+        robot_info_dict=robot_info_dict,
+        object_sdf_paths=object_sdf_paths,
         gravity=gravity,
         nd_per_contact=4,
-        object_sdf_paths=object_sdf_paths,
-        joint_stiffness=Kp_list,
         time_step_seconds=h)
     builder.AddSystem(q_sys)
 
@@ -173,10 +171,9 @@ def run_quasistatic_sim(
 
 def run_mbp_sim(
         q_a_traj: PiecewisePolynomial,
-        Kp_a: np.ndarray,
-        q0_dict_str: Dict[str, PiecewisePolynomial],
-        object_sdf_paths: List[str],
-        setup_environment: SetupEnvironmentFunction,
+        q0_dict_str: Dict[str, np.ndarray],
+        robot_info_dict: Dict[str, RobotInfo],
+        object_sdf_paths: Dict[str, str],
         create_controller_plant: CreateControllerPlantFunction,
         h: float,
         gravity: np.ndarray,
@@ -195,14 +192,17 @@ def run_mbp_sim(
 
     builder = DiagramBuilder()
     plant, scene_graph, robot_models, object_models = \
-        setup_environment(builder, object_sdf_paths, h, gravity)
+        create_plant_with_robots_and_objects(
+            builder, robot_info_dict, object_sdf_paths, h, gravity)
     assert len(robot_models) == 1
     robot_model = robot_models[0]
-
+    for _, robot_info in robot_info_dict.items():
+        break
+    joint_stiffness = robot_info.joint_stiffness
     # controller plant.
     plant_robot, _ = create_controller_plant(gravity)
     controller_robot = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=Kp_a,
+        plant_robot=plant_robot, joint_stiffness=joint_stiffness,
         controller_mode="impedance")
     builder.AddSystem(controller_robot)
     builder.Connect(controller_robot.GetOutputPort("joint_torques"),

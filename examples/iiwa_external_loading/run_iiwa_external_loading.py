@@ -1,25 +1,30 @@
-
-import numpy as np
 from matplotlib import pyplot as plt
+from pydrake.all import RigidTransform
 
-from pydrake.trajectories import PiecewisePolynomial
-
+from examples.setup_simulation_diagram import *
 from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
-
-from examples.setup_simulation_diagram import run_mbp_sim, run_quasistatic_sim
-from examples.setup_environments import create_iiwa_plant
+from examples.setup_environments import iiwa_sdf_path_drake
 
 
 #%% simulation parameters.
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
-gravity = np.array([0, 0, -10.])
+robot_name = "iiwa7"
+robot_info = RobotInfo(
+    sdf_path=iiwa_sdf_path_drake,
+    parent_model_name="WorldModelInstance",
+    parent_frame_name="WorldBody",
+    base_frame_name="iiwa_link_0",
+    X_PB=RigidTransform(),
+    joint_stiffness=Kp_iiwa)
 
-iiwa_name = "iiwa7"
+nq_a = 7
 q_iiwa_knots = np.zeros((2, 7))
 q_iiwa_knots[0] = [0, 0, 0, -1.70, 0, 1.0, 0]
 q_iiwa_knots[1] = q_iiwa_knots[0]
-q0_dict_str = {iiwa_name: q_iiwa_knots[0]}
 q_iiwa_traj = PiecewisePolynomial.FirstOrderHold([0, 2], q_iiwa_knots.T)
+
+q0_dict_str = {robot_name: q_iiwa_knots[0]}
+gravity = np.array([0, 0, -10.])
 
 F_WB = np.zeros((2, 3))
 F_WB[1] = [0, 0, -100.]
@@ -30,11 +35,10 @@ F_WB_traj = PiecewisePolynomial.FirstOrderHold(
 def run_comparison(is_visualizing: bool, real_time_rate: float):
     #%% Quasistatic.
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_a_traj_dict_str={iiwa_name: q_iiwa_traj},
+        q_a_traj_dict_str={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
-        Kp_list=[Kp_iiwa],
-        setup_environment=create_iiwa_plant,
-        object_sdf_paths=[],
+        robot_info_dict={robot_name: robot_info},
+        object_sdf_paths=dict(),
         h=0.2,
         gravity=gravity,
         is_visualizing=is_visualizing,
@@ -45,10 +49,9 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
     #%% MBP.
     loggers_dict_mbp_str = run_mbp_sim(
         q_a_traj=q_iiwa_traj,
-        Kp_a=Kp_iiwa,
         q0_dict_str=q0_dict_str,
-        object_sdf_paths=[],
-        setup_environment=create_iiwa_plant,
+        robot_info_dict={robot_name: robot_info},
+        object_sdf_paths=dict(),
         create_controller_plant=create_iiwa_controller_plant,
         h=1e-4,
         gravity=gravity,
@@ -66,11 +69,11 @@ if __name__ == "__main__":
 
     #%%
     nq = 7
-    iiwa_log_mbp = loggers_dict_mbp_str[iiwa_name]
+    iiwa_log_mbp = loggers_dict_mbp_str[robot_name]
     q_iiwa_mbp = iiwa_log_mbp.data().T[:, :nq]
     t_mbp = iiwa_log_mbp.sample_times()
 
-    iiwa_log_qs = loggers_dict_quasistatic_str[iiwa_name]
+    iiwa_log_qs = loggers_dict_quasistatic_str[robot_name]
     q_iiwa_qs = iiwa_log_qs.data().T[:, :nq]
     t_qs = iiwa_log_qs.sample_times()
 

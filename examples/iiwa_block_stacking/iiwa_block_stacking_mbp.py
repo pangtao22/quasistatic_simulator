@@ -3,7 +3,6 @@ from pydrake.all import (PiecewisePolynomial, Simulator, PidController,
 
 from quasistatic_simulation.quasistatic_simulator import *
 
-from examples.setup_environments import create_iiwa_plant_with_schunk
 from examples.setup_simulation_diagram import (
     shift_q_traj_to_start_at_minus_h,
     create_dict_keyed_by_model_instance_index,
@@ -13,25 +12,28 @@ from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from iiwa_controller.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
+from examples.iiwa_block_stacking.simulation_parameters import (
+    iiwa_name, schunk_name)
 
 
 def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
                 x_traj_schunk: PiecewisePolynomial,
-                Kp_iiwa: np.array,
-                Kp_schunk: np.array,
-                object_sdf_paths: List[str],
-                q0_dict_str: Dict[str, np.array],
+                robot_info_dict: Dict[str, RobotInfo],
+                object_sdf_paths: Dict[str, str],
+                q0_dict_str: Dict[str, np.ndarray],
                 gravity: np.array,
                 time_step: float,
                 is_visualizing: bool):
 
     #%%  Build diagram.
     builder = DiagramBuilder()
-    plant, scene_graph, robot_models, object_models = \
-        create_iiwa_plant_with_schunk(
-            builder, object_sdf_paths, time_step, gravity)
+    plant, scene_graph, robot_model_list, object_model_list = \
+        create_plant_with_robots_and_objects(
+            builder, robot_info_dict, object_sdf_paths, 1e-3, gravity)
 
-    iiwa_model, schunk_model = robot_models
+    iiwa_model, schunk_model = robot_model_list
+    Kp_iiwa = robot_info_dict[iiwa_name].joint_stiffness
+    Kp_schunk = robot_info_dict[schunk_name].joint_stiffness
 
     # IIWA controller
     gravity = [0, 0, -10.]

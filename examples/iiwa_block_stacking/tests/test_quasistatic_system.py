@@ -55,9 +55,8 @@ class TestQuasistaticSystem(unittest.TestCase):
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
-            Kp_list=[Kp_iiwa, Kp_schunk],
-            setup_environment=create_iiwa_plant_with_schunk,
-            object_sdf_paths=object_sdf_paths,
+            robot_info_dict=robot_info_dict,
+            object_sdf_paths=object_sdf_paths_dict,
             h=h,
             gravity=gravity,
             is_visualizing=False,
@@ -65,7 +64,8 @@ class TestQuasistaticSystem(unittest.TestCase):
 
         # Simulate manually.
         q_logs_dict_str, t_quasistatic = \
-            run_quasistatic_sim_manually(h=0.2, is_visualizing=False)
+            run_quasistatic_sim_manually(h=0.2, is_visualizing=False,
+                                         gravity=gravity)
 
         tolerance = 5e-5
         for model_name in q0_dict_str.keys():

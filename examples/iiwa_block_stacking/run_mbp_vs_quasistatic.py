@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
+from examples.setup_simulation_diagram import (
+    run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_mbp_sim
-from examples.iiwa_block_stacking.run_manual_quasistatic import *
+from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (calc_error_integral,
                                      calc_pose_error_integral,
                                      get_angle_from_quaternion)
@@ -13,9 +14,8 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     loggers_dict_mbp_str = run_mbp_sim(
         q_traj_iiwa=q_iiwa_traj,
         x_traj_schunk=x_schunk_traj,
-        Kp_iiwa=Kp_iiwa,
-        Kp_schunk=Kp_schunk,
-        object_sdf_paths=object_sdf_paths,
+        robot_info_dict=robot_info_dict,
+        object_sdf_paths=object_sdf_paths_dict,
         q0_dict_str=q0_dict_str,
         gravity=gravity,
         time_step=h_mbp,
@@ -24,9 +24,8 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        Kp_list=[Kp_iiwa, Kp_schunk],
-        setup_environment=create_iiwa_plant_with_schunk,
-        object_sdf_paths=object_sdf_paths,
+        robot_info_dict=robot_info_dict,
+        object_sdf_paths=object_sdf_paths_dict,
         h=h_quasistatic,
         gravity=gravity,
         is_visualizing=is_visualizing,

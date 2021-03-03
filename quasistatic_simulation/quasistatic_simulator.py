@@ -18,20 +18,7 @@ from pydrake.geometry import PenetrationAsPointPair
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
 
-"""
-Input:
-    DiagramBuilder: diagram builder. 
-    List[str]: A list of paths to unactuated bodies.
-    float: simulation time step in seconds, useful only for simulations using 
-        MBP. For quasistatic simulations, time step is specified in 
-        QuasistaticSimulator instead.
-    np.array: (3,) gravity vector.
-"""
-SetupEnvironmentFunction = Callable[
-    [DiagramBuilder, List[str], float, np.ndarray],
-    Tuple[MultibodyPlant, SceneGraph, List[ModelInstanceIndex],
-          List[ModelInstanceIndex]]
-]
+from .environment_setup import RobotInfo, create_plant_with_robots_and_objects
 
 
 class MyContactInfo(object):
@@ -55,24 +42,22 @@ class MyContactInfo(object):
 
 
 class QuasistaticSimulator:
-    def __init__(self,
-                 setup_environment: SetupEnvironmentFunction,
-                 gravity: np.ndarray,
-                 nd_per_contact: int,
-                 object_sdf_paths: List[str],
-                 joint_stiffness: List[np.ndarray],
+    def __init__(self, robot_info_dict: [str, RobotInfo],
+                 object_sdf_paths: Dict[str, str],
+                 gravity: np.ndarray, nd_per_contact: int,
                  internal_vis: bool = False):
         """
         Let's assume that
         - Each rigid body has one contact geometry.
-        :param joint_stiffness: a 1D vector of length n_a. The stiffness of
         all joints of the robot.
+        :param robot_info_dict:
         """
 
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
-            setup_environment(builder, object_sdf_paths, 1e-3, gravity)
+            create_plant_with_robots_and_objects(
+                builder, robot_info_dict, object_sdf_paths, 1e-3, gravity)
 
         # visualization.
         self.internal_vis = internal_vis
@@ -136,8 +121,10 @@ class QuasistaticSimulator:
         # stiffness matrices.
         self.Kq_a = dict()
         for i, model in enumerate(self.models_actuated):
-            assert self.n_v_dict[model] == joint_stiffness[i].size
-            self.Kq_a[model] = np.diag(joint_stiffness[i]).astype(float)
+            model_name = plant.GetModelInstanceName(model)
+            joint_stiffness = robot_info_dict[model_name].joint_stiffness
+            assert self.n_v_dict[model] == joint_stiffness.size
+            self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
         # Find planar model instances.
         # TODO: it is assumed that each unactuated model instance contains

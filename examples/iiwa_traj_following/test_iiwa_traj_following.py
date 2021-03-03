@@ -1,5 +1,5 @@
 import unittest
-from .run_mbp_vs_quasistatic import *
+from .run_iiwa_traj_following import *
 
 
 class TestIiwaTrajectoryFollowing(unittest.TestCase):

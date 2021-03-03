@@ -1,6 +1,7 @@
 import os
 import pathlib
-from typing import List, Tuple, Callable
+from collections import namedtuple
+from typing import List, Tuple, Dict, Callable
 
 import numpy as np
 
@@ -27,15 +28,13 @@ Input:
 CreateControllerPlantFunction = Callable[
     [np.array], Tuple[MultibodyPlant, List[FrameIndex]]]
 
+# transform between three link arm's base frame and world frame.
+X_WR = RigidTransform()
+X_WR.set_translation([0, 0, 0.1])
 
 schunk_sdf_path = FindResourceOrThrow(
     "drake/manipulation/models/wsg_50_description/sdf"
     "/schunk_wsg_50_ball_contact.sdf")
-
-# transform between robot base frame and world frame
-X_WR = RigidTransform()
-X_WR.set_translation([0, 0, 0.1])
-
 model_dir_path = os.path.join(
     pathlib.Path(__file__).parent.absolute(), "..", "models")
 box2d_big_sdf_path = os.path.join(model_dir_path, "box_yz_rotation_big.sdf")
@@ -57,49 +56,6 @@ def create_3link_arm_controller_plant(gravity: np.ndarray):
         plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
     plant.Finalize()
     return plant, None
-
-
-def create_3link_arm_plant_with_multiple_objects(
-        builder, object_sdf_paths: List[str], time_step: float,
-        gravity: np.ndarray):
-    """
-    :param builder: a DiagramBuilder object.
-    :param object_sdf_paths: list of absolute paths to object.sdf files.
-    :return:
-    """
-    # MultibodyPlant
-    plant = MultibodyPlant(time_step)
-    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
-    parser = Parser(plant=plant, scene_graph=scene_graph)
-
-    # Add ground
-    parser.AddModelFromFile(ground_sdf_path)
-    X_WG = RigidTransform.Identity()
-    X_WG.set_translation([0, 0, -0.5])  # "ground"
-    plant.WeldFrames(A=plant.world_frame(),
-                     B=plant.GetFrameByName("ground"),
-                     X_AB=X_WG)
-
-    # Add Robot
-    robot_model = parser.AddModelFromFile(robot_sdf_path)
-    plant.WeldFrames(
-        plant.world_frame(), plant.GetFrameByName("link_0"), X_WR)
-
-    # Add objects
-    object_models_list = []
-    for i, sdf_path in enumerate(object_sdf_paths):
-        object_models_list.append(
-            parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
-
-    # gravity
-    plant.mutable_gravity_field().set_gravity_vector(gravity)
-
-    plant.Finalize()
-
-    return (plant,
-            scene_graph,
-            [robot_model],
-            object_models_list)
 
 
 def create_iiwa_plant_with_multiple_objects(builder,
@@ -147,76 +103,6 @@ def create_iiwa_plant_with_multiple_objects(builder,
     return (plant,
             scene_graph,
             [robot_model, ee_model],
-            object_models_list)
-
-
-def create_iiwa_plant(builder, object_sdf_paths: List[str],
-                      time_step: float, gravity: np.ndarray):
-    # MultibodyPlant
-    plant = MultibodyPlant(time_step)
-    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
-    parser = Parser(plant=plant, scene_graph=scene_graph)
-
-    # fix robot to world
-    iiwa_model = parser.AddModelFromFile(iiwa_sdf_path_drake)
-    plant.WeldFrames(A=plant.world_frame(),
-                     B=plant.GetFrameByName("iiwa_link_0"),
-                     X_AB=RigidTransform.Identity())
-
-    plant.mutable_gravity_field().set_gravity_vector(gravity)
-    plant.Finalize()
-
-    return plant, scene_graph, [iiwa_model], []
-
-
-def create_iiwa_plant_with_schunk(
-        builder, object_sdf_paths: List[str], time_step: float,
-        gravity: np.ndarray):
-    """
-    :param builder: a DiagramBuilder object.
-    :param object_sdf_paths: list of absolute paths to object.sdf files.
-    :return:
-    """
-    # MultibodyPlant
-    plant = MultibodyPlant(time_step)
-    _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
-    parser = Parser(plant=plant, scene_graph=scene_graph)
-
-    # Add ground
-    parser.AddModelFromFile(ground_sdf_path)
-    X_WG = RigidTransform.Identity()
-    X_WG.set_translation([0, 0, -0.5])  # "ground"
-    plant.WeldFrames(A=plant.world_frame(),
-                     B=plant.GetFrameByName("ground"),
-                     X_AB=X_WG)
-
-    # fix robot to world
-    robot_model = parser.AddModelFromFile(iiwa_sdf_path_drake)
-    plant.WeldFrames(A=plant.world_frame(),
-                     B=plant.GetFrameByName("iiwa_link_0"),
-                     X_AB=RigidTransform.Identity())
-
-    # fix schunk to l7
-    schunk_model = parser.AddModelFromFile(schunk_sdf_path)
-    X_L7E = RigidTransform(
-        RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
-    plant.WeldFrames(A=plant.GetFrameByName("iiwa_link_7"),
-                     B=plant.GetFrameByName("body", schunk_model),
-                     X_AB=X_L7E)
-
-    plant.mutable_gravity_field().set_gravity_vector(gravity)
-
-    # Add objects
-    object_models_list = []
-    for i, sdf_path in enumerate(object_sdf_paths):
-        object_models_list.append(
-            parser.AddModelFromFile(sdf_path, model_name="box%d" % i))
-
-    plant.Finalize()
-
-    return (plant,
-            scene_graph,
-            [robot_model, schunk_model],
             object_models_list)
 
 
