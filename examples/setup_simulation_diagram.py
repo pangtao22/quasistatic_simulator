@@ -103,6 +103,9 @@ def run_quasistatic_sim(
         time_step_seconds=h)
     builder.AddSystem(q_sys)
 
+    if "sim_settings" in kwargs.keys():
+        q_sys.q_sim.set_sim_settings(kwargs["sim_settings"])
+
     # update dictionaries with ModelInstanceIndex keys.
     q_a_traj_dict = create_dict_keyed_by_model_instance_index(
         q_sys.plant, q_dict_str=q_a_traj_dict_str)
