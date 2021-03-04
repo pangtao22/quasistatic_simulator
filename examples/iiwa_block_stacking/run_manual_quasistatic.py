@@ -28,8 +28,9 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
     """
     q_sim = QuasistaticSimulator(robot_info_dict=robot_info_dict,
                                  object_sdf_paths=object_sdf_paths_dict,
-                                 gravity=gravity,
-                                 nd_per_contact=4, internal_vis=is_visualizing)
+                                 gravity=gravity, nd_per_contact=4,
+                                 sim_settings=SimulationSettings(),
+                                 internal_vis=is_visualizing)
 
     q0_dict = create_dict_keyed_by_model_instance_index(
         q_sim.plant, q0_dict_str)

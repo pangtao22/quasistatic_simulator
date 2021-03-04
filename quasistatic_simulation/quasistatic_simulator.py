@@ -1,4 +1,5 @@
-from typing import List, Union, Dict, Callable, Tuple
+from typing import List, Union, Dict, Tuple
+from collections import namedtuple
 import copy
 
 import numpy as np
@@ -42,18 +43,37 @@ class MyContactInfo(object):
         self.dC_W = dC_W
 
 
+"""
+@param is_quasi_dynamic: bool. If True, dynamics of unactauted objects is 
+    given by sum(F) = M @ (v_(l+1) - 0). If False, it becomes sum(F) = 0 
+    instead. 
+    This is only relevant when is_constrained == False. Not having an mass 
+    matrix can sometimes makes the unconstrained program unbounded. 
+@param is_unconstrained: bool. If False, solves the standard QP for system 
+    states at the next time step. If True, solves an unconstrained version of 
+    the QP, obtained by moving inequality constraints into the objective with 
+    log barrier functions. 
+@param log_barrier_weight: float, used only when is_unconstrained == True. 
+"""
+SimulationSettings = namedtuple(
+    "SimulationSettings",
+    field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"],
+    defaults=[False, False, 1e6])
+
+
 class QuasistaticSimulator:
     def __init__(self, robot_info_dict: [str, RobotInfo],
-                 object_sdf_paths: Dict[str, str],
-                 gravity: np.ndarray, nd_per_contact: int,
+                 object_sdf_paths: Dict[str, str], gravity: np.ndarray,
+                 nd_per_contact: int, sim_settings: SimulationSettings,
                  internal_vis: bool = False):
         """
         Let's assume that
         - Each rigid body has one contact geometry.
         all joints of the robot.
+        :param sim_settings:
         :param robot_info_dict:
         """
-
+        self.sim_settings = sim_settings
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
@@ -163,6 +183,9 @@ class QuasistaticSimulator:
         self.nc_log = []
         self.nd_log = []
         self.optimizer_time_log = []
+
+    def set_sim_settings(self, new_settings: SimulationSettings):
+        self.sim_settings = new_settings
 
     def get_model_instance_indices(self):
         return (copy.copy(self.models_unactuated),
@@ -529,11 +552,13 @@ class QuasistaticSimulator:
             idx_v_model = self.velocity_indices_dict[model]
             ixgrid = np.ix_(idx_v_model, idx_v_model)
 
-            # prog.AddLinearCost(-tau_ext_dict[model] * h, 0, v_h_dict[model])
-            #TODO: need to add M @ v_l to the linear terms.
-            prog.AddQuadraticCost(M[ixgrid] / h,
-                                  -tau_ext_dict[model] * h,
-                                  v_h_dict[model])
+            if self.sim_settings.is_quasi_dynamic:
+                prog.AddQuadraticCost(M[ixgrid] / h,
+                                      -tau_ext_dict[model] * h,
+                                      v_h_dict[model])
+            else:
+                prog.AddLinearCost(
+                    -tau_ext_dict[model] * h, 0, v_h_dict[model])
 
         for model in self.models_actuated:
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
@@ -590,7 +615,7 @@ class QuasistaticSimulator:
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
                 self.Kq_a[model].diagonal() * h
 
-        t = 1000000
+        t = self.sim_settings.log_barrier_weight
         log_barriers_sum = 0.
         if len(phi_constraints) > 0:
             log_barriers_sum = cp.sum(cp.log(phi_constraints + J @ vh))
@@ -633,9 +658,14 @@ class QuasistaticSimulator:
         phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \
             self.calc_jacobian_and_phi(contact_detection_tolerance)
 
-        v_h_value_dict, beta = \
-            self.step_qp(q_dict, q_a_cmd_dict, tau_ext_dict,
-                         h, phi_constraints, J)
+        if self.sim_settings.is_unconstrained:
+            v_h_value_dict, beta = \
+                self.step_unconstrained(q_dict, q_a_cmd_dict, tau_ext_dict,
+                             h, phi_constraints, J)
+        else:
+            v_h_value_dict, beta = \
+                self.step_qp(q_dict, q_a_cmd_dict, tau_ext_dict,
+                             h, phi_constraints, J)
 
         dq_dict = dict()
         for model in self.models_actuated:

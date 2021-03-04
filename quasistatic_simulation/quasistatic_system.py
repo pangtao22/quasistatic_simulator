@@ -20,9 +20,10 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        self.q_sim = QuasistaticSimulator(robot_info_dict,
-                                          object_sdf_paths, gravity,
-                                          nd_per_contact, internal_vis=False)
+        self.q_sim = QuasistaticSimulator(robot_info_dict, object_sdf_paths,
+                                          gravity, nd_per_contact,
+                                          SimulationSettings(),
+                                          internal_vis=False)
         self.plant = self.q_sim.plant
 
         # output ports for states of unactuated objects and robots (actuated).
