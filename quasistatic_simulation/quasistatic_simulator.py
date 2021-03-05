@@ -62,7 +62,7 @@ SimulationSettings = namedtuple(
 
 
 class QuasistaticSimulator:
-    def __init__(self, robot_info_dict: [str, RobotInfo],
+    def __init__(self, robot_info_dict: Dict[str, RobotInfo],
                  object_sdf_paths: Dict[str, str], gravity: np.ndarray,
                  nd_per_contact: int, sim_settings: SimulationSettings,
                  internal_vis: bool = False):
@@ -183,6 +183,12 @@ class QuasistaticSimulator:
         self.nc_log = []
         self.nd_log = []
         self.optimizer_time_log = []
+
+    def get_robot_name_to_model_instance_dict(self):
+        name_to_model = dict()
+        for model in self.models_all:
+            name_to_model[self.plant.GetModelInstanceName(model)] = model
+        return name_to_model
 
     def set_sim_settings(self, new_settings: SimulationSettings):
         self.sim_settings = new_settings

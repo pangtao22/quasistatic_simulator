@@ -69,16 +69,17 @@ q0_dict_str = {object_name: q_u0,
 
 
 #%% run sim.
-loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-    q_a_traj_dict_str=q_a_traj_dict_str,
-    q0_dict_str=q0_dict_str,
-    robot_info_dict=robot_info_dict,
-    object_sdf_paths=object_sdf_dict,
-    h=h,
-    gravity=gravity,
-    is_visualizing=True,
-    real_time_rate=1.0,
-    sim_settings=sim_settings)
+if __name__ == "__main__":
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        robot_info_dict=robot_info_dict,
+        object_sdf_paths=object_sdf_dict,
+        h=h,
+        gravity=gravity,
+        is_visualizing=True,
+        real_time_rate=1.0,
+        sim_settings=sim_settings)
 
 
 
