@@ -13,8 +13,9 @@ h = 0.1
 T = 10  # num of time steps to simulate forward.
 duration = T * h
 sim_settings = SimulationSettings(is_quasi_dynamic=True,
-                                  is_unconstrained=False,
-                                  log_barrier_weight=5000)
+                                  is_unconstrained=True,
+                                  log_barrier_weight=5000,
+                                  time_step=h)
 gravity = np.array([0, 0, -10.])
 
 #%%

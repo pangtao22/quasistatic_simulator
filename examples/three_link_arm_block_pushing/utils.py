@@ -28,8 +28,8 @@ q_robot_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
     sample_dot_at_end=np.zeros(nq_a))
 
 gravity = np.array([0, 0, -10.])
-h_quasistatic = 0.01
-h_mbp = 1e-4
+h_quasistatic = 0.02
+h_mbp = 1e-3
 
 
 def run_comparison(

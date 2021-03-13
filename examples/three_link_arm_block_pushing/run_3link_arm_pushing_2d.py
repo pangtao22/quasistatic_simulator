@@ -31,7 +31,6 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
         q_knots=q_box_log_quasistatic[:, 2],
         t=t_quasistatic,
         q_gt_traj=angle_box_mbp_traj)
-
     # Quasistatic vs MBP, object position.
     xyz_box_mbp_traj = PiecewisePolynomial.FirstOrderHold(
         t_mbp, q_box_log_mbp[:, :2].T)

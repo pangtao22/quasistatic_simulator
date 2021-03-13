@@ -7,7 +7,7 @@ import cvxpy as cp
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
-                         SceneGraph, ExternallyAppliedSpatialForce)
+                         SceneGraph, ExternallyAppliedSpatialForce, Context)
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
 from pydrake.solvers import mathematicalprogram as mp
@@ -57,8 +57,9 @@ class MyContactInfo(object):
 """
 SimulationSettings = namedtuple(
     "SimulationSettings",
-    field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"],
-    defaults=[False, False, 1e6])
+    field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight",
+                 "time_step"],
+    defaults=[False, False, 1e6, 0.1])
 
 
 class QuasistaticSimulator:
@@ -248,7 +249,9 @@ class QuasistaticSimulator:
             position_indices: Union[List[int], None],
             Jn: np.ndarray,
             Jf: np.ndarray,
-            jacobian_wrt_variable: JacobianWrtVariable):
+            jacobian_wrt_variable: JacobianWrtVariable,
+            plant: MultibodyPlant = None,
+            context: Context = None):
         """
         Updates corresponding rows of Jn and Jf.
         :param body: a RigidBody object that belongs to either
@@ -264,15 +267,19 @@ class QuasistaticSimulator:
             instance to which body belongs.
         :param Jn: normal jacobian of shape(n_c, len(position_indices)).
         :param Jf: tangent jacobian of shape(n_f, len(position_indices)).
+        :param plant: if None, use self.plant.
         :return: None.
         """
-        J_WBi = self.plant.CalcJacobianTranslationalVelocity(
-            context=self.context_plant,
+        if plant is None:
+            plant = self.plant
+            context = self.context_plant
+        J_WBi = plant.CalcJacobianTranslationalVelocity(
+            context=context,
             with_respect_to=jacobian_wrt_variable,
             frame_B=body.body_frame(),
             p_BoBi_B=pC_D,
-            frame_A=self.plant.world_frame(),
-            frame_E=self.plant.world_frame())
+            frame_A=plant.world_frame(),
+            frame_E=plant.world_frame())
         if position_indices is not None:
             J_WBi = J_WBi[:, position_indices]
 
@@ -362,7 +369,7 @@ class QuasistaticSimulator:
             '''
 
             phi[i_c] = sdp.distance
-            U[i_c] = self.get_friction_coefficient_from_signed_distance_pair(
+            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(
                 sdp)
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
@@ -513,7 +520,7 @@ class QuasistaticSimulator:
         return self.plant.GetVelocitiesFromArray(
             model_instance_index, selector).astype(np.int)
 
-    def get_friction_coefficient_from_signed_distance_pair(self, sdp):
+    def get_friction_coefficient_for_signed_distance_pair(self, sdp):
         props_A = self.inspector.GetProximityProperties(sdp.id_A)
         props_B = self.inspector.GetProximityProperties(sdp.id_B)
         cf_A = props_A.GetProperty("material", "coulomb_friction")
