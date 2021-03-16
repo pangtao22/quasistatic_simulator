@@ -41,6 +41,10 @@ def create_plant_with_robots_and_objects(
     robot_models_list = []
     for name, robot_info in robot_info_dict.items():
         robot_model = parser.AddModelFromFile(robot_info.sdf_path, name)
+        robot_models_list.append(robot_model)
+
+        if robot_info.parent_model_name is None:
+            continue
         parent_model = plant.GetModelInstanceByName(
             robot_info.parent_model_name)
         parent_frame = plant.GetFrameByName(
@@ -51,7 +55,6 @@ def create_plant_with_robots_and_objects(
                          B=robot_base_frame,
                          X_AB=robot_info.X_PB)
 
-        robot_models_list.append(robot_model)
 
     # Objects
     object_models_list = []

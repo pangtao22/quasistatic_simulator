@@ -10,11 +10,11 @@ from quasistatic_simulation.quasistatic_simulator import (
 
 #%% sim params
 h = 0.1
-T = 10  # num of time steps to simulate forward.
+T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
 sim_settings = SimulationSettings(is_quasi_dynamic=True,
                                   is_unconstrained=True,
-                                  log_barrier_weight=5000,
+                                  log_barrier_weight=1000,
                                   time_step=h)
 gravity = np.array([0, 0, -10.])
 
@@ -61,7 +61,7 @@ q_a_traj_dict_str = {robot_l_name: q_robot_l_traj,
 # object
 object_name = "sphere"
 object_sdf_dict = {object_name: object_sdf_path}
-q_u0 = np.array([0, 1.7, 0])
+q_u0 = np.array([0, 1.3, 0])
 
 # initial conditions dict.
 q0_dict_str = {object_name: q_u0,
@@ -80,7 +80,8 @@ if __name__ == "__main__":
         gravity=gravity,
         is_visualizing=True,
         real_time_rate=1.0,
-        sim_settings=sim_settings)
+        sim_settings=sim_settings,
+        nd_per_contact=2)
 
 
 

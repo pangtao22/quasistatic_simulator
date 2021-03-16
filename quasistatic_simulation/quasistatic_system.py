@@ -108,4 +108,5 @@ class QuasistaticSystem(LeafSystem):
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
 
         self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.h,
-                        contact_detection_tolerance=0.005)
+                        contact_detection_tolerance=
+                        self.q_sim.sim_settings.contact_detection_tolerance)

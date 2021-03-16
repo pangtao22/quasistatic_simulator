@@ -50,6 +50,8 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
     q_log = [q0_dict]
     t_log = [0.]
     q_a_cmd_log = []
+    contact_detection_tolerance = \
+        SimulationSettings().contact_detection_tolerance
 
     for i in range(n_steps):
         t = h * i
@@ -60,7 +62,8 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
             q_sim.get_generalized_force_from_external_spatial_force([])
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
         q_dict = q_sim.step(q_a_cmd_dict, tau_ext_dict, h,
-                            contact_detection_tolerance=0.01)
+                            contact_detection_tolerance=
+                            contact_detection_tolerance)
         if is_visualizing:
             q_sim.draw_current_configuration()
 

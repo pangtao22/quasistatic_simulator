@@ -32,9 +32,8 @@ h_quasistatic = 0.02
 h_mbp = 1e-3
 
 
-def run_comparison(
-        box_sdf_path: str, q0_dict_str: Dict[str, np.ndarray],
-        is_visualizing=False, real_time_rate=0.0):
+def run_comparison(box_sdf_path: str, q0_dict_str: Dict[str, np.ndarray],
+                   nd_per_contact, is_visualizing=False, real_time_rate=0.0):
     #%% Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_a_traj_dict_str={robot_name: q_robot_traj},
@@ -44,7 +43,8 @@ def run_comparison(
         h=h_quasistatic,
         gravity=gravity,
         is_visualizing=is_visualizing,
-        real_time_rate=real_time_rate)
+        real_time_rate=real_time_rate,
+        nd_per_contact=nd_per_contact)
 
     # %% MBP
     loggers_dict_mbp_str = run_mbp_sim(

@@ -92,14 +92,15 @@ def run_quasistatic_sim(
         h: float,
         gravity: np.ndarray,
         is_visualizing: bool,
-        real_time_rate: float, **kwargs):
+        real_time_rate: float,
+        nd_per_contact: int = 4, **kwargs):
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
         robot_info_dict=robot_info_dict,
         object_sdf_paths=object_sdf_paths,
         gravity=gravity,
-        nd_per_contact=4,
+        nd_per_contact=nd_per_contact,
         time_step_seconds=h)
     builder.AddSystem(q_sys)
 

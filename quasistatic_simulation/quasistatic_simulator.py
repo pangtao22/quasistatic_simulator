@@ -58,8 +58,8 @@ class MyContactInfo(object):
 SimulationSettings = namedtuple(
     "SimulationSettings",
     field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight",
-                 "time_step"],
-    defaults=[False, False, 1e6, 0.1])
+                 "time_step", "contact_detection_tolerance"],
+    defaults=[False, False, 1e6, 0.1, 0.01])
 
 
 class QuasistaticSimulator:
@@ -603,10 +603,10 @@ class QuasistaticSimulator:
                            h: float,
                            phi_constraints: np.ndarray,
                            J: np.ndarray):
-        vh = cp.Variable(self.n_v)
-        v_h_dict = dict()
+        v = cp.Variable(self.n_v)
+        v_dict = dict()
         for model in self.models_all:
-            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
+            v_dict[model] = v[self.velocity_indices_dict[model]]
 
         M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
         Q = np.zeros((self.n_v, self.n_v))
@@ -617,7 +617,7 @@ class QuasistaticSimulator:
             tau_h[idx_v_model] = tau_ext_dict[model] * h
 
             ixgrid = np.ix_(idx_v_model, idx_v_model)
-            Q[ixgrid] = M[ixgrid] / h
+            Q[ixgrid] = M[ixgrid]
 
         for model in self.models_actuated:
             idx_v_model = self.velocity_indices_dict[model]
@@ -626,22 +626,22 @@ class QuasistaticSimulator:
             tau_h[idx_v_model] = tau_a * h
 
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.Kq_a[model].diagonal() * h
+                self.Kq_a[model].diagonal() * h**2
 
         t = self.sim_settings.log_barrier_weight
         log_barriers_sum = 0.
         if len(phi_constraints) > 0:
-            log_barriers_sum = cp.sum(cp.log(phi_constraints + J @ vh))
+            log_barriers_sum = cp.sum(cp.log(phi_constraints / h + J @ v))
         prob = cp.Problem(
-            cp.Minimize(0.5 * cp.quad_form(vh, Q) - tau_h @ vh -
+            cp.Minimize(0.5 * cp.quad_form(v, Q) - tau_h @ v -
                         log_barriers_sum / t))
 
         prob.solve()
         assert prob.status == "optimal"
 
         v_h_value_dict = dict()
-        for model in v_h_dict.keys():
-            v_h_value_dict[model] = v_h_dict[model].value
+        for model in v_dict.keys():
+            v_h_value_dict[model] = v_dict[model].value * h
 
         return v_h_value_dict, np.zeros_like(phi_constraints)
 
