@@ -29,7 +29,7 @@ def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
     builder = DiagramBuilder()
     plant, scene_graph, robot_model_list, object_model_list = \
         create_plant_with_robots_and_objects(
-            builder, robot_info_dict, object_sdf_paths, 1e-3, gravity)
+            builder, robot_info_dict, object_sdf_paths, time_step, gravity)
 
     iiwa_model, schunk_model = robot_model_list
     Kp_iiwa = robot_info_dict[iiwa_name].joint_stiffness
@@ -57,8 +57,7 @@ def run_mbp_sim(q_traj_iiwa: PiecewisePolynomial,
         controller_iiwa.joint_angle_commanded_input_port)
 
     # Schunk controller
-    controller_schunk = PidController(
-        Kp_schunk, np.zeros(2), 2 * 0.7 * np.sqrt(Kp_schunk))
+    controller_schunk = PidController(Kp_schunk, np.zeros(2), np.ones(2) * 20)
 
     builder.AddSystem(controller_schunk)
     builder.Connect(
