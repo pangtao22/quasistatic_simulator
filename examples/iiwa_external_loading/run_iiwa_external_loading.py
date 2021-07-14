@@ -1,22 +1,24 @@
+import os
 from matplotlib import pyplot as plt
-from pydrake.all import RigidTransform
 
 from examples.setup_simulation_diagram import *
-from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
-from examples.setup_environments import iiwa_sdf_path_drake
+from iiwa_controller.iiwa_controller.utils import (create_iiwa_controller_plant,
+    get_package_path)
 
 
-#%% simulation parameters.
+# Simulation parameters.
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
-robot_name = "iiwa7"
-robot_info = RobotInfo(
-    sdf_path=iiwa_sdf_path_drake,
-    parent_model_name="WorldModelInstance",
-    parent_frame_name="WorldBody",
-    base_frame_name="iiwa_link_0",
-    X_PB=RigidTransform(),
-    joint_stiffness=Kp_iiwa)
+robot_name = "iiwa"
+robot_stiffness_dict = {robot_name: Kp_iiwa}
+h_quasistatic = 0.2
+h_mbp = 1e-4
+gravity = np.array([0, 0, -10.])
+quasistatic_sim_params = QuasistaticSimParameters(
+    gravity=gravity,
+    nd_per_contact=4,
+    contact_detection_tolerance=0.5)
 
+# Robot joint trajectory.
 nq_a = 7
 q_iiwa_knots = np.zeros((2, 7))
 q_iiwa_knots[0] = [0, 0, 0, -1.70, 0, 1.0, 0]
@@ -32,15 +34,21 @@ F_WB_traj = PiecewisePolynomial.FirstOrderHold(
     [0, q_iiwa_traj.end_time() / 2], F_WB.T)
 
 
+# model directive paths
+model_directive_path = os.path.join(
+    get_package_path(), 'models', 'iiwa.yml')
+
+
 def run_comparison(is_visualizing: bool, real_time_rate: float):
     #%% Quasistatic.
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        model_directive_path=model_directive_path,
+        object_sdf_paths=dict(),
         q_a_traj_dict_str={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
-        robot_info_dict={robot_name: robot_info},
-        object_sdf_paths=dict(),
-        h=0.2,
-        gravity=gravity,
+        robot_stiffness_dict=robot_stiffness_dict,
+        h=h_quasistatic,
+        sim_params=quasistatic_sim_params,
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
         body_name="iiwa_link_7",
@@ -48,12 +56,13 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
 
     #%% MBP.
     loggers_dict_mbp_str = run_mbp_sim(
+        model_directive_path=model_directive_path,
+        object_sdf_paths=dict(),
         q_a_traj=q_iiwa_traj,
         q0_dict_str=q0_dict_str,
-        robot_info_dict={robot_name: robot_info},
-        object_sdf_paths=dict(),
+        robot_stiffness_dict=robot_stiffness_dict,
         create_controller_plant=create_iiwa_controller_plant,
-        h=1e-4,
+        h=h_mbp,
         gravity=gravity,
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
