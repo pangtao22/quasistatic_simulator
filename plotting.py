@@ -9,6 +9,8 @@ rc('text', usetex=True)
 from problem_definition_pinch import *
 
 
+
+#%%
 def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
                       figsize, save_name):
     """
@@ -28,7 +30,7 @@ def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
         ax2.grid(True)
 
         color = "red"
-        color2 = np.array([163, 31, 52.]) / 255
+        color2 = np.array([0, 204, 163, 255]) / 255
         ax.step(t_sim, lambda_n_log[:, i], where="post", color=color,
                 label=r"$c_{n_%d}$" % (i+1), linewidth=1)
 
@@ -96,7 +98,7 @@ def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log,
     idx = [0, 2]
     for i, ax in enumerate(axes):
         color = "red"
-        color2 = np.array([163, 31, 52.]) / 255
+        color2 = np.array([0, 204, 163, 255]) / 255
         ax.step(t_sim1, q_log[:, 2 + idx[i]], where="post", color=color,
                 label=labels[i], linewidth=1)
         ax.step(t_sim1[1:], qa_cmd_log[:, idx[i]], where="post", color=color2,

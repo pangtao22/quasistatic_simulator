@@ -1,6 +1,7 @@
 from typing import List, Union, Dict, Tuple
 from collections import namedtuple
 import copy
+import warnings
 
 import numpy as np
 import cvxpy as cp
@@ -59,7 +60,7 @@ SimulationSettings = namedtuple(
     "SimulationSettings",
     field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight",
                  "time_step", "contact_detection_tolerance"],
-    defaults=[False, False, 1e6, 0.1, 0.01])
+    defaults=[False, False, 1e4, 0.1, 0.01])
 
 
 class QuasistaticSimulator:
@@ -637,7 +638,12 @@ class QuasistaticSimulator:
                         log_barriers_sum / t))
 
         prob.solve()
-        assert prob.status == "optimal"
+        if prob.status != "optimal":
+            if prob.status == "optimal_inaccurate":
+                warnings.warn("CVX solver is inaccurate.")
+            else:
+                raise RuntimeError(
+                    "CVX solver status is {}".format(prob.status))
 
         v_h_value_dict = dict()
         for model in v_dict.keys():

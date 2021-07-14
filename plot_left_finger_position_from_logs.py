@@ -21,7 +21,7 @@ cmd_labels = [r"$\bar{x}_l$", r"$\bar{y}_l$"]
 idx = [0, 2]
 for i, ax in enumerate(axes):
     color = "red"
-    color2 = np.array([163, 31, 52.]) / 255
+    color2 = np.array([0, 204, 163, 255]) / 255
     ax.step(t_sim1, q_log[:, 2 + idx[i]], where="post", color="blue",
             label=labels[i], linewidth=2)
     ax.step(t_sim1, q_log_anitescu[:, 2 + idx[i]], where="post",
