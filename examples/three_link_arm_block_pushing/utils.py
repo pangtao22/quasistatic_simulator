@@ -1,23 +1,18 @@
-from pydrake.all import RigidTransform
+import os.path
 
 from examples.setup_simulation_diagram import *
-from examples.setup_environments import (
-    robot_sdf_path,
+from examples.setup_environments import (model_dir_path,
     create_3link_arm_controller_plant)
 
 # Simulation parameters.
-robot_name = "three_link_arm"
+gravity = np.array([0, 0, -10.])
+robot_name = "arm"
 box_name = "box0"
-X_WR = RigidTransform()
-X_WR.set_translation([0, 0, 0.1])
-robot_info = RobotInfo(
-    sdf_path=robot_sdf_path,
-    parent_model_name="WorldModelInstance",
-    parent_frame_name="WorldBody",
-    base_frame_name="link_0",
-    X_PB=X_WR,
-    joint_stiffness= np.array([1000, 1000, 1000], dtype=float))
+robot_stiffness_dict = {robot_name: np.array([1000, 1000, 1000], dtype=float)}
+h_quasistatic = 0.02
+h_mbp = 1e-3
 
+# Robot joint trajectory.
 nq_a = 3
 qa_knots = np.zeros((2, nq_a))
 qa_knots[0] = [np.pi / 2, -np.pi / 2, -np.pi / 2]
@@ -27,31 +22,30 @@ q_robot_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
     sample_dot_at_start=np.zeros(nq_a),
     sample_dot_at_end=np.zeros(nq_a))
 
-gravity = np.array([0, 0, -10.])
-h_quasistatic = 0.02
-h_mbp = 1e-3
+# model directive paths
+model_directive_path = os.path.join(
+    model_dir_path, 'three_link_arm_and_ground.yml')
 
 
 def run_comparison(box_sdf_path: str, q0_dict_str: Dict[str, np.ndarray],
-                   nd_per_contact, is_visualizing=False, real_time_rate=0.0):
+                   quasistatic_sim_params: QuasistaticSimParameters,
+                   is_visualizing=False, real_time_rate=0.0):
     #%% Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_a_traj_dict_str={robot_name: q_robot_traj},
-        q0_dict_str=q0_dict_str,
-        robot_info_dict={robot_name: robot_info},
+        model_directive_path=model_directive_path,
         object_sdf_paths={box_name: box_sdf_path},
-        h=h_quasistatic,
-        gravity=gravity,
-        is_visualizing=is_visualizing,
-        real_time_rate=real_time_rate,
-        nd_per_contact=nd_per_contact)
+        q_a_traj_dict_str={robot_name: q_robot_traj}, q0_dict_str=q0_dict_str,
+        robot_stiffness_dict=robot_stiffness_dict, h=h_quasistatic,
+        sim_params=quasistatic_sim_params,
+        is_visualizing=is_visualizing, real_time_rate=real_time_rate)
 
     # %% MBP
     loggers_dict_mbp_str = run_mbp_sim(
+        model_directive_path=model_directive_path,
+        object_sdf_paths={box_name: box_sdf_path},
         q_a_traj=q_robot_traj,
         q0_dict_str=q0_dict_str,
-        robot_info_dict={robot_name: robot_info},
-        object_sdf_paths={box_name: box_sdf_path},
+        robot_stiffness_dict=robot_stiffness_dict,
         create_controller_plant=create_3link_arm_controller_plant,
         h=h_mbp,
         gravity=gravity,

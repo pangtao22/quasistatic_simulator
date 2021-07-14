@@ -1,0 +1,6 @@
+directives:
+  - add_directives:
+      file: package://local/three_link_arm.yml
+
+  - add_directives:
+      file: package://local/ground.yml

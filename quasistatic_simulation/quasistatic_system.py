@@ -5,25 +5,35 @@ from .quasistatic_simulator import *
 
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
-                 robot_info_dict: [str, RobotInfo],
-                 object_sdf_paths: Dict[str, RobotInfo],
-                 gravity: np.array,
-                 nd_per_contact: int,
-                 time_step_seconds: float):
+                 time_step: float,
+                 model_directive_path: str,
+                 robot_stiffness_dict: Dict[str, np.ndarray],
+                 object_sdf_paths: Dict[str, str],
+                 sim_params: QuasistaticSimParameters):
+        """
+        Also refer to the docstring of quasistatic simulator.
+        :param time_step:  quasistatic simulation time step in seconds.
+        :param model_directive_path:
+        :param robot_stiffness_dict:
+        :param object_sdf_paths:
+        :param sim_params:
+        """
         LeafSystem.__init__(self)
         self.set_name("quasistatic_system")
 
         # State updates are triggered by publish events.
-        self.h = time_step_seconds
+        self.h = time_step
         self.DeclarePeriodicDiscreteUpdate(self.h)
         # need at least one state to call self.DoCalcDiscreteVariableUpdates.
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        self.q_sim = QuasistaticSimulator(robot_info_dict, object_sdf_paths,
-                                          gravity, nd_per_contact,
-                                          SimulationSettings(),
-                                          internal_vis=False)
+        self.q_sim = QuasistaticSimulator(
+            model_directive_path=model_directive_path,
+            robot_stiffness_dict=robot_stiffness_dict,
+            object_sdf_paths=object_sdf_paths,
+            sim_params=sim_params,
+            internal_vis=False)
         self.plant = self.q_sim.plant
 
         # output ports for states of unactuated objects and robots (actuated).
@@ -109,4 +119,4 @@ class QuasistaticSystem(LeafSystem):
 
         self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.h,
                         contact_detection_tolerance=
-                        self.q_sim.sim_settings.contact_detection_tolerance)
+                        self.q_sim.sim_params.contact_detection_tolerance)

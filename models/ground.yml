@@ -1,0 +1,14 @@
+directives:
+  - add_model:
+      name: ground
+      file: package://local/ground_box.sdf
+
+  - add_frame:
+      name: ground_world_offset
+      X_PF:
+        base_frame: world
+        translation: [ 0, 0, -0.5]
+
+  - add_weld:
+      parent: ground_world_offset
+      child: ground::ground

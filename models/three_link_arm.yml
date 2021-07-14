@@ -1,0 +1,15 @@
+directives:
+
+- add_model:
+    name: arm
+    file: package://local/three_link_arm.sdf
+
+- add_frame:
+    name: world_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0, 0.1]
+
+- add_weld:
+    parent: world_arm_offset
+    child: arm::link_0

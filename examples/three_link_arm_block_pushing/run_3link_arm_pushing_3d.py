@@ -34,9 +34,14 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
 
 
 if __name__ == "__main__":
+    quasistatic_sim_params = QuasistaticSimParameters(
+        gravity=gravity,
+        nd_per_contact=4,
+        contact_detection_tolerance=np.inf)
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
-        run_comparison(box3d_big_sdf_path, q0_dict_str, 4, is_visualizing=True,
+        run_comparison(box3d_big_sdf_path, q0_dict_str, is_visualizing=True,
+                       quasistatic_sim_params=quasistatic_sim_params,
                        real_time_rate=0.0)
 #%%
     figure, axes = plt.subplots(nq_a, 1, figsize=(4, 10), dpi=200)

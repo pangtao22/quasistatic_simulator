@@ -1,3 +1,4 @@
+import numpy as np
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          LogOutput, SpatialForce, BodyIndex, InputPort)
 
@@ -85,27 +86,24 @@ def add_externally_applied_generalized_force(
 
 
 def run_quasistatic_sim(
+        model_directive_path: str,
+        object_sdf_paths: Dict[str, str],
         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
         q0_dict_str: Dict[str, np.ndarray],
-        robot_info_dict: Dict[str, RobotInfo],
-        object_sdf_paths: Dict[str, str],
+        robot_stiffness_dict: Dict[str, np.ndarray],
         h: float,
-        gravity: np.ndarray,
+        sim_params: QuasistaticSimParameters,
         is_visualizing: bool,
-        real_time_rate: float,
-        nd_per_contact: int = 4, **kwargs):
+        real_time_rate: float, **kwargs):
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
-        robot_info_dict=robot_info_dict,
+        time_step=h,
+        model_directive_path=model_directive_path,
+        robot_stiffness_dict=robot_stiffness_dict,
         object_sdf_paths=object_sdf_paths,
-        gravity=gravity,
-        nd_per_contact=nd_per_contact,
-        time_step_seconds=h)
+        sim_params=sim_params)
     builder.AddSystem(q_sys)
-
-    if "sim_settings" in kwargs.keys():
-        q_sys.q_sim.set_sim_settings(kwargs["sim_settings"])
 
     # update dictionaries with ModelInstanceIndex keys.
     q_a_traj_dict = create_dict_keyed_by_model_instance_index(
@@ -174,10 +172,11 @@ def run_quasistatic_sim(
 
 
 def run_mbp_sim(
+        model_directive_path: str,
+        object_sdf_paths: Dict[str, str],
         q_a_traj: PiecewisePolynomial,
         q0_dict_str: Dict[str, np.ndarray],
-        robot_info_dict: Dict[str, RobotInfo],
-        object_sdf_paths: Dict[str, str],
+        robot_stiffness_dict: Dict[str, np.ndarray],
         create_controller_plant: CreateControllerPlantFunction,
         h: float,
         gravity: np.ndarray,
@@ -197,12 +196,18 @@ def run_mbp_sim(
     builder = DiagramBuilder()
     plant, scene_graph, robot_models, object_models = \
         create_plant_with_robots_and_objects(
-            builder, robot_info_dict, object_sdf_paths, h, gravity)
+            builder=builder,
+            model_directive_path=model_directive_path,
+            robot_names=[name for name in robot_stiffness_dict.keys()],
+            object_sdf_paths=object_sdf_paths,
+            time_step=h,  # Only useful for MBP simulations.
+            gravity=gravity)
+
     assert len(robot_models) == 1
     robot_model = robot_models[0]
-    for _, robot_info in robot_info_dict.items():
+    for _, joint_stiffness in robot_stiffness_dict.items():
         break
-    joint_stiffness = robot_info.joint_stiffness
+
     # controller plant.
     plant_robot, _ = create_controller_plant(gravity)
     controller_robot = RobotInternalController(

@@ -8,7 +8,7 @@ import cvxpy as cp
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
-                         SceneGraph, ExternallyAppliedSpatialForce, Context)
+                         ExternallyAppliedSpatialForce, Context)
 from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
     MeshcatContactVisualizer)
 from pydrake.solvers import mathematicalprogram as mp
@@ -21,7 +21,7 @@ from pydrake.geometry import PenetrationAsPointPair
 from contact_aware_control.contact_particle_filter.utils_cython import (
     CalcTangentVectors)
 
-from .environment_setup import RobotInfo, create_plant_with_robots_and_objects
+from .environment_setup import create_plant_with_robots_and_objects
 
 
 class MyContactInfo(object):
@@ -45,42 +45,56 @@ class MyContactInfo(object):
 
 
 """
-@param is_quasi_dynamic: bool. If True, dynamics of unactauted objects is 
+:param time_step:
+:param contact_detection_tolerance: Signed distance pairs whose distances are 
+    greater than this value are ignored in the simulator's non-penetration 
+    constraints. Unit is in meters.
+:param is_quasi_dynamic: bool. If True, dynamics of unactauted objects is 
     given by sum(F) = M @ (v_(l+1) - 0). If False, it becomes sum(F) = 0 
     instead. 
-    This is only relevant when is_constrained == False. Not having an mass 
+    This is only relevant when is_constrained == False. Not having a mass 
     matrix can sometimes makes the unconstrained program unbounded. 
-@param is_unconstrained: bool. If False, solves the standard QP for system 
+:param is_unconstrained: bool. If False, solves the standard QP for system 
     states at the next time step. If True, solves an unconstrained version of 
     the QP, obtained by moving inequality constraints into the objective with 
     log barrier functions. 
-@param log_barrier_weight: float, used only when is_unconstrained == True. 
+:param log_barrier_weight: float, used only when is_unconstrained == True.
+:param nd_per_contact: int, number of extreme rays per contact point. 
 """
-SimulationSettings = namedtuple(
-    "SimulationSettings",
-    field_names=["is_quasi_dynamic", "is_unconstrained", "log_barrier_weight",
-                 "time_step", "contact_detection_tolerance"],
-    defaults=[False, False, 1e4, 0.1, 0.01])
+QuasistaticSimParameters = namedtuple(
+    "QuasistaticSimParameters",
+    field_names=[
+        "gravity", "nd_per_contact", "contact_detection_tolerance",
+        "is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"],
+    defaults=[np.array([0, 0, -9.81]), 4, 0.01,
+              False, False, 1e4])
 
 
 class QuasistaticSimulator:
-    def __init__(self, robot_info_dict: Dict[str, RobotInfo],
-                 object_sdf_paths: Dict[str, str], gravity: np.ndarray,
-                 nd_per_contact: int, sim_settings: SimulationSettings,
+    def __init__(self, model_directive_path: str,
+                 robot_stiffness_dict: Dict[str, np.ndarray],
+                 object_sdf_paths: Dict[str, str],
+                 sim_params: QuasistaticSimParameters,
                  internal_vis: bool = False):
         """
-        Let's assume that
+        Assumptions:
         - Each rigid body has one contact geometry.
-        all joints of the robot.
-        :param sim_settings:
-        :param robot_info_dict:
+        :param robot_stiffness_dict: key: model instance name; value: 1D
+            array of the stiffness of each joint in the model.
+        :param object_sdf_paths: key: object model instance name; value:
+            object sdf path.
         """
-        self.sim_settings = sim_settings
+        self.sim_params = sim_params
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_model_list, object_model_list = \
             create_plant_with_robots_and_objects(
-                builder, robot_info_dict, object_sdf_paths, 1e-3, gravity)
+                builder=builder,
+                model_directive_path=model_directive_path,
+                robot_names=[name for name in robot_stiffness_dict.keys()],
+                object_sdf_paths=object_sdf_paths,
+                time_step=1e-3,  # Only useful for MBP simulations.
+                gravity=sim_params.gravity)
 
         # visualization.
         self.internal_vis = internal_vis
@@ -137,7 +151,7 @@ class QuasistaticSimulator:
 
             n_v += len(velocity_indices)
 
-        self.nd_per_contact = nd_per_contact
+        self.nd_per_contact = sim_params.nd_per_contact
         # Sanity check.
         assert plant.num_velocities() == n_v
 
@@ -145,7 +159,7 @@ class QuasistaticSimulator:
         self.Kq_a = dict()
         for i, model in enumerate(self.models_actuated):
             model_name = plant.GetModelInstanceName(model)
-            joint_stiffness = robot_info_dict[model_name].joint_stiffness
+            joint_stiffness = robot_stiffness_dict[model_name]
             assert self.n_v_dict[model] == joint_stiffness.size
             self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
@@ -191,9 +205,6 @@ class QuasistaticSimulator:
         for model in self.models_all:
             name_to_model[self.plant.GetModelInstanceName(model)] = model
         return name_to_model
-
-    def set_sim_settings(self, new_settings: SimulationSettings):
-        self.sim_settings = new_settings
 
     def get_model_instance_indices(self):
         return (copy.copy(self.models_unactuated),
@@ -514,12 +525,12 @@ class QuasistaticSimulator:
     def get_position_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_positions())
         return self.plant.GetPositionsFromArray(
-            model_instance_index, selector).astype(np.int)
+            model_instance_index, selector).astype(int)
 
     def get_velocity_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_velocities())
         return self.plant.GetVelocitiesFromArray(
-            model_instance_index, selector).astype(np.int)
+            model_instance_index, selector).astype(int)
 
     def get_friction_coefficient_for_signed_distance_pair(self, sdp):
         props_A = self.inspector.GetProximityProperties(sdp.id_A)
@@ -566,7 +577,7 @@ class QuasistaticSimulator:
             idx_v_model = self.velocity_indices_dict[model]
             ixgrid = np.ix_(idx_v_model, idx_v_model)
 
-            if self.sim_settings.is_quasi_dynamic:
+            if self.sim_params.is_quasi_dynamic:
                 prog.AddQuadraticCost(M[ixgrid] / h,
                                       -tau_ext_dict[model] * h,
                                       v_h_dict[model])
@@ -629,7 +640,7 @@ class QuasistaticSimulator:
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
                 self.Kq_a[model].diagonal() * h**2
 
-        t = self.sim_settings.log_barrier_weight
+        t = self.sim_params.log_barrier_weight
         log_barriers_sum = 0.
         if len(phi_constraints) > 0:
             log_barriers_sum = cp.sum(cp.log(phi_constraints / h + J @ v))
@@ -677,7 +688,7 @@ class QuasistaticSimulator:
         phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \
             self.calc_jacobian_and_phi(contact_detection_tolerance)
 
-        if self.sim_settings.is_unconstrained:
+        if self.sim_params.is_unconstrained:
             v_h_value_dict, beta = \
                 self.step_unconstrained(q_dict, q_a_cmd_dict, tau_ext_dict,
                              h, phi_constraints, J)
