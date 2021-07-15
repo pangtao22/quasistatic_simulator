@@ -1,14 +1,11 @@
 import numpy as np
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
-                         LogOutput, SpatialForce, BodyIndex, InputPort)
+                         LogOutput, SpatialForce, BodyIndex, InputPort,
+                         Multiplexer, LeafSystem, PidController)
 
 from quasistatic_simulation.quasistatic_system import *
-from examples.setup_environments import CreateControllerPlantFunction
 from iiwa_controller.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-
-from contact_aware_control.plan_runner.plan_utils import (
-    RenderSystemWithGraphviz)
 
 
 class LoadApplier(LeafSystem):
@@ -20,12 +17,12 @@ class LoadApplier(LeafSystem):
             self.DeclareAbstractOutputPort(
                 "external_spatial_force",
                 lambda: AbstractValue.Make([ExternallyAppliedSpatialForce()]),
-                self.CalcOutput)
+                self.calc_output)
 
         self.F_WB_traj = F_WB_traj
         self.body_idx = body_idx
 
-    def CalcOutput(self, context, spatial_forces_vector):
+    def calc_output(self, context, spatial_forces_vector):
         t = context.get_time()
 
         easf = ExternallyAppliedSpatialForce()
@@ -149,7 +146,7 @@ def run_quasistatic_sim(
             draw_period=max(h, 1 / 30.))
 
     diagram = builder.Build()
-    RenderSystemWithGraphviz(diagram)
+    # RenderSystemWithGraphviz(diagram)
 
     # Construct simulator and run simulation.
     t_final = find_t_final_from_commanded_trajectories(q_a_traj_dict)
@@ -174,17 +171,15 @@ def run_quasistatic_sim(
 def run_mbp_sim(
         model_directive_path: str,
         object_sdf_paths: Dict[str, str],
-        q_a_traj: PiecewisePolynomial,
+        q_a_traj_dict: Dict[str, PiecewisePolynomial],
         q0_dict_str: Dict[str, np.ndarray],
         robot_stiffness_dict: Dict[str, np.ndarray],
-        create_controller_plant: CreateControllerPlantFunction,
+        robot_controller_dict: Dict[str, LeafSystem],
         h: float,
         gravity: np.ndarray,
         is_visualizing: bool,
         real_time_rate: float, **kwargs):
     """
-    Only supports one actuated model instance, which must have an accompanying
-        CreateControllerPlantFunction function.
     kwargs is used to handle externally applied spatial forces. Currently
         only supports applying one force (no torque) at the origin of the body
         frame of one body. To apply such forces, kwargs need to have
@@ -203,29 +198,47 @@ def run_mbp_sim(
             time_step=h,  # Only useful for MBP simulations.
             gravity=gravity)
 
-    assert len(robot_models) == 1
-    robot_model = robot_models[0]
-    for _, joint_stiffness in robot_stiffness_dict.items():
-        break
+    # controller.
+    for robot_name, joint_stiffness in robot_stiffness_dict.items():
+        robot_model = plant.GetModelInstanceByName(robot_name)
+        q_a_traj = q_a_traj_dict[robot_name]
 
-    # controller plant.
-    plant_robot, _ = create_controller_plant(gravity)
-    controller_robot = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=joint_stiffness,
-        controller_mode="impedance")
-    builder.AddSystem(controller_robot)
-    builder.Connect(controller_robot.GetOutputPort("joint_torques"),
-                    plant.get_actuation_input_port(robot_model))
-    builder.Connect(plant.get_state_output_port(robot_model),
-                    controller_robot.robot_state_input_port)
+        # robot trajectory source
+        shift_q_traj_to_start_at_minus_h(q_a_traj, h)
+        traj_source_q = TrajectorySource(q_a_traj)
+        builder.AddSystem(traj_source_q)
 
-    # robot trajectory source
-    shift_q_traj_to_start_at_minus_h(q_a_traj, h)
-    traj_source = TrajectorySource(q_a_traj)
-    builder.AddSystem(traj_source)
-    builder.Connect(
-        traj_source.get_output_port(0),
-        controller_robot.joint_angle_commanded_input_port)
+        controller = robot_controller_dict[robot_name]
+        builder.AddSystem(controller)
+
+        if isinstance(controller, RobotInternalController):
+            builder.Connect(controller.GetOutputPort("joint_torques"),
+                            plant.get_actuation_input_port(robot_model))
+            builder.Connect(plant.get_state_output_port(robot_model),
+                            controller.robot_state_input_port)
+            builder.Connect(
+                traj_source_q.get_output_port(),
+                controller.joint_angle_commanded_input_port)
+        elif isinstance(controller, PidController):
+            builder.Connect(
+                controller.get_output_port_control(),
+                plant.get_actuation_input_port(robot_model))
+            builder.Connect(
+                plant.get_state_output_port(robot_model),
+                controller.get_input_port_estimated_state())
+
+            # PID also needs velocity reference.
+            v_a_traj = q_a_traj.derivative(1)
+            n_q = plant.num_positions(robot_model)
+            n_v = plant.num_velocities(robot_model)
+            mux = builder.AddSystem(Multiplexer([n_q, n_v]))
+            traj_source_v = builder.AddSystem(TrajectorySource(v_a_traj))
+            builder.Connect(traj_source_q.get_output_port(),
+                            mux.get_input_port(0))
+            builder.Connect(traj_source_v.get_output_port(),
+                            mux.get_input_port(1))
+            builder.Connect(mux.get_output_port(),
+                            controller.get_input_port_desired_state())
 
     # externally applied spatial force.
     if "F_WB_traj" in kwargs.keys():
@@ -256,17 +269,19 @@ def run_mbp_sim(
     # Construct simulator and run simulation.
     sim = Simulator(diagram)
     context = sim.get_context()
-    context_controller = diagram.GetSubsystemContext(
-        controller_robot, context)
-    context_plant = diagram.GetSubsystemContext(plant, context)
 
-    controller_robot.tau_feedforward_input_port.FixValue(
-        context_controller,
-        np.zeros(controller_robot.tau_feedforward_input_port.size()))
+    for controller in robot_controller_dict.values():
+        if isinstance(controller, RobotInternalController):
+            context_controller = diagram.GetSubsystemContext(
+                controller, context)
+            controller.tau_feedforward_input_port.FixValue(
+                context_controller,
+                np.zeros(controller.tau_feedforward_input_port.size()))
 
     # robot initial configuration.
     # Makes sure that q0_dict has enough initial conditions for every model
     # instance in plant.
+    context_plant = plant.GetMyContextFromRoot(context)
     for model, q0 in q0_dict.items():
         plant.SetPositions(context_plant, model, q0)
 

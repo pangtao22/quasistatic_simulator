@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 
 from examples.log_comparison import *
-from examples.setup_environments import box3d_big_sdf_path
+from examples.model_paths import box3d_big_sdf_path
 from examples.three_link_arm_block_pushing.utils import *
+from examples.setup_simulation_diagram import shift_q_traj_to_start_at_minus_h
 
 # box initial state.
 q_u0 = np.array([1, 0, 0, 0, 0.0, 1.7, 0.5])
@@ -12,7 +13,7 @@ q0_dict_str = {robot_name: qa_knots[0], box_name: q_u0}
 def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic):
     # Set q_iiwa_traj to start at t=0.
-    shift_q_traj_to_start_at_minus_h(q_robot_traj, 0)
+    shift_q_traj_to_start_at_minus_h(q_robot_traj, h=0)
 
     # Convert mbp knot points to a polynomial.
     qa_mbp_traj = PiecewisePolynomial.ZeroOrderHold(t_mbp, q_robot_log_mbp.T)

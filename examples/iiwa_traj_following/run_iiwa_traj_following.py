@@ -1,10 +1,18 @@
 import os
-import matplotlib.pyplot as plt
 
-from examples.setup_simulation_diagram import *
+import matplotlib.pyplot as plt
+import numpy as np
 from examples.log_comparison import calc_error_integral
+from examples.setup_simulation_diagram import (run_mbp_sim,
+                                               run_quasistatic_sim,
+                                               shift_q_traj_to_start_at_minus_h)
+from iiwa_controller.iiwa_controller.robot_internal_controller import (
+    RobotInternalController)
 from iiwa_controller.iiwa_controller.utils import (create_iiwa_controller_plant,
-    get_package_path)
+                                                   get_package_path)
+from pydrake.all import PiecewisePolynomial
+from quasistatic_simulation.quasistatic_simulator import (
+    QuasistaticSimParameters)
 
 # Simulation parameters.
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
@@ -30,14 +38,13 @@ q_iiwa_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
 
 q0_dict_str = {robot_name: qa_knots[0]}
 
-
 # model directive paths
 model_directive_path = os.path.join(
     get_package_path(), 'models', 'iiwa.yml')
 
 
 def run_comparison(is_visualizing=False, real_time_rate=0.):
-    #%% Quasistatic
+    # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         model_directive_path=model_directive_path,
         object_sdf_paths=dict(),
@@ -49,14 +56,20 @@ def run_comparison(is_visualizing=False, real_time_rate=0.):
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate)
 
-    #%% MBP
+    # MBP
+    # create controller system for robot.
+    plant_robot, _ = create_iiwa_controller_plant(gravity)
+    controller_robot = RobotInternalController(
+        plant_robot=plant_robot, joint_stiffness=Kp_iiwa,
+        controller_mode="impedance")
+    robot_controller_dict = {robot_name: controller_robot}
     loggers_dict_mbp_str = run_mbp_sim(
         model_directive_path=model_directive_path,
         object_sdf_paths=dict(),
-        q_a_traj=q_iiwa_traj,
+        q_a_traj_dict={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
         robot_stiffness_dict=robot_stiffness_dict,
-        create_controller_plant=create_iiwa_controller_plant,
+        robot_controller_dict=robot_controller_dict,
         h=h_mbp,
         gravity=gravity,
         is_visualizing=is_visualizing,
@@ -76,7 +89,7 @@ if __name__ == "__main__":
     q_iiwa_log_mbp, t_mbp, q_iiwa_log_quasistatic, t_quasistatic = \
         run_comparison(is_visualizing=True, real_time_rate=1.0)
 
-#%% Making plots.
+    # %% Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_iiwa_log_mbp[:, i], label="mbp")
@@ -86,7 +99,7 @@ if __name__ == "__main__":
         ax.legend()
     axes[-1].set_xlabel("t [s]")
     plt.show()
-#%%
+    # %%
     # Set q_iiwa_traj to start at t=0.
     shift_q_traj_to_start_at_minus_h(q_iiwa_traj, 0)
     q_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp, q_iiwa_log_mbp.T)
@@ -115,7 +128,7 @@ if __name__ == "__main__":
         q_gt_traj=q_mbp_traj)
     print("MBP vs itself", e4)
 
-    #%%
+    # %%
     plt.plot(t_e3, e_vec3, label="quasistatic vs cmd")
     plt.plot(t_e2, e_vec2, label="mbp vs cmd")
     plt.xlabel("t [s]")

@@ -40,7 +40,7 @@ model_directive_path = os.path.join(
 
 
 def run_comparison(is_visualizing: bool, real_time_rate: float):
-    #%% Quasistatic.
+    # Quasistatic.
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         model_directive_path=model_directive_path,
         object_sdf_paths=dict(),
@@ -54,14 +54,21 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
         body_name="iiwa_link_7",
         F_WB_traj=F_WB_traj)
 
-    #%% MBP.
+    # MBP.
+    # create controller system for robot.
+    plant_robot, _ = create_iiwa_controller_plant(gravity)
+    controller_robot = RobotInternalController(
+        plant_robot=plant_robot, joint_stiffness=Kp_iiwa,
+        controller_mode="impedance")
+    robot_controller_dict = {robot_name: controller_robot}
+
     loggers_dict_mbp_str = run_mbp_sim(
         model_directive_path=model_directive_path,
         object_sdf_paths=dict(),
-        q_a_traj=q_iiwa_traj,
+        q_a_traj_dict={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
         robot_stiffness_dict=robot_stiffness_dict,
-        create_controller_plant=create_iiwa_controller_plant,
+        robot_controller_dict=robot_controller_dict,
         h=h_mbp,
         gravity=gravity,
         is_visualizing=is_visualizing,

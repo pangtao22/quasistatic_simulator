@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict
 
 import numpy as np
@@ -5,15 +6,14 @@ import numpy as np
 from pydrake.math import RollPitchYaw
 from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
                          ModelInstanceIndex, RigidTransform)
-
+from quasistatic_simulation.quasistatic_simulator import (
+    QuasistaticSimParameters)
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from contact_aware_control.plan_runner.contact_utils import (
     CalcIiwaQTrajectory)
-from examples.setup_environments import (
-    iiwa_sdf_path_drake, schunk_sdf_path, box3d_8cm_sdf_path,
+from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
     box3d_7cm_sdf_path, box3d_6cm_sdf_path)
-from quasistatic_simulation.quasistatic_simulator import RobotInfo
 
 
 def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
@@ -98,30 +98,15 @@ x_schunk_traj = concatenate_traj_list(x_schunk_traj_list)
 
 
 # other constants for simulation.
-iiwa_name = "iiwa7"
-schunk_name = "Schunk_Gripper"
+iiwa_name = "iiwa"
+schunk_name = "schunk"
 Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
 Kp_schunk = np.array([1000., 1000])
 
-iiwa_info = RobotInfo(
-    sdf_path=iiwa_sdf_path_drake,
-    parent_model_name="WorldModelInstance",
-    parent_frame_name="WorldBody",
-    base_frame_name="iiwa_link_0",
-    X_PB=RigidTransform(),
-    joint_stiffness=Kp_iiwa)
-
 X_L7E = RigidTransform(
     RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
-schunk_info = RobotInfo(
-    sdf_path=schunk_sdf_path,
-    parent_model_name="iiwa7",
-    parent_frame_name="iiwa_link_7",
-    base_frame_name="body",
-    X_PB=X_L7E,
-    joint_stiffness=Kp_schunk)
 
-robot_info_dict = {iiwa_name: iiwa_info, schunk_name: schunk_info}
+robot_stiffness_dict = {iiwa_name: Kp_iiwa, schunk_name: Kp_schunk}
 
 object_sdf_paths_list = [box3d_6cm_sdf_path,
                          box3d_8cm_sdf_path,
@@ -159,3 +144,11 @@ q0_dict_str[iiwa_name] = q_iiwa_traj.value(t_start).ravel()
 q0_dict_str[schunk_name] = q_schunk_traj.value(t_start).ravel()
 
 q_a_traj_dict_str = {iiwa_name: q_iiwa_traj, schunk_name: q_schunk_traj}
+
+model_directive_path = os.path.join(
+    models_dir, 'iiwa_and_schunk_and_ground.yml')
+
+quasistatic_sim_params = QuasistaticSimParameters(
+    gravity=gravity,
+    nd_per_contact=4,
+    contact_detection_tolerance=0.02)

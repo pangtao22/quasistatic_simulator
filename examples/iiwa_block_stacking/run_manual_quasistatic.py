@@ -1,3 +1,5 @@
+import os
+
 from quasistatic_simulation.quasistatic_simulator import *
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulation_diagram import (
@@ -17,8 +19,7 @@ def extract_log_for_object(
     return q_i_log
 
 
-def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
-                                 is_visualizing: bool):
+def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     """
     "Manual" means calling state update functions in a for loop, without
     relying on drake's system framework to call them.
@@ -26,11 +27,12 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
     :param is_visualizing:
     :return:
     """
-    q_sim = QuasistaticSimulator(robot_info_dict=robot_info_dict,
-                                 object_sdf_paths=object_sdf_paths_dict,
-                                 gravity=gravity, nd_per_contact=4,
-                                 sim_settings=SimulationSettings(),
-                                 internal_vis=is_visualizing)
+    q_sim = QuasistaticSimulator(
+        model_directive_path=model_directive_path,
+        robot_stiffness_dict=robot_stiffness_dict,
+        object_sdf_paths=object_sdf_paths_dict,
+        sim_params=quasistatic_sim_params,
+        internal_vis=is_visualizing)
 
     q0_dict = create_dict_keyed_by_model_instance_index(
         q_sim.plant, q0_dict_str)
@@ -50,8 +52,7 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
     q_log = [q0_dict]
     t_log = [0.]
     q_a_cmd_log = []
-    contact_detection_tolerance = \
-        SimulationSettings().contact_detection_tolerance
+    phi_threshold = quasistatic_sim_params.contact_detection_tolerance
 
     for i in range(n_steps):
         t = h * i
@@ -62,8 +63,7 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
             q_sim.get_generalized_force_from_external_spatial_force([])
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
         q_dict = q_sim.step(q_a_cmd_dict, tau_ext_dict, h,
-                            contact_detection_tolerance=
-                            contact_detection_tolerance)
+                            contact_detection_tolerance=phi_threshold)
         if is_visualizing:
             q_sim.draw_current_configuration()
 
@@ -81,11 +81,12 @@ def run_quasistatic_sim_manually(h: float, gravity: np.ndarray,
 
 if __name__ == "__main__":
     # Show that two consecutive simulations have non-deterministic differences.
+    # TODO: figure out why.
     q_quasistatic_logs_dict_str1, t_qs = run_quasistatic_sim_manually(
-        h=0.2, is_visualizing=False, gravity=gravity)
+        h=0.2, is_visualizing=False)
 
     q_quasistatic_logs_dict_str2, _ = run_quasistatic_sim_manually(
-        h=0.2, is_visualizing=False, gravity=gravity)
+        h=0.2, is_visualizing=False)
 
     for model_name in q0_dict_str.keys():
         q_log1 = q_quasistatic_logs_dict_str1[model_name]

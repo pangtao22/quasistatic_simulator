@@ -1,30 +1,10 @@
-import os
-from collections import namedtuple
 from typing import Dict, List
 
 import numpy as np
-import pydrake
-from pydrake.all import (MultibodyPlant, Parser, RigidTransform,
-                         DiagramBuilder, AddMultibodyPlantSceneGraph,
+from examples.model_paths import add_package_paths_local
+from pydrake.all import (MultibodyPlant, Parser, DiagramBuilder,
+                         AddMultibodyPlantSceneGraph,
                          ProcessModelDirectives, LoadModelDirectives)
-from iiwa_controller.iiwa_controller.utils import get_package_path
-
-RobotInfo = namedtuple("RobotInfo", ["sdf_path", "parent_model_name",
-                                     "parent_frame_name", "base_frame_name",
-                                     "X_PB", "joint_stiffness"])
-
-models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
-
-
-def add_package_paths_local(parser: Parser):
-    parser.package_map().Add(
-        "drake_manipulation_models",
-        os.path.join(pydrake.common.GetDrakePath(),
-                     "manipulation/models"))
-
-    parser.package_map().Add("local", models_dir)
-
-    parser.package_map().Add('iiwa_controller', get_package_path(), 'models')
 
 
 def create_plant_with_robots_and_objects(builder: DiagramBuilder,

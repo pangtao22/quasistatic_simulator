@@ -50,22 +50,24 @@ class TestQuasistaticSystem(unittest.TestCase):
 
         # Simulation time step.
         h = 0.2
+        model_directive_path = os.path.join(models_dir,
+                                            'iiwa_and_schunk_and_ground.yml')
 
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
+            model_directive_path=model_directive_path,
+            object_sdf_paths=object_sdf_paths_dict,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
-            robot_info_dict=robot_info_dict,
-            object_sdf_paths=object_sdf_paths_dict,
+            robot_stiffness_dict=robot_stiffness_dict,
             h=h,
-            gravity=gravity,
+            sim_params=quasistatic_sim_params,
             is_visualizing=False,
             real_time_rate=0.0)
 
         # Simulate manually.
         q_logs_dict_str, t_quasistatic = \
-            run_quasistatic_sim_manually(h=0.2, is_visualizing=False,
-                                         gravity=gravity)
+            run_quasistatic_sim_manually(h=0.2, is_visualizing=False)
 
         tolerance = 1e-5
         duraiton = t_quasistatic[-1]

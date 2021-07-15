@@ -6,7 +6,7 @@ from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from quasistatic_simulation.quasistatic_simulator import (
-    RobotInfo, SimulationSettings, create_plant_with_robots_and_objects)
+    QuasistaticSimParameters, create_plant_with_robots_and_objects)
 
 pkg_path = '/Users/pangtao/PycharmProjects/quasistatic_models'
 object_sdf_path = os.path.join(pkg_path, "models", "sphere_yz.sdf")
@@ -17,25 +17,17 @@ robot_sdf_path = os.path.join(pkg_path, "models", "sphere_yz_actuated.sdf")
 h = 0.1
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
-sim_settings = SimulationSettings(is_quasi_dynamic=True,
-                                  is_unconstrained=True,
-                                  log_barrier_weight=10000,
-                                  time_step=h,
-                                  contact_detection_tolerance=np.inf)
-gravity = np.array([0, 0, -10.])
-
+quasistatic_sim_params = QuasistaticSimParameters(
+    gravity=np.array([0, 0, -10.]),
+    nd_per_contact=2,
+    contact_detection_tolerance=np.inf,
+    is_quasi_dynamic=True,
+    is_unconstrained=True,
+    log_barrier_weight=10000)
 
 Kp = np.array([100, 100], dtype=float)
 robot_name = "pusher"
-robot_info = RobotInfo(
-    sdf_path=robot_sdf_path,
-    parent_frame_name=None,
-    parent_model_name=None,
-    base_frame_name=None,
-    X_PB=None,
-    joint_stiffness=Kp)
-
-robot_info_dict = {robot_name: robot_info}
+robot_stiffness_dict = {robot_name: Kp}
 
 #%%
 nq_a = 2
@@ -60,13 +52,13 @@ if __name__ == "__main__":
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_info_dict=robot_info_dict,
+        robot_stiffness_dict=robot_info_dict,
         object_sdf_paths=object_sdf_dict,
         h=h,
         gravity=gravity,
         is_visualizing=True,
         real_time_rate=1.0,
-        sim_settings=sim_settings,
+        sim_settings=quasistatic_sim_params,
         nd_per_contact=2)
 
 

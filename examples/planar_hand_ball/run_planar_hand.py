@@ -6,17 +6,17 @@ from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from contact_mode_cluster.first_file import robot_sdf_paths, object_sdf_path
 from quasistatic_simulation.quasistatic_simulator import (
-    RobotInfo, SimulationSettings, create_plant_with_robots_and_objects)
+    RobotInfo, QuasistaticSimParameters, create_plant_with_robots_and_objects)
 
 #%% sim params
 h = 0.2
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
-sim_settings = SimulationSettings(is_quasi_dynamic=True,
-                                  is_unconstrained=True,
-                                  log_barrier_weight=100,
-                                  time_step=h,
-                                  contact_detection_tolerance=1.0)
+sim_settings = QuasistaticSimParameters(is_quasi_dynamic=True,
+                                        is_unconstrained=True,
+                                        log_barrier_weight=100,
+                                        time_step=h,
+                                        contact_detection_tolerance=1.0)
 gravity = np.array([0, 0, -10.])
 
 #%%
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_info_dict=robot_info_dict,
+        robot_stiffness_dict=robot_info_dict,
         object_sdf_paths=object_sdf_dict,
         h=h,
         gravity=gravity,
