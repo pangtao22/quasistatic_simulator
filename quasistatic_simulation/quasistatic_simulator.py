@@ -18,10 +18,7 @@ from pydrake.multibody.plant import (
     CalcContactFrictionFromSurfaceProperties)
 from pydrake.geometry import PenetrationAsPointPair
 
-from contact_aware_control.contact_particle_filter.utils_cython import (
-    CalcTangentVectors)
-
-from .environment_setup import create_plant_with_robots_and_objects
+from .utils import create_plant_with_robots_and_objects, calc_tangent_vectors
 
 
 class MyContactInfo(object):
@@ -410,7 +407,7 @@ class QuasistaticSimulator:
                 The normal n_A/B_W needs to point into body A/B, respectively. 
                 '''
                 n_A_W = sdp.nhat_BA_W
-                d_A_W = CalcTangentVectors(n_A_W, n_d[i_c])
+                d_A_W = calc_tangent_vectors(n_A_W, n_d[i_c])
                 n_B_W = -n_A_W
                 d_B_W = -d_A_W
 
@@ -431,7 +428,7 @@ class QuasistaticSimulator:
 
             elif is_B_in:
                 n_B_W = -sdp.nhat_BA_W
-                d_B_W = CalcTangentVectors(n_B_W, n_d[i_c])
+                d_B_W = calc_tangent_vectors(n_B_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
                     body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
@@ -442,7 +439,7 @@ class QuasistaticSimulator:
 
             elif is_A_in:
                 n_A_W = sdp.nhat_BA_W
-                d_A_W = CalcTangentVectors(n_A_W, n_d[i_c])
+                d_A_W = calc_tangent_vectors(n_A_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
                     body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,

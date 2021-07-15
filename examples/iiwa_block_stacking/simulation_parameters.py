@@ -10,10 +10,10 @@ from quasistatic_simulation.quasistatic_simulator import (
     QuasistaticSimParameters)
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)
-from contact_aware_control.plan_runner.contact_utils import (
-    CalcIiwaQTrajectory)
 from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
     box3d_7cm_sdf_path, box3d_6cm_sdf_path)
+
+from .inverse_kinematics import calc_iwa_trajectory_for_point_tracking
 
 
 def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
@@ -49,31 +49,27 @@ p_WQ_list = np.array([
     [0.555, 0, 0.25 + n_blocks_to_stack * l],
 ])
 schunk_setpoints = [0.05, 0.02, 0.02, 0.02, 0.02, 0.05, 0.05, 0.05]
-# schunk_setpoints = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+
+# frame L7 orientation
+R_WL7_0 = RollPitchYaw(0, np.pi, 0).ToRotationMatrix()
+R_WL7_1 = RollPitchYaw(0, np.pi, np.pi/2).ToRotationMatrix()
+R_WL7_list = [
+    R_WL7_0, R_WL7_0, R_WL7_0, R_WL7_1, R_WL7_1, R_WL7_1, R_WL7_1, R_WL7_0]
+
 
 q_iiwa_traj_list = []
 q_schunk_traj_list = []
 x_schunk_traj_list = []
 
-num_knot_points = 10
-
-# EE orientation
-R_WL7_0 = RollPitchYaw(0, np.pi, 0).ToRotationMatrix()
-R_WL7_1 = RollPitchYaw(0, np.pi, np.pi/2).ToRotationMatrix()
-
-R_WL7_traj = PiecewiseQuaternionSlerp(
-    [0, durations[2]], [R_WL7_0.ToQuaternion(), R_WL7_1.ToQuaternion()])
-
-R_WL7_list = [R_WL7_0, R_WL7_0, R_WL7_traj, R_WL7_1, R_WL7_1, R_WL7_1, R_WL7_1]
-
 for i, duration in enumerate(durations):
-    q_iiwa_traj, q_knots = CalcIiwaQTrajectory(
+    q_iiwa_traj, q_knots = calc_iwa_trajectory_for_point_tracking(
         plant=plant_iiwa,
         duration=duration,
-        num_knot_points=num_knot_points,
+        num_knot_points=10,
         p_WQ_start=p_WQ_list[i],
         p_WQ_offset=p_WQ_list[i + 1] - p_WQ_list[i],
-        R_WL7_ref=R_WL7_list[i],
+        R_WL7_start=R_WL7_list[i],
+        R_WL7_final=R_WL7_list[i + 1],
         q_initial_guess=q_a_initial_guess,
         p_L7Q=np.array([0, 0, 0.15]))
 
@@ -83,19 +79,11 @@ for i, duration in enumerate(durations):
             [0., duration],
             np.array([[-schunk_setpoints[i], schunk_setpoints[i]],
                       [-schunk_setpoints[i+1], schunk_setpoints[i+1]]]).T))
-    x_schunk_traj_list.append(
-        PiecewisePolynomial.FirstOrderHold(
-            [0., duration],
-            np.array(
-                [[-schunk_setpoints[i], schunk_setpoints[i], 0, 0],
-                 [-schunk_setpoints[i+1], schunk_setpoints[i+1], 0, 0]]).T))
 
     q_a_initial_guess = q_knots[-1]
 
 q_iiwa_traj = concatenate_traj_list(q_iiwa_traj_list)
 q_schunk_traj = concatenate_traj_list(q_schunk_traj_list)
-x_schunk_traj = concatenate_traj_list(x_schunk_traj_list)
-
 
 # other constants for simulation.
 iiwa_name = "iiwa"
