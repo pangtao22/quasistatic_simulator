@@ -1,6 +1,6 @@
 import os
 
-from quasistatic_simulation.quasistatic_simulator import *
+from core.quasistatic_simulator import *
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulation_diagram import (
     shift_q_traj_to_start_at_minus_h,

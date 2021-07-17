@@ -11,7 +11,7 @@ from iiwa_controller.iiwa_controller.robot_internal_controller import (
 
 from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
 from examples.model_paths import add_package_paths_local, models_dir
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters)
 
 

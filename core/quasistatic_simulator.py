@@ -42,7 +42,6 @@ class MyContactInfo(object):
 
 
 """
-:param time_step:
 :param contact_detection_tolerance: Signed distance pairs whose distances are 
     greater than this value are ignored in the simulator's non-penetration 
     constraints. Unit is in meters.
@@ -196,6 +195,14 @@ class QuasistaticSimulator:
         self.nc_log = []
         self.nd_log = []
         self.optimizer_time_log = []
+
+    def num_actauted_dof(self):
+        return np.sum(
+            [self.n_v_dict[model] for model in self.models_actuated])
+
+    def num_unactuated_dof(self):
+        return np.sum(
+            [self.n_v_dict[model] for model in self.models_unactuated])
 
     def get_robot_name_to_model_instance_dict(self):
         name_to_model = dict()
@@ -680,6 +687,7 @@ class QuasistaticSimulator:
         :return: system configuration at the next time step, stored in a
             dictionary keyed by ModelInstanceIndex.
         """
+        # TODO: remove contact_detection_tolerance from function arguments.
         q_dict = self.get_current_configuration()
         self.update_configuration(q_dict)
         phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \

@@ -6,7 +6,7 @@ import numpy as np
 from pydrake.math import RollPitchYaw
 from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
                          ModelInstanceIndex, RigidTransform)
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters)
 from iiwa_controller.iiwa_controller.utils import (
     create_iiwa_controller_plant)

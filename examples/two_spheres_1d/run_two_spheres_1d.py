@@ -6,14 +6,15 @@ from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters, create_plant_with_robots_and_objects)
 from examples.model_paths import models_dir
 
+
+#%% sim setup
 object_sdf_path = os.path.join(models_dir, "sphere_y.sdf")
 model_directive_path = os.path.join(models_dir, "sphere_y_actuated.yml")
 
-#%% sim params
 h = 0.05
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
@@ -24,11 +25,16 @@ quasistatic_sim_params = QuasistaticSimParameters(
     is_quasi_dynamic=True,
     is_unconstrained=False)
 
+# robot
 Kp = np.array([500], dtype=float)
 robot_name = "sphere_y_actuated"
 robot_stiffness_dict = {robot_name: Kp}
 
-#%%
+# object
+object_name = "sphere_y"
+object_sdf_dict = {object_name: object_sdf_path}
+
+# trajectory and initial contidionts.
 nq_a = 1
 qa_knots = np.zeros((3, nq_a))
 qa_knots[0] = [0]
@@ -38,12 +44,8 @@ qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.7, duration],
                                              qa_knots.T)
 q_a_traj_dict_str = {robot_name: qa_traj}
 
-# object
-object_name = "sphere_y"
-object_sdf_dict = {object_name: object_sdf_path}
-qu0 = np.array([0.5])
-
 # initial conditions dict.
+qu0 = np.array([0.5])
 q0_dict_str = {object_name: qu0, robot_name: qa_knots[0]}
 
 

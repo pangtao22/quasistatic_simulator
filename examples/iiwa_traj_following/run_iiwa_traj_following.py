@@ -11,7 +11,7 @@ from iiwa_controller.iiwa_controller.robot_internal_controller import (
 from iiwa_controller.iiwa_controller.utils import (create_iiwa_controller_plant,
                                                    get_package_path)
 from pydrake.all import PiecewisePolynomial
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters)
 
 # Simulation parameters.
