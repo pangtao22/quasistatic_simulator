@@ -1,6 +1,6 @@
 directives:
   - add_directives:
-      file: package://local/ground.yml
+      file: package://quasistatic_simulator/ground.yml
 
   - add_directives:
       file: package://iiwa_controller/iiwa_and_schunk.yml

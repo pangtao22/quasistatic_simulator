@@ -25,7 +25,7 @@ def add_package_paths_local(parser: Parser):
         os.path.join(pydrake.common.GetDrakePath(),
                      "manipulation/models"))
 
-    parser.package_map().Add("local", models_dir)
+    parser.package_map().Add("quasistatic_simulator", models_dir)
 
     parser.package_map().Add(
         'iiwa_controller', os.path.join(get_package_path(), 'models'))

@@ -1,6 +1,6 @@
 directives:
   - add_directives:
-      file: package://local/three_link_arm.yml
+      file: package://quasistatic_simulator/three_link_arm.yml
 
   - add_directives:
-      file: package://local/ground.yml
+      file: package://quasistatic_simulator/ground.yml

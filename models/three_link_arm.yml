@@ -2,7 +2,7 @@ directives:
 
 - add_model:
     name: arm
-    file: package://local/three_link_arm.sdf
+    file: package://quasistatic_simulator/three_link_arm.sdf
 
 - add_frame:
     name: world_arm_offset

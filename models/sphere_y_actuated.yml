@@ -1,4 +1,4 @@
 directives:
 - add_model:
     name: sphere_y_actuated
-    file: package://local/sphere_y_actuated.sdf
+    file: package://quasistatic_simulator/sphere_y_actuated.sdf
