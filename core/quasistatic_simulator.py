@@ -204,6 +204,12 @@ class QuasistaticSimulator:
         return np.sum(
             [self.n_v_dict[model] for model in self.models_unactuated])
 
+    def get_positions(self):
+        """
+        returns a copy of the MBP positions vector stored in self.context_plant.
+        """
+        return np.copy(self.plant.GetPositions(self.context_plant))
+
     def get_robot_name_to_model_instance_dict(self):
         name_to_model = dict()
         for model in self.models_all:
@@ -667,8 +673,7 @@ class QuasistaticSimulator:
         return v_h_value_dict, np.zeros_like(phi_constraints)
 
     def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-             h: float, contact_detection_tolerance: float):
+             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray], h: float):
         """
         This function does the following:
         1. Extracts q_dict, a dictionary containing current system
@@ -687,11 +692,11 @@ class QuasistaticSimulator:
         :return: system configuration at the next time step, stored in a
             dictionary keyed by ModelInstanceIndex.
         """
-        # TODO: remove contact_detection_tolerance from function arguments.
         q_dict = self.get_current_configuration()
-        self.update_configuration(q_dict)
+
         phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \
-            self.calc_jacobian_and_phi(contact_detection_tolerance)
+            self.calc_jacobian_and_phi(
+                self.sim_params.contact_detection_tolerance)
 
         if self.sim_params.is_unconstrained:
             v_h_value_dict, beta = \
