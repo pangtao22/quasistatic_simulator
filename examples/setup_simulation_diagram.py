@@ -150,15 +150,15 @@ def run_quasistatic_sim(
 
     # Construct simulator and run simulation.
     t_final = find_t_final_from_commanded_trajectories(q_a_traj_dict)
-    sim_quasistatic = Simulator(diagram)
+    sim = Simulator(diagram)
     q_sys.set_initial_state(q0_dict)
-    sim_quasistatic.Initialize()
-    sim_quasistatic.set_target_realtime_rate(real_time_rate)
+    sim.Initialize()
+    sim.set_target_realtime_rate(real_time_rate)
     if is_visualizing:
         meshcat_vis.reset_recording()
         meshcat_vis.start_recording()
 
-    sim_quasistatic.AdvanceTo(t_final)
+    sim.AdvanceTo(t_final)
 
     if is_visualizing:
         meshcat_vis.publish_recording()

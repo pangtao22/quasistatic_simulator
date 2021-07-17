@@ -7,14 +7,14 @@ from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from quasistatic_simulation.quasistatic_simulator import (
     QuasistaticSimParameters, create_plant_with_robots_and_objects)
+from examples.model_paths import models_dir
 
-pkg_path = '/Users/pangtao/PycharmProjects/quasistatic_models'
-object_sdf_path = os.path.join(pkg_path, "models", "sphere_yz.sdf")
-# object_sdf_path = os.path.join(pkg_path, "models", "box_yz_rotation_big.sdf")
-robot_sdf_path = os.path.join(pkg_path, "models", "sphere_yz_actuated.sdf")
+object_sdf_path = os.path.join(models_dir, "sphere_yz.sdf")
+model_directive_path = os.path.join(models_dir,
+                                    "sphere_yz_actuated_and_ground.yml")
 
 #%% sim params
-h = 0.1
+h = 0.05
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
 quasistatic_sim_params = QuasistaticSimParameters(
@@ -22,19 +22,20 @@ quasistatic_sim_params = QuasistaticSimParameters(
     nd_per_contact=2,
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
-    is_unconstrained=True,
-    log_barrier_weight=10000)
+    is_unconstrained=False)
 
 Kp = np.array([100, 100], dtype=float)
-robot_name = "pusher"
+robot_name = "sphere_yz_actuated"
 robot_stiffness_dict = {robot_name: Kp}
 
 #%%
 nq_a = 2
-qa_knots = np.zeros((2, nq_a))
+qa_knots = np.zeros((3, nq_a))
 qa_knots[0] = [0, 0.15]
-qa_knots[1] = [0.5, 0.15]
-qa_traj = PiecewisePolynomial.FirstOrderHold([0, T * h], qa_knots.T)
+qa_knots[1] = [0.8, 0.15]
+qa_knots[2] = qa_knots[1]
+qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.8, duration],
+                                             qa_knots.T)
 q_a_traj_dict_str = {robot_name: qa_traj}
 
 # object
@@ -50,16 +51,15 @@ q0_dict_str = {object_name: qu0,
 #%% run sim.
 if __name__ == "__main__":
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        model_directive_path=model_directive_path,
+        object_sdf_paths=object_sdf_dict,
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_info_dict,
-        object_sdf_paths=object_sdf_dict,
+        robot_stiffness_dict={robot_name: Kp},
         h=h,
-        gravity=gravity,
+        sim_params=quasistatic_sim_params,
         is_visualizing=True,
-        real_time_rate=1.0,
-        sim_settings=quasistatic_sim_params,
-        nd_per_contact=2)
+        real_time_rate=1.0)
 
 
 #%% look into the plant.
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     for model in q_sys.q_sim.models_all:
         print(model, plant.GetModelInstanceName(model),
               q_sys.q_sim.velocity_indices_dict[model])
+
 
 #%% construct q and v vectors of MBP from log.
     name_to_model_dict = q_sys.q_sim.get_robot_name_to_model_instance_dict()
