@@ -139,4 +139,6 @@ model_directive_path = os.path.join(
 quasistatic_sim_params = QuasistaticSimParameters(
     gravity=gravity,
     nd_per_contact=4,
-    contact_detection_tolerance=0.02)
+    contact_detection_tolerance=0.02,
+    is_quasi_dynamic=False,
+    mode='qp_mp')

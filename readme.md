@@ -6,6 +6,7 @@ Some interactive animations generated using the code in this repo can be found i
 
 ## Dependencies
 - Drake **built with Gurobi** (replacing the QP solver with OSQP should work too).
+- cvxpy.
 - [iiwa_controller](https://github.com/pangtao22/iiwa_controller) repo (make sure it's on `PYTHONPATH`).
 - Possibly others (if import fails...)
 

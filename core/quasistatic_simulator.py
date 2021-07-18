@@ -48,12 +48,16 @@ class MyContactInfo(object):
 :param is_quasi_dynamic: bool. If True, dynamics of unactauted objects is 
     given by sum(F) = M @ (v_(l+1) - 0). If False, it becomes sum(F) = 0 
     instead. 
-    This is only relevant when is_constrained == False. Not having a mass 
+    The mass matrix for unactuated objects is always added when the 
+    unconstrained version of the problem is solved. Not having a mass 
     matrix can sometimes makes the unconstrained program unbounded. 
-:param is_unconstrained: bool. If False, solves the standard QP for system 
-    states at the next time step. If True, solves an unconstrained version of 
-    the QP, obtained by moving inequality constraints into the objective with 
-    log barrier functions. 
+:param mode: Union['qp_mp', 'qp_cvx', 'unconstrained']. 
+    - 'qp_mp': solves the standard QP for system states at the next time 
+        step, using MathematicalProgram. 
+    - 'qp_mp': solves the standard QP using cvxpy.
+    - 'unconstrained': solves an unconstrained version of the QP, obtained by 
+        moving inequality constraints into the objective with 
+        log barrier functions. 
 :param log_barrier_weight: float, used only when is_unconstrained == True.
 :param nd_per_contact: int, number of extreme rays per contact point. 
 """
@@ -61,9 +65,10 @@ QuasistaticSimParameters = namedtuple(
     "QuasistaticSimParameters",
     field_names=[
         "gravity", "nd_per_contact", "contact_detection_tolerance",
-        "is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"],
+        "is_quasi_dynamic", "mode", "log_barrier_weight",
+        ],
     defaults=[np.array([0, 0, -9.81]), 4, 0.01,
-              False, False, 1e4])
+              False, "qp_mp", 1e4, ])
 
 
 class QuasistaticSimulator:
@@ -178,6 +183,12 @@ class QuasistaticSimulator:
         # solver
         self.solver = GurobiSolver()
         assert self.solver.available()
+
+        # step function dictionary
+        self.step_function_dict = {
+            'qp_mp': self.step_qp,
+            'qp_cvx': self.step_qp_cvx,
+            'unconstrained': self.step_unconstrained}
 
         '''
         Both self.contact_results and self.query_object are updated by calling
@@ -567,6 +578,15 @@ class QuasistaticSimulator:
 
         return phi_constraints, J, contact_info_list, n_c, n_d, n_f, U
 
+    @staticmethod
+    def check_cvx_status(status: str):
+        if status != "optimal":
+            if status == "optimal_inaccurate":
+                warnings.warn("CVX solver is inaccurate.")
+            else:
+                raise RuntimeError(
+                    "CVX solver status is {}".format(status))
+
     def step_qp(self,
                 q_dict: Dict[ModelInstanceIndex, np.ndarray],
                 q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -618,29 +638,24 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, beta
 
-    def step_unconstrained(self,
-                           q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           h: float,
-                           phi_constraints: np.ndarray,
-                           J: np.ndarray):
-        v = cp.Variable(self.n_v)
-        v_dict = dict()
-        for model in self.models_all:
-            v_dict[model] = v[self.velocity_indices_dict[model]]
-
+    def form_Q_and_tau_h_for_cvx_problem(
+            self,
+            q_dict: Dict[ModelInstanceIndex, np.ndarray],
+            q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+            tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+            h: float):
         M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
         Q = np.zeros((self.n_v, self.n_v))
-        idx_i, idx_j = np.diag_indices(self.n_v)
         tau_h = np.zeros(self.n_v)
         for model in self.models_unactuated:
             idx_v_model = self.velocity_indices_dict[model]
             tau_h[idx_v_model] = tau_ext_dict[model] * h
 
-            ixgrid = np.ix_(idx_v_model, idx_v_model)
-            Q[ixgrid] = M[ixgrid]
+            if self.sim_params.is_quasi_dynamic:
+                ixgrid = np.ix_(idx_v_model, idx_v_model)
+                Q[ixgrid] = M[ixgrid]
 
+        idx_i, idx_j = np.diag_indices(self.n_v)
         for model in self.models_actuated:
             idx_v_model = self.velocity_indices_dict[model]
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
@@ -649,6 +664,22 @@ class QuasistaticSimulator:
 
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
                 self.Kq_a[model].diagonal() * h**2
+        return Q, tau_h
+
+    def step_unconstrained(self,
+                           q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                           h: float,
+                           phi_constraints: np.ndarray,
+                           J: np.ndarray):
+        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+
+        v = cp.Variable(self.n_v)
+        v_dict = dict()
+        for model in self.models_all:
+            v_dict[model] = v[self.velocity_indices_dict[model]]
 
         t = self.sim_params.log_barrier_weight
         log_barriers_sum = 0.
@@ -659,12 +690,46 @@ class QuasistaticSimulator:
                         log_barriers_sum / t))
 
         prob.solve()
-        if prob.status != "optimal":
-            if prob.status == "optimal_inaccurate":
-                warnings.warn("CVX solver is inaccurate.")
-            else:
-                raise RuntimeError(
-                    "CVX solver status is {}".format(prob.status))
+        self.check_cvx_status(prob.status)
+
+        v_h_value_dict = dict()
+        for model in v_dict.keys():
+            v_h_value_dict[model] = v_dict[model].value * h
+
+        return v_h_value_dict, np.zeros_like(phi_constraints)
+
+    def step_qp_cvx(self,
+                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    h: float,
+                    phi_constraints: np.ndarray,
+                    J: np.ndarray):
+        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+
+        # build CVX problem.
+        # The cholesky decomposition is needed because cp.sum_squares() is the
+        # only way I've found so far to ensure the problem is DCP (
+        # disciplined convex program).
+        L = np.linalg.cholesky(Q)
+        L_cp = cp.Parameter(L.shape)
+        L_cp.value = L
+
+        tau_h_cp = cp.Parameter(self.n_v)
+        tau_h_cp.value = tau_h
+
+        v = cp.Variable(self.n_v)
+        v_dict = dict()
+        for model in self.models_all:
+            v_dict[model] = v[self.velocity_indices_dict[model]]
+
+        prob = cp.Problem(
+            cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) - tau_h_cp @ v),
+            [phi_constraints / h + J @ v >= 0])
+
+        prob.solve(requires_grad=True)
+        self.check_cvx_status(prob.status)
 
         v_h_value_dict = dict()
         for model in v_dict.keys():
@@ -698,14 +763,9 @@ class QuasistaticSimulator:
             self.calc_jacobian_and_phi(
                 self.sim_params.contact_detection_tolerance)
 
-        if self.sim_params.is_unconstrained:
-            v_h_value_dict, beta = \
-                self.step_unconstrained(q_dict, q_a_cmd_dict, tau_ext_dict,
-                             h, phi_constraints, J)
-        else:
-            v_h_value_dict, beta = \
-                self.step_qp(q_dict, q_a_cmd_dict, tau_ext_dict,
-                             h, phi_constraints, J)
+        v_h_value_dict, beta = \
+            self.step_function_dict[self.sim_params.mode](
+                q_dict, q_a_cmd_dict, tau_ext_dict, h, phi_constraints, J)
 
         dq_dict = dict()
         for model in self.models_actuated:
