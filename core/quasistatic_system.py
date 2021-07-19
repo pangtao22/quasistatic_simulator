@@ -117,4 +117,4 @@ class QuasistaticSystem(LeafSystem):
                 easf_list)
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
 
-        self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.h)
+        self.q_sim.step_default(q_a_cmd_dict, tau_ext_dict, self.h)

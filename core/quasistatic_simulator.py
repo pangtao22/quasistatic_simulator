@@ -635,7 +635,8 @@ class QuasistaticSimulator:
                 tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                 h: float,
                 phi_constraints: np.ndarray,
-                J: np.ndarray):
+                J: np.ndarray,
+                requires_grad: bool):
 
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
@@ -681,7 +682,7 @@ class QuasistaticSimulator:
 
         # compute DvDb and DvDe
         DvDb, DvDe = None, None
-        if self.sim_params.requires_grad:
+        if requires_grad:
             pass
 
         return v_h_value_dict, beta, DvDb, DvDe
@@ -692,7 +693,8 @@ class QuasistaticSimulator:
                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                     h: float,
                     phi_constraints: np.ndarray,
-                    J: np.ndarray):
+                    J: np.ndarray,
+                    requires_grad: bool):
         Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
             q_dict, q_a_cmd_dict, tau_ext_dict, h)
 
@@ -743,7 +745,7 @@ class QuasistaticSimulator:
 
         # compute DvDb and DvDe
         DvDb, DvDe = None, None
-        if self.sim_params.requires_grad:
+        if requires_grad:
             DvDb = np.zeros((self.n_v, self.n_v))
             DvDe = np.zeros((self.n_v, n_e))
             for i in range(self.n_v):
@@ -763,7 +765,8 @@ class QuasistaticSimulator:
                            tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                            h: float,
                            phi_constraints: np.ndarray,
-                           J: np.ndarray):
+                           J: np.ndarray,
+                           requires_grad: bool):
         Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
             q_dict, q_a_cmd_dict, tau_ext_dict, h)
 
@@ -792,26 +795,31 @@ class QuasistaticSimulator:
         DvDb, DvDe = None, None
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
-    def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray], h: float):
+    def step(self,
+             q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+             h: float,
+             mode: str,
+             requires_grad: bool):
         """
-        This function does the following:
-        1. Extracts q_dict, a dictionary containing current system
-            configuration, from self.plant_context.
-        2. Runs collision query by calling self.calc_contact_jacobians.
-        3. Constructs and solves the quasistatic QP described in the paper.
-        4. Integrates q_dict to the next time step.
-        5. Calls self.update_configuration with the new q_dict.
-            self.update_configuration updates self.context_plant and
-            self.query_object.
-        6. Updates self.contact_results.
-        :param q_a_cmd_dict:
-        :param tau_ext_dict:
-        :param h: simulation time step.
-        :param contact_detection_tolerance:
-        :return: system configuration at the next time step, stored in a
-            dictionary keyed by ModelInstanceIndex.
-        """
+         This function does the following:
+         1. Extracts q_dict, a dictionary containing current system
+             configuration, from self.plant_context.
+         2. Runs collision query by calling self.calc_contact_jacobians.
+         3. Constructs and solves the quasistatic QP described in the paper.
+         4. Integrates q_dict to the next time step.
+         5. Calls self.update_configuration with the new q_dict.
+             self.update_configuration updates self.context_plant and
+             self.query_object.
+         6. Updates self.contact_results.
+         :param q_a_cmd_dict:
+         :param tau_ext_dict:
+         :param h: simulation time step.
+         :param mode: one of {'qp_mp', 'qp_cvx', 'unconstrained'}.
+         :param requires_grad: whether gradient of the dynamics is computed.
+         :return: system configuration at the next time step, stored in a
+             dictionary keyed by ModelInstanceIndex.
+         """
         q_dict = self.get_current_configuration()
 
         phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
@@ -819,8 +827,9 @@ class QuasistaticSimulator:
                 self.sim_params.contact_detection_tolerance)
 
         v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = \
-            self.step_function_dict[self.sim_params.mode](
-                q_dict, q_a_cmd_dict, tau_ext_dict, h, phi_constraints, J)
+            self.step_function_dict[mode](
+                q_dict, q_a_cmd_dict, tau_ext_dict, h, phi_constraints, J,
+                requires_grad=requires_grad)
 
         dq_dict = dict()
         for model in self.models_actuated:
@@ -847,22 +856,22 @@ class QuasistaticSimulator:
         self.update_configuration(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
-        if not self.sim_params.requires_grad:
+        if not requires_grad:
             return q_dict
 
-        # gradients.
+        # Gradients.
         '''
         Generic dynamical system: x_next = f(x, u). We need DfDx and DfDu.
-        
+
         In a quasistatic system, x := [qu, qa], u = qa_cmd.
         q_next = q + h * E @ v_next
         v_next = argmin_{v} {0.5 * v @ Q @ v + b @ v | G @ v <= e}
             - E is not identity if rotation is represented by quaternions.
             - Dv_nextDb and Dv_nextDe are returned by self.step_*(...).
-        
+
         D(q_next)Dq = I + h * E @ D(v_next)Dq
         D(q_next)D(qa_cmd) = h * E @ D(v_next)D(qa_cmd)
-        
+
         Dv_nextDq = Dv_nextDb @ DbDq
                     + Dv_nextDe @ (1 / h * Dphi_constraints_Dq)
         Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd,
@@ -903,6 +912,18 @@ class QuasistaticSimulator:
         # Dq_nextDqa_cmd
         self.Dq_nextDqa_cmd = h * Dv_nextDb @ DbDqa_cmd
         return q_dict
+
+    def step_default(self,
+                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     h: float):
+
+        return self.step(
+            q_a_cmd_dict=q_a_cmd_dict,
+            tau_ext_dict=tau_ext_dict,
+            h=h,
+            mode=self.sim_params.mode,
+            requires_grad=self.sim_params.requires_grad)
 
     def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
                            dq_dict: Dict[ModelInstanceIndex, np.ndarray]):
