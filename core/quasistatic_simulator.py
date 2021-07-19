@@ -735,7 +735,7 @@ class QuasistaticSimulator:
             cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) + b_cp @ v),
             [e_cp + J @ v >= 0])
 
-        prob.solve(requires_grad=self.sim_params.requires_grad)
+        prob.solve(requires_grad=requires_grad)
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.
