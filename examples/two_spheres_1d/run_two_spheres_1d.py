@@ -23,7 +23,8 @@ quasistatic_sim_params = QuasistaticSimParameters(
     nd_per_contact=2,
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
-    mode='qp_cvx')
+    mode='qp_cvx',
+    requires_grad=True)
 
 # robot
 Kp = np.array([500], dtype=float)
