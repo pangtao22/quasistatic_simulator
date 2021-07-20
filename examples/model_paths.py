@@ -1,7 +1,7 @@
 import os
 
 import pydrake
-from iiwa_controller.iiwa_controller.utils import get_package_path
+from robotics_utilities.iiwa_controller.utils import get_package_path
 from pydrake.all import (MultibodyPlant, AddMultibodyPlantSceneGraph)
 from pydrake.common import FindResourceOrThrow
 from pydrake.math import RigidTransform

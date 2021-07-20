@@ -8,7 +8,7 @@ from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
                          ModelInstanceIndex, RigidTransform)
 from core.quasistatic_simulator import (
     QuasistaticSimParameters)
-from iiwa_controller.iiwa_controller.utils import (
+from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
     box3d_7cm_sdf_path, box3d_6cm_sdf_path)

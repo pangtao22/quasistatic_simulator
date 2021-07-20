@@ -8,9 +8,10 @@ from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (calc_error_integral,
                                      calc_pose_error_integral,
                                      get_angle_from_quaternion)
-from iiwa_controller.iiwa_controller.robot_internal_controller import (
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
+from robotics_utilities.iiwa_controller.utils import (
+    create_iiwa_controller_plant)
 
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):

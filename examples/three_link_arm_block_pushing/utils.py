@@ -6,7 +6,7 @@ import numpy as np
 from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
                          PiecewisePolynomial, MultibodyPlant)
 
-from iiwa_controller.iiwa_controller.robot_internal_controller import (
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
 from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim

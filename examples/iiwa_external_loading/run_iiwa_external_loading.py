@@ -2,8 +2,8 @@ import os
 from matplotlib import pyplot as plt
 
 from examples.setup_simulation_diagram import *
-from iiwa_controller.iiwa_controller.utils import (create_iiwa_controller_plant,
-    get_package_path)
+from robotics_utilities.iiwa_controller.utils import (
+    create_iiwa_controller_plant, get_package_path)
 
 
 # Simulation parameters.

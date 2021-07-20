@@ -4,7 +4,7 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          Multiplexer, LeafSystem, PidController)
 
 from core.quasistatic_system import *
-from iiwa_controller.iiwa_controller.robot_internal_controller import (
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
 
