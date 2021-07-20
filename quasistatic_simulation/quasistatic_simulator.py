@@ -62,10 +62,11 @@ QuasistaticSimParameters = namedtuple(
     "QuasistaticSimParameters",
     field_names=[
         "gravity", "nd_per_contact", "contact_detection_tolerance",
-        "is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"],
-    defaults=[np.array([0, 0, -9.81]), 4, 0.01,
-              False, False, 1e4])
-
+        "is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"])
+QuasistaticSimParameters.__new__.__defaults__ = (
+    np.array([0, 0, -9.81]), 4, 0.01, False, False, 1e4)
+    
+QuasistaticSimParameters = QuasistaticSimParameters
 
 class QuasistaticSimulator:
     def __init__(self, model_directive_path: str,
@@ -92,6 +93,8 @@ class QuasistaticSimulator:
                 object_sdf_paths=object_sdf_paths,
                 time_step=1e-3,  # Only useful for MBP simulations.
                 gravity=sim_params.gravity)
+
+        print(sim_params.gravity)
 
         # visualization.
         self.internal_vis = internal_vis
