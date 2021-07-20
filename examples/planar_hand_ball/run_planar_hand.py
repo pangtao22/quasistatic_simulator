@@ -5,7 +5,7 @@ from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from contact_mode_cluster.first_file import robot_sdf_paths, object_sdf_path
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     RobotInfo, QuasistaticSimParameters, create_plant_with_robots_and_objects)
 
 #%% sim params

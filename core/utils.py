@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 import numpy as np
-from examples.model_paths import add_package_paths_local
+from quasistatic_simulator.examples.model_paths import add_package_paths_local
 from pydrake.all import (MultibodyPlant, Parser, DiagramBuilder,
                          AddMultibodyPlantSceneGraph,
                          ProcessModelDirectives, LoadModelDirectives)
@@ -65,17 +65,17 @@ def create_plant_with_robots_and_objects(builder: DiagramBuilder,
     ProcessModelDirectives(LoadModelDirectives(model_directive_path),
                            plant, parser)
 
-    # Robots
-    robot_models_list = []
-    for name in robot_names:
-        robot_model = plant.GetModelInstanceByName(name)
-        robot_models_list.append(robot_model)
-
     # Objects
     object_models_list = []
     for name, sdf_path in object_sdf_paths.items():
         object_models_list.append(
             parser.AddModelFromFile(sdf_path, model_name=name))
+
+    # Robots
+    robot_models_list = []
+    for name in robot_names:
+        robot_model = plant.GetModelInstanceByName(name)
+        robot_models_list.append(robot_model)
 
     # gravity
     plant.mutable_gravity_field().set_gravity_vector(gravity)

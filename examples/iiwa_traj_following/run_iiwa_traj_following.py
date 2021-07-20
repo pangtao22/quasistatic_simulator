@@ -6,12 +6,12 @@ from examples.log_comparison import calc_error_integral
 from examples.setup_simulation_diagram import (run_mbp_sim,
                                                run_quasistatic_sim,
                                                shift_q_traj_to_start_at_minus_h)
-from iiwa_controller.iiwa_controller.robot_internal_controller import (
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-from iiwa_controller.iiwa_controller.utils import (create_iiwa_controller_plant,
-                                                   get_package_path)
+from robotics_utilities.iiwa_controller.utils import (
+    create_iiwa_controller_plant, get_package_path)
 from pydrake.all import PiecewisePolynomial
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters)
 
 # Simulation parameters.

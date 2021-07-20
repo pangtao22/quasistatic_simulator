@@ -8,12 +8,25 @@ from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (calc_error_integral,
                                      calc_pose_error_integral,
                                      get_angle_from_quaternion)
-from iiwa_controller.iiwa_controller.robot_internal_controller import (
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-from iiwa_controller.iiwa_controller.utils import create_iiwa_controller_plant
+from robotics_utilities.iiwa_controller.utils import (
+    create_iiwa_controller_plant)
 
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
+    # Quasistatic
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        model_directive_path=model_directive_path,
+        object_sdf_paths=object_sdf_paths_dict,
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        robot_stiffness_dict=robot_stiffness_dict,
+        h=h_quasistatic,
+        sim_params=quasistatic_sim_params,
+        is_visualizing=is_visualizing,
+        real_time_rate=0.0)
+
     # MBP
     plant_robot, _ = create_iiwa_controller_plant(gravity,
                                                   add_schunk_inertia=True)
@@ -37,18 +50,6 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
         gravity=gravity,
         is_visualizing=is_visualizing,
         real_time_rate=0)
-
-    # Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths=object_sdf_paths_dict,
-        q_a_traj_dict_str=q_a_traj_dict_str,
-        q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
-        h=h_quasistatic,
-        sim_params=quasistatic_sim_params,
-        is_visualizing=is_visualizing,
-        real_time_rate=0.0)
 
     return loggers_dict_mbp_str, loggers_dict_quasistatic_str, q_sys.plant
 

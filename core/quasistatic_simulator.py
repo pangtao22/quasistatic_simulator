@@ -21,7 +21,7 @@ from pydrake.geometry import PenetrationAsPointPair
 from .utils import create_plant_with_robots_and_objects, calc_tangent_vectors
 
 
-class MyContactInfo(object):
+class MyContactInfo:
     """
     Used as an intermediate storage structure for constructing
     PointPairContactInfo.
@@ -42,21 +42,26 @@ class MyContactInfo(object):
 
 
 """
-:param time_step:
 :param contact_detection_tolerance: Signed distance pairs whose distances are 
     greater than this value are ignored in the simulator's non-penetration 
     constraints. Unit is in meters.
 :param is_quasi_dynamic: bool. If True, dynamics of unactauted objects is 
     given by sum(F) = M @ (v_(l+1) - 0). If False, it becomes sum(F) = 0 
     instead. 
-    This is only relevant when is_constrained == False. Not having a mass 
+    The mass matrix for unactuated objects is always added when the 
+    unconstrained version of the problem is solved. Not having a mass 
     matrix can sometimes makes the unconstrained program unbounded. 
-:param is_unconstrained: bool. If False, solves the standard QP for system 
-    states at the next time step. If True, solves an unconstrained version of 
-    the QP, obtained by moving inequality constraints into the objective with 
-    log barrier functions. 
+:param mode: Union['qp_mp', 'qp_cvx', 'unconstrained']. 
+    - 'qp_mp': solves the standard QP for system states at the next time 
+        step, using MathematicalProgram. 
+    - 'qp_mp': solves the standard QP using cvxpy.
+    - 'unconstrained': solves an unconstrained version of the QP, obtained by 
+        moving inequality constraints into the objective with 
+        log barrier functions. 
 :param log_barrier_weight: float, used only when is_unconstrained == True.
-:param nd_per_contact: int, number of extreme rays per contact point. 
+:param nd_per_contact: int, number of extreme rays per contact point.
+:param requires_grad: whether the gradient of v_next w.r.t the parameters of 
+    the QP are computed. 
 """
 QuasistaticSimParameters = namedtuple(
     "QuasistaticSimParameters",
@@ -183,9 +188,15 @@ class QuasistaticSimulator:
         self.solver = GurobiSolver()
         assert self.solver.available()
 
+        # step function dictionary
+        self.step_function_dict = {
+            'qp_mp': self.step_qp,
+            'qp_cvx': self.step_qp_cvx,
+            'unconstrained': self.step_unconstrained}
+
         '''
         Both self.contact_results and self.query_object are updated by calling
-        self.step_anitescu.
+        self.step(...)
         '''
         # For contact force visualization. It is updated when
         #   self.calc_contact_results is called.
@@ -195,10 +206,35 @@ class QuasistaticSimulator:
         #   self.update_configuration is called.
         self.query_object = QueryObject()
 
+        # gradients
+        self.Dv_nextDb = None
+        self.Dv_nextDe = None
+        self.Dq_nextDq = None
+        self.Dq_nextDqa_cmd = None
+
+        # TODO: these are not used right now.
         # Logging num of contacts and solver time.
         self.nc_log = []
         self.nd_log = []
         self.optimizer_time_log = []
+
+    def num_actuated_dof(self):
+        return np.sum(
+            [self.n_v_dict[model] for model in self.models_actuated])
+
+    def num_unactuated_dof(self):
+        return np.sum(
+            [self.n_v_dict[model] for model in self.models_unactuated])
+
+    def get_positions(self):
+        """
+        returns a copy of the MBP positions vector stored in self.context_plant.
+        """
+        return np.copy(self.plant.GetPositions(self.context_plant))
+
+    def get_dynamics_derivatives(self):
+        return (np.copy(self.Dv_nextDb), np.copy(self.Dv_nextDe),
+                np.copy(self.Dq_nextDq), np.copy(self.Dq_nextDqa_cmd))
 
     def get_robot_name_to_model_instance_dict(self):
         name_to_model = dict()
@@ -555,7 +591,45 @@ class QuasistaticSimulator:
                 phi_constraints[idx] = phi_l[i_c]
             j_start += n_d[i_c]
 
-        return phi_constraints, J, contact_info_list, n_c, n_d, n_f, U
+        return (phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d,
+                n_f, U)
+
+    @staticmethod
+    def check_cvx_status(status: str):
+        if status != "optimal":
+            if status == "optimal_inaccurate":
+                warnings.warn("CVX solver is inaccurate.")
+            else:
+                raise RuntimeError(
+                    "CVX solver status is {}".format(status))
+
+    def form_Q_and_tau_h_for_cvx_problem(
+            self,
+            q_dict: Dict[ModelInstanceIndex, np.ndarray],
+            q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+            tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+            h: float):
+        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
+        Q = np.zeros((self.n_v, self.n_v))
+        tau_h = np.zeros(self.n_v)
+        for model in self.models_unactuated:
+            idx_v_model = self.velocity_indices_dict[model]
+            tau_h[idx_v_model] = tau_ext_dict[model] * h
+
+            if self.sim_params.is_quasi_dynamic:
+                ixgrid = np.ix_(idx_v_model, idx_v_model)
+                Q[ixgrid] = M[ixgrid]
+
+        idx_i, idx_j = np.diag_indices(self.n_v)
+        for model in self.models_actuated:
+            idx_v_model = self.velocity_indices_dict[model]
+            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
+            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
+            tau_h[idx_v_model] = tau_a * h
+
+            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
+                self.Kq_a[model].diagonal() * h**2
+        return Q, tau_h
 
     def step_qp(self,
                 q_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -563,7 +637,8 @@ class QuasistaticSimulator:
                 tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                 h: float,
                 phi_constraints: np.ndarray,
-                J: np.ndarray):
+                J: np.ndarray,
+                requires_grad: bool):
 
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
@@ -602,11 +677,89 @@ class QuasistaticSimulator:
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
 
+        # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in v_h_dict.keys():
             v_h_value_dict[model] = result.GetSolution(v_h_dict[model])
 
-        return v_h_value_dict, beta
+        # compute DvDb and DvDe
+        DvDb, DvDe = None, None
+        if requires_grad:
+            pass
+
+        return v_h_value_dict, beta, DvDb, DvDe
+
+    def step_qp_cvx(self,
+                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    h: float,
+                    phi_constraints: np.ndarray,
+                    J: np.ndarray,
+                    requires_grad: bool):
+        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+
+        # Make a CVX problem.
+        # The cholesky decomposition is needed because cp.sum_squares() is the
+        # only way I've found so far to ensure the problem is DCP (
+        # disciplined convex program).
+        '''
+        The original non-penetration constraint is given by 
+            phi_constraints / h + J @ v >= 0
+        The "standard form" in Cotler's paper is
+            min. 1 / 2 * z.dot(Q).dot(z) + b.dot(z)
+            s.t. G @ z <= e (or e >= G @ z).
+        Rearranging the non-penetration constraint as:
+            phi_constraints / h >= -J @ v 
+        gives
+            G := -J; e := phi_constraints / h.
+
+        Objective: b := -tau_h.
+        '''
+        L = np.linalg.cholesky(Q)
+        L_cp = cp.Parameter(L.shape)
+        L_cp.value = L
+
+        b_cp = cp.Parameter(self.n_v)
+        b_cp.value = -tau_h
+
+        n_e = len(phi_constraints)
+        e_cp = cp.Parameter(n_e)
+        e_cp.value = phi_constraints / h
+
+        v = cp.Variable(self.n_v)
+        v_dict = dict()
+        for model in self.models_all:
+            v_dict[model] = v[self.velocity_indices_dict[model]]
+
+        prob = cp.Problem(
+            cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) + b_cp @ v),
+            [e_cp + J @ v >= 0])
+
+        prob.solve(requires_grad=requires_grad)
+        self.check_cvx_status(prob.status)
+
+        # extract v_h from vector into a dictionary.
+        v_h_value_dict = dict()
+        for model in v_dict.keys():
+            v_h_value_dict[model] = v_dict[model].value * h
+
+        # compute DvDb and DvDe
+        DvDb, DvDe = None, None
+        if requires_grad:
+            DvDb = np.zeros((self.n_v, self.n_v))
+            DvDe = np.zeros((self.n_v, n_e))
+            for i in range(self.n_v):
+                dv = np.zeros(self.n_v)
+                dv[i] = 1
+                v.gradient = dv
+                prob.backward()
+
+                DvDb[i] = b_cp.gradient
+                DvDe[i] = e_cp.gradient
+
+        return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
     def step_unconstrained(self,
                            q_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -614,31 +767,15 @@ class QuasistaticSimulator:
                            tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                            h: float,
                            phi_constraints: np.ndarray,
-                           J: np.ndarray):
+                           J: np.ndarray,
+                           requires_grad: bool):
+        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+
         v = cp.Variable(self.n_v)
         v_dict = dict()
         for model in self.models_all:
             v_dict[model] = v[self.velocity_indices_dict[model]]
-
-        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
-        Q = np.zeros((self.n_v, self.n_v))
-        idx_i, idx_j = np.diag_indices(self.n_v)
-        tau_h = np.zeros(self.n_v)
-        for model in self.models_unactuated:
-            idx_v_model = self.velocity_indices_dict[model]
-            tau_h[idx_v_model] = tau_ext_dict[model] * h
-
-            ixgrid = np.ix_(idx_v_model, idx_v_model)
-            Q[ixgrid] = M[ixgrid]
-
-        for model in self.models_actuated:
-            idx_v_model = self.velocity_indices_dict[model]
-            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
-            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
-            tau_h[idx_v_model] = tau_a * h
-
-            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.Kq_a[model].diagonal() * h**2
 
         t = self.sim_params.log_barrier_weight
         log_barriers_sum = 0.
@@ -649,53 +786,52 @@ class QuasistaticSimulator:
                         log_barriers_sum / t))
 
         prob.solve()
-        if prob.status != "optimal":
-            if prob.status == "optimal_inaccurate":
-                warnings.warn("CVX solver is inaccurate.")
-            else:
-                raise RuntimeError(
-                    "CVX solver status is {}".format(prob.status))
+        self.check_cvx_status(prob.status)
 
+        # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in v_dict.keys():
             v_h_value_dict[model] = v_dict[model].value * h
 
-        return v_h_value_dict, np.zeros_like(phi_constraints)
+        # TODO: gradient not supported yet.
+        DvDb, DvDe = None, None
+        return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
-    def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+    def step(self,
+             q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
              tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-             h: float, contact_detection_tolerance: float):
+             h: float,
+             mode: str,
+             requires_grad: bool):
         """
-        This function does the following:
-        1. Extracts q_dict, a dictionary containing current system
-            configuration, from self.plant_context.
-        2. Runs collision query by calling self.calc_contact_jacobians.
-        3. Constructs and solves the quasistatic QP described in the paper.
-        4. Integrates q_dict to the next time step.
-        5. Calls self.update_configuration with the new q_dict.
-            self.update_configuration updates self.context_plant and
-            self.query_object.
-        6. Updates self.contact_results.
-        :param q_a_cmd_dict:
-        :param tau_ext_dict:
-        :param h: simulation time step.
-        :param contact_detection_tolerance:
-        :return: system configuration at the next time step, stored in a
-            dictionary keyed by ModelInstanceIndex.
-        """
+         This function does the following:
+         1. Extracts q_dict, a dictionary containing current system
+             configuration, from self.plant_context.
+         2. Runs collision query by calling self.calc_contact_jacobians.
+         3. Constructs and solves the quasistatic QP described in the paper.
+         4. Integrates q_dict to the next time step.
+         5. Calls self.update_configuration with the new q_dict.
+             self.update_configuration updates self.context_plant and
+             self.query_object.
+         6. Updates self.contact_results.
+         :param q_a_cmd_dict:
+         :param tau_ext_dict:
+         :param h: simulation time step.
+         :param mode: one of {'qp_mp', 'qp_cvx', 'unconstrained'}.
+         :param requires_grad: whether gradient of the dynamics is computed.
+         :return: system configuration at the next time step, stored in a
+             dictionary keyed by ModelInstanceIndex.
+         """
         q_dict = self.get_current_configuration()
-        self.update_configuration(q_dict)
-        phi_constraints, J, contact_info_list, n_c, n_d, n_f, U = \
-            self.calc_jacobian_and_phi(contact_detection_tolerance)
 
-        if self.sim_params.is_unconstrained:
-            v_h_value_dict, beta = \
-                self.step_unconstrained(q_dict, q_a_cmd_dict, tau_ext_dict,
-                             h, phi_constraints, J)
-        else:
-            v_h_value_dict, beta = \
-                self.step_qp(q_dict, q_a_cmd_dict, tau_ext_dict,
-                             h, phi_constraints, J)
+        phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
+            self.calc_jacobian_and_phi(
+                self.sim_params.contact_detection_tolerance)
+
+        v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = \
+            self.step_function_dict[mode](
+                q_dict, q_a_cmd_dict, tau_ext_dict, h, phi_constraints, J,
+                requires_grad=requires_grad)
 
         dq_dict = dict()
         for model in self.models_actuated:
@@ -721,7 +857,75 @@ class QuasistaticSimulator:
         self.step_configuration(q_dict, dq_dict)
         self.update_configuration(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
+
+        if not requires_grad:
+            return q_dict
+
+        # Gradients.
+        '''
+        Generic dynamical system: x_next = f(x, u). We need DfDx and DfDu.
+
+        In a quasistatic system, x := [qu, qa], u = qa_cmd.
+        q_next = q + h * E @ v_next
+        v_next = argmin_{v} {0.5 * v @ Q @ v + b @ v | G @ v <= e}
+            - E is not identity if rotation is represented by quaternions.
+            - Dv_nextDb and Dv_nextDe are returned by self.step_*(...).
+
+        D(q_next)Dq = I + h * E @ D(v_next)Dq
+        D(q_next)D(qa_cmd) = h * E @ D(v_next)D(qa_cmd)
+
+        Dv_nextDq = Dv_nextDb @ DbDq
+                    + Dv_nextDe @ (1 / h * Dphi_constraints_Dq)
+        Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd,
+            - where DbDqa_cmd != np.vstack([0, Kq]).        
+        '''
+        # TODO: for now it is assumed that n_q == n_v.
+        #  Dphi_constraints_Dv is used for Dphi_constraints_Dq.
+        self.Dv_nextDb = Dv_nextDb
+        self.Dv_nextDe = Dv_nextDe
+
+        Dphi_constraints_Dq = np.zeros((n_f, self.n_v))
+        j_start = 0
+        for i_c in range(n_c):
+            Dphi_constraints_Dq[j_start: j_start + n_d[i_c]] = Jn[i_c]
+            j_start += n_d[i_c]
+
+        DbDq = np.zeros((self.n_v, self.n_v))
+        DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dof()))
+        j_start = 0
+        for model in self.models_actuated:
+            idx_v_model = self.velocity_indices_dict[model]
+            n_v_i = len(idx_v_model)
+            idx_rows = idx_v_model[:, None]
+            idx_cols = np.arange(j_start, j_start + n_v_i)[None, :]
+            DbDqa_cmd[idx_rows, idx_cols] = -h * self.Kq_a[model]
+
+            idx_cols_2 = idx_v_model[None, :]
+            DbDq[idx_rows, idx_cols_2] = h * self.Kq_a[model]
+
+            j_start += n_v_i
+
+        # Dq_nextDq
+        Dv_nextDq_1 = Dv_nextDb @ DbDq
+        Dv_nextDq_2 = Dv_nextDe @ Dphi_constraints_Dq / h
+        Dv_nextDq = Dv_nextDq_1 + Dv_nextDq_2
+        self.Dq_nextDq = np.eye(self.n_v) + h * Dv_nextDq
+
+        # Dq_nextDqa_cmd
+        self.Dq_nextDqa_cmd = h * Dv_nextDb @ DbDqa_cmd
         return q_dict
+
+    def step_default(self,
+                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     h: float):
+
+        return self.step(
+            q_a_cmd_dict=q_a_cmd_dict,
+            tau_ext_dict=tau_ext_dict,
+            h=h,
+            mode=self.sim_params.mode,
+            requires_grad=self.sim_params.requires_grad)
 
     def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
                            dq_dict: Dict[ModelInstanceIndex, np.ndarray]):

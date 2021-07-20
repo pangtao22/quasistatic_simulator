@@ -1,6 +1,6 @@
 import os
 
-from quasistatic_simulation.quasistatic_simulator import *
+from core.quasistatic_simulator import *
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulation_diagram import (
     shift_q_traj_to_start_at_minus_h,
@@ -62,8 +62,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         tau_ext_a_dict = \
             q_sim.get_generalized_force_from_external_spatial_force([])
         tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
-        q_dict = q_sim.step(q_a_cmd_dict, tau_ext_dict, h,
-                            contact_detection_tolerance=phi_threshold)
+        q_dict = q_sim.step_default(q_a_cmd_dict, tau_ext_dict, h)
         if is_visualizing:
             q_sim.draw_current_configuration()
 

@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 
@@ -9,43 +10,44 @@ from core.quasistatic_simulator import (
     QuasistaticSimParameters, create_plant_with_robots_and_objects)
 from examples.model_paths import models_dir
 
-object_sdf_path = os.path.join(models_dir, "sphere_yz.sdf")
-model_directive_path = os.path.join(models_dir,
-                                    "sphere_yz_actuated_and_ground.yml")
 
-#%% sim params
+#%% sim setup
+object_sdf_path = os.path.join(models_dir, "sphere_y.sdf")
+model_directive_path = os.path.join(models_dir, "sphere_y_actuated.yml")
+
 h = 0.05
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
 quasistatic_sim_params = QuasistaticSimParameters(
-    gravity=np.array([0, 0, -10.]),
+    gravity=np.array([0, 0, 0.]),
     nd_per_contact=2,
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
-    is_unconstrained=False)
+    mode='qp_cvx',
+    requires_grad=True)
 
-Kp = np.array([100, 100], dtype=float)
-robot_name = "sphere_yz_actuated"
+# robot
+Kp = np.array([500], dtype=float)
+robot_name = "sphere_y_actuated"
 robot_stiffness_dict = {robot_name: Kp}
 
-#%%
-nq_a = 2
+# object
+object_name = "sphere_y"
+object_sdf_dict = {object_name: object_sdf_path}
+
+# trajectory and initial contidionts.
+nq_a = 1
 qa_knots = np.zeros((3, nq_a))
-qa_knots[0] = [0, 0.15]
-qa_knots[1] = [0.8, 0.15]
+qa_knots[0] = [0]
+qa_knots[1] = [0.8]
 qa_knots[2] = qa_knots[1]
-qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.8, duration],
+qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.7, duration],
                                              qa_knots.T)
 q_a_traj_dict_str = {robot_name: qa_traj}
 
-# object
-object_name = "sphere_yz"
-object_sdf_dict = {object_name: object_sdf_path}
-qu0 = np.array([0.5, 0.1])
-
 # initial conditions dict.
-q0_dict_str = {object_name: qu0,
-               robot_name: qa_knots[0]}
+qu0 = np.array([0.5])
+q0_dict_str = {object_name: qu0, robot_name: qa_knots[0]}
 
 
 #%% run sim.
@@ -89,3 +91,11 @@ if __name__ == "__main__":
         qa_l1_cmd = qa_traj.value((l + 1) * h).squeeze()
         tau_a_log[l] = Kp * (qa_l1_cmd - qa_l)
 
+#%% plot q(t).
+    plt.figure()
+    plt.title('q(t)')
+    plt.plot(logger.sample_times(),  q_log[:, 0])
+    plt.plot(logger.sample_times(),  q_log[:, 1])
+    plt.grid(True)
+    plt.ylabel('t [s]')
+    plt.show()

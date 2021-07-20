@@ -6,9 +6,9 @@ import numpy as np
 from pydrake.math import RollPitchYaw
 from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
                          ModelInstanceIndex, RigidTransform)
-from quasistatic_simulation.quasistatic_simulator import (
+from core.quasistatic_simulator import (
     QuasistaticSimParameters)
-from iiwa_controller.iiwa_controller.utils import (
+from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
     box3d_7cm_sdf_path, box3d_6cm_sdf_path)
@@ -139,4 +139,6 @@ model_directive_path = os.path.join(
 quasistatic_sim_params = QuasistaticSimParameters(
     gravity=gravity,
     nd_per_contact=4,
-    contact_detection_tolerance=0.02)
+    contact_detection_tolerance=0.02,
+    is_quasi_dynamic=False,
+    mode='qp_mp')
