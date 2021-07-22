@@ -3,7 +3,7 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          LogOutput, SpatialForce, BodyIndex, InputPort,
                          Multiplexer, LeafSystem, PidController)
 
-from core.quasistatic_system import *
+from ..core.quasistatic_system import *
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
