@@ -103,9 +103,7 @@ class QuasistaticSimulator:
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
-            viz = ConnectMeshcatVisualizer(
-                builder, scene_graph,
-                frames_to_draw={"three_link_arm": {"link_ee"}})
+            viz = ConnectMeshcatVisualizer(builder, scene_graph)
             # ContactVisualizer
             contact_viz = MeshcatContactVisualizer(
                 meshcat_viz=viz, plant=plant)
@@ -274,16 +272,28 @@ class QuasistaticSimulator:
         return {model: self.plant.GetPositions(self.context_plant, model)
                 for model in self.models_all}
 
-    def draw_current_configuration(self):
+    def draw_current_configuration(self, draw_forces=True):
         # Body poses
         self.viz.DoPublish(self.context_meshcat, [])
 
         # Contact forces
-        self.contact_viz.GetInputPort("contact_results").FixValue(
-            self.context_meshcat_contact,
-            AbstractValue.Make(self.contact_results))
+        if draw_forces:
+            self.contact_viz.GetInputPort("contact_results").FixValue(
+                self.context_meshcat_contact,
+                AbstractValue.Make(self.contact_results))
+            self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
-        self.contact_viz.DoPublish(self.context_meshcat_contact, [])
+    def animate_system_trajectory(self, h: float,
+            q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]):
+        self.viz.draw_period = h
+        self.viz.reset_recording()
+        self.viz.start_recording()
+        for q_dict in q_dict_traj:
+            self.update_configuration(q_dict)
+            self.draw_current_configuration(draw_forces=False)
+
+        self.viz.stop_recording()
+        self.viz.publish_recording()
 
     def update_normal_and_tangential_jacobian_rows(
             self,
