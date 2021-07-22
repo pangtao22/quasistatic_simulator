@@ -1,0 +1,28 @@
+directives:
+- add_model:
+    name: arm_left
+    file: package://quasistatic_simulator/two_link_sphere_arm_left.sdf
+
+- add_model:
+    name: arm_right
+    file: package://quasistatic_simulator/two_link_sphere_arm_right.sdf
+
+- add_frame:
+    name: world_left_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, -0.1, 0]
+
+- add_frame:
+    name: world_right_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0.1, 0]
+
+- add_weld:
+    parent: world_left_arm_offset
+    child: arm_left::link_0
+
+- add_weld:
+    parent: world_right_arm_offset
+    child: arm_right::link_0
