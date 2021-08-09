@@ -41,9 +41,9 @@ if __name__ == "__main__":
         contact_detection_tolerance=np.inf)
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
-        run_comparison(box3d_big_sdf_path, q0_dict_str, is_visualizing=True,
-                       quasistatic_sim_params=quasistatic_sim_params,
-                       real_time_rate=0.0)
+        run_mbp_quasistatic_comparison(box3d_big_sdf_path, q0_dict_str, is_visualizing=True,
+                                       quasistatic_sim_params=quasistatic_sim_params,
+                                       real_time_rate=0.0)
 #%%
     figure, axes = plt.subplots(nq_a, 1, figsize=(4, 10), dpi=200)
     axes[0].set_title("Joint angles")

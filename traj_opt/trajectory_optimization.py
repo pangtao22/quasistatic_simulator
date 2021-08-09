@@ -94,7 +94,7 @@ class TrajectoryOptimizer:
         # Update configuration in self.q_sim.context_plant.
         q_dict = {model: autoDiffToValueMatrix(q_ad).squeeze()
                   for model, q_ad in q_ad_dict.items()}
-        self.q_sim.update_configuration(q_dict)
+        self.q_sim.update_mbp_positions(q_dict)
 
         # Update state in self.plant_context_ad.
         for model_instance_idx, q_ad in q_ad_dict.items():

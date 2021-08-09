@@ -14,7 +14,7 @@ r = 0.1
 q_a = np.array([0.1, -1.05*r, 1.05*r])
 q_u = np.array([0, r])
 q_list = [q_u, q_a]
-q_sim.update_configuration(q_list)
+q_sim.update_mbp_positions(q_list)
 q_sim.draw_current_configuration()
 
 #%%
@@ -33,7 +33,7 @@ for i in range(n_steps):
 
     # Update q
     q_sim.step_configuration(q_list, dq_u_list)
-    q_sim.update_configuration(q_list)
+    q_sim.update_mbp_positions(q_list)
     q_sim.draw_current_configuration()
 
     # logging

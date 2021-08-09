@@ -2,18 +2,14 @@ import os.path
 from typing import Dict
 
 import numpy as np
-
-from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
-                         PiecewisePolynomial, MultibodyPlant)
-
-from robotics_utilities.iiwa_controller.robot_internal_controller import (
-    RobotInternalController)
-
-from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
-from examples.model_paths import add_package_paths_local, models_dir
 from core.quasistatic_simulator import (
     QuasistaticSimParameters)
-
+from examples.model_paths import add_package_paths_local, models_dir
+from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
+from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
+                         PiecewisePolynomial, MultibodyPlant)
+from robotics_utilities.iiwa_controller.robot_internal_controller import (
+    RobotInternalController)
 
 # Simulation parameters.
 gravity = np.array([0, 0, -10.])
@@ -53,9 +49,10 @@ def create_3link_arm_controller_plant(gravity: np.ndarray):
     return plant, None
 
 
-def run_comparison(box_sdf_path: str, q0_dict_str: Dict[str, np.ndarray],
-                   quasistatic_sim_params: QuasistaticSimParameters,
-                   is_visualizing=False, real_time_rate=0.0):
+def run_mbp_quasistatic_comparison(box_sdf_path: str,
+                                   q0_dict_str: Dict[str, np.ndarray],
+                                   quasistatic_sim_params: QuasistaticSimParameters,
+                                   is_visualizing=False, real_time_rate=0.0):
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         model_directive_path=model_directive_path,

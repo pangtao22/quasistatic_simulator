@@ -1,6 +1,13 @@
+import sys
+
 from pydrake.all import LeafSystem, BasicVector, PortDataType
 
 from .quasistatic_simulator import *
+
+sys.path.append(
+    '/Users/pangtao/ClionProjects/quasistatic_sim/cmake-build-release/src/')
+from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
+                                      QuasistaticSimulatorCpp)
 
 
 class QuasistaticSystem(LeafSystem):
@@ -9,7 +16,8 @@ class QuasistaticSystem(LeafSystem):
                  model_directive_path: str,
                  robot_stiffness_dict: Dict[str, np.ndarray],
                  object_sdf_paths: Dict[str, str],
-                 sim_params: QuasistaticSimParameters):
+                 sim_params: QuasistaticSimParameters,
+                 backend: str = "python"):
         """
         Also refer to the docstring of quasistatic simulator.
         :param time_step:  quasistatic simulation time step in seconds.
@@ -28,17 +36,37 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        self.q_sim = QuasistaticSimulator(
-            model_directive_path=model_directive_path,
-            robot_stiffness_dict=robot_stiffness_dict,
-            object_sdf_paths=object_sdf_paths,
-            sim_params=sim_params,
-            internal_vis=False)
-        self.plant = self.q_sim.plant
+        if backend == "python":
+            self.q_sim = QuasistaticSimulator(
+                model_directive_path=model_directive_path,
+                robot_stiffness_dict=robot_stiffness_dict,
+                object_sdf_paths=object_sdf_paths,
+                sim_params=sim_params,
+                internal_vis=False)
+        elif backend == "cpp":
+            sim_params_cpp = QuasistaticSimParametersCpp()
+            sim_params_cpp.gravity = sim_params.gravity
+            sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
+            sim_params_cpp.contact_detection_tolerance = (
+                sim_params.contact_detection_tolerance)
+            sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
+            sim_params_cpp.requires_grad = sim_params.requires_grad
+
+            self.q_sim = QuasistaticSimulatorCpp(
+                model_directive_path=model_directive_path,
+                robot_stiffness_str=robot_stiffness_dict,
+                object_sdf_paths=object_sdf_paths,
+                sim_params=sim_params_cpp)
+        else:
+            raise RuntimeError(
+                "QuasistaticSystem backend must be either python or cpp.")
+
+        self.plant = self.q_sim.get_plant()
+        self.actuated_models = self.q_sim.get_actuated_models()
 
         # output ports for states of unactuated objects and robots (actuated).
         self.state_output_ports = dict()
-        for model in self.q_sim.models_all:
+        for model in self.q_sim.get_all_models():
             port_name = self.plant.GetModelInstanceName(model) + "_state"
             nq = self.plant.num_positions(model)
 
@@ -47,7 +75,7 @@ class QuasistaticSystem(LeafSystem):
                     port_name,
                     BasicVector(nq),
                     lambda context, output, model=model:
-                        output.SetFromVector(self.copy_model_state_out(model)))
+                    output.SetFromVector(self.q_sim.get_positions(model)))
 
         # query object output port.
         self.query_object_output_port = \
@@ -56,7 +84,7 @@ class QuasistaticSystem(LeafSystem):
                 lambda: AbstractValue.Make(QueryObject()),
                 self.copy_query_object_out)
 
-        # contact resutls oubput port.
+        # contact results output port.
         self.contact_results_output_port = \
             self.DeclareAbstractOutputPort(
                 "contact_results",
@@ -65,10 +93,10 @@ class QuasistaticSystem(LeafSystem):
 
         # input ports for commanded positions for robots.
         self.commanded_positions_input_ports = dict()
-        for model in self.q_sim.models_actuated:
+        for model in self.actuated_models:
             port_name = self.plant.GetModelInstanceName(model)
             port_name += "_commanded_position"
-            nv = self.q_sim.n_v_dict[model]
+            nv = self.plant.num_velocities(model)
             self.commanded_positions_input_ports[model] = \
                 self.DeclareInputPort(port_name, PortDataType.kVectorValued, nv)
 
@@ -83,38 +111,29 @@ class QuasistaticSystem(LeafSystem):
     def get_commanded_positions_input_port(self, model: ModelInstanceIndex):
         return self.commanded_positions_input_ports[model]
 
-    def copy_model_state_out(self, model: ModelInstanceIndex):
-        return self.plant.GetPositions(self.q_sim.context_plant, model)
-
     def copy_query_object_out(self, context, query_object_abstract_value):
-        query_object_abstract_value.set_value(self.q_sim.query_object)
+        query_object_abstract_value.set_value(self.q_sim.get_query_object())
 
-    def copy_contact_results_out(self,  context,
+    def copy_contact_results_out(self, context,
                                  contact_results_abstract_value):
-        contact_results_abstract_value.set_value(self.q_sim.contact_results)
+        contact_results_abstract_value.set_value(
+            self.q_sim.get_contact_results())
 
     def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
-        self.q_sim.update_configuration(q0_dict)
+        self.q_sim.update_mbp_positions(q0_dict)
 
     def DoCalcDiscreteVariableUpdates(self, context, events, discrete_state):
-        LeafSystem.DoCalcDiscreteVariableUpdates(
-            self, context, events, discrete_state)
+        super().DoCalcDiscreteVariableUpdates(context, events, discrete_state)
         # Commanded positions.
         q_a_cmd_dict = {
             model: self.commanded_positions_input_ports[model].Eval(context)
-            for model in self.q_sim.models_actuated}
-
-        # Gravity for unactuated models.
-        tau_ext_u_dict = self.q_sim.calc_gravity_for_unactuated_models()
+            for model in self.actuated_models}
 
         # Non-contact external spatial forces for actuated models.
         easf_list = []
         if self.spatial_force_input_port.HasValue(context):
             easf_list = self.spatial_force_input_port.Eval(context)
 
-        tau_ext_a_dict = \
-            self.q_sim.get_generalized_force_from_external_spatial_force(
-                easf_list)
-        tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
+        tau_ext_dict = self.q_sim.calc_tau_ext(easf_list)
 
         self.q_sim.step_default(q_a_cmd_dict, tau_ext_dict, self.h)

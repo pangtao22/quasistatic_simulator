@@ -3,7 +3,11 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          LogOutput, SpatialForce, BodyIndex, InputPort,
                          Multiplexer, LeafSystem, PidController)
 
-from ..core.quasistatic_system import *
+try:
+    from ..core.quasistatic_system import *
+except ImportError:
+    from core.quasistatic_system import *
+
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
@@ -91,7 +95,8 @@ def run_quasistatic_sim(
         h: float,
         sim_params: QuasistaticSimParameters,
         is_visualizing: bool,
-        real_time_rate: float, **kwargs):
+        real_time_rate: float,
+        backend: str = "python", **kwargs):
 
     builder = DiagramBuilder()
     q_sys = QuasistaticSystem(
@@ -99,7 +104,8 @@ def run_quasistatic_sim(
         model_directive_path=model_directive_path,
         robot_stiffness_dict=robot_stiffness_dict,
         object_sdf_paths=object_sdf_paths,
-        sim_params=sim_params)
+        sim_params=sim_params,
+        backend=backend)
     builder.AddSystem(q_sys)
 
     # update dictionaries with ModelInstanceIndex keys.
@@ -109,8 +115,8 @@ def run_quasistatic_sim(
         q_sys.plant, q_dict_str=q0_dict_str)
 
     # trajectory sources.
-    assert len(q_sys.q_sim.models_actuated) == len(q_a_traj_dict)
-    for model in q_sys.q_sim.models_actuated:
+    assert len(q_sys.q_sim.get_actuated_models()) == len(q_a_traj_dict)
+    for model in q_sys.q_sim.get_actuated_models():
         # Make sure that q_traj start at t=-h.
         q_traj = q_a_traj_dict[model]
         shift_q_traj_to_start_at_minus_h(q_traj, h)
@@ -133,7 +139,7 @@ def run_quasistatic_sim(
 
     # log states.
     loggers_dict = dict()
-    for model in q_sys.q_sim.models_all:
+    for model in q_sys.q_sim.get_all_models():
         loggers_dict[model] = LogOutput(
             q_sys.get_state_output_port(model), builder)
 
@@ -141,7 +147,7 @@ def run_quasistatic_sim(
     if is_visualizing:
         meshcat_vis = ConnectMeshcatVisualizer(
             builder=builder,
-            scene_graph=q_sys.q_sim.scene_graph,
+            scene_graph=q_sys.q_sim.get_scene_graph(),
             output_port=q_sys.query_object_output_port,
             draw_period=max(h, 1 / 30.))
 

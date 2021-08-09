@@ -38,7 +38,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         q_sim.plant, q0_dict_str)
 
     #%% show initial configuration before simulation starts.
-    q_sim.update_configuration(q0_dict)
+    q_sim.update_mbp_positions(q0_dict)
     if is_visualizing:
         q_sim.viz.vis["drake"]["contact_forces"].delete()
         q_sim.draw_current_configuration()
@@ -58,10 +58,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         t = h * i
         q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(t).squeeze(),
                         idx_schunk: q_schunk_traj.value(t).squeeze()}
-        tau_ext_u_dict = q_sim.calc_gravity_for_unactuated_models()
-        tau_ext_a_dict = \
-            q_sim.get_generalized_force_from_external_spatial_force([])
-        tau_ext_dict = {**tau_ext_a_dict, **tau_ext_u_dict}
+        tau_ext_dict = q_sim.calc_tau_ext([])
         q_dict = q_sim.step_default(q_a_cmd_dict, tau_ext_dict, h)
         if is_visualizing:
             q_sim.draw_current_configuration()
