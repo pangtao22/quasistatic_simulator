@@ -8,15 +8,16 @@ import cvxpy as cp
 
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
-                         ExternallyAppliedSpatialForce, Context)
-from pydrake.systems.meshcat_visualizer import (ConnectMeshcatVisualizer,
-    MeshcatContactVisualizer)
+                         ExternallyAppliedSpatialForce, Context,
+                         JacobianWrtVariable, RigidBody,
+                         PenetrationAsPointPair, ConnectMeshcatVisualizer,
+                         MeshcatContactVisualizer)
 from pydrake.solvers import mathematicalprogram as mp
-from pydrake.multibody.tree import JacobianWrtVariable, RigidBody
 from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults,
     CalcContactFrictionFromSurfaceProperties)
-from pydrake.geometry import PenetrationAsPointPair
+
+from robotics_utilities.qp_derivatives.qp_derivatives import QpDerivativesKkt
 
 from .utils import create_plant_with_robots_and_objects, calc_tangent_vectors
 
@@ -104,9 +105,7 @@ class QuasistaticSimulator:
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
-            viz = ConnectMeshcatVisualizer(
-                builder, scene_graph,
-                frames_to_draw={"three_link_arm": {"link_ee"}})
+            viz = ConnectMeshcatVisualizer(builder, scene_graph)
             # ContactVisualizer
             contact_viz = MeshcatContactVisualizer(
                 meshcat_viz=viz, plant=plant)
@@ -190,7 +189,7 @@ class QuasistaticSimulator:
 
         # step function dictionary
         self.step_function_dict = {
-            'qp_mp': self.step_qp,
+            'qp_mp': self.step_qp_mp,
             'qp_cvx': self.step_qp_cvx,
             'unconstrained': self.step_unconstrained}
 
@@ -211,6 +210,7 @@ class QuasistaticSimulator:
         self.Dv_nextDe = None
         self.Dq_nextDq = None
         self.Dq_nextDqa_cmd = None
+        self.dqp_kkt = QpDerivativesKkt()
 
         # TODO: these are not used right now.
         # Logging num of contacts and solver time.
@@ -274,16 +274,28 @@ class QuasistaticSimulator:
         return {model: self.plant.GetPositions(self.context_plant, model)
                 for model in self.models_all}
 
-    def draw_current_configuration(self):
+    def draw_current_configuration(self, draw_forces=True):
         # Body poses
         self.viz.DoPublish(self.context_meshcat, [])
 
         # Contact forces
-        self.contact_viz.GetInputPort("contact_results").FixValue(
-            self.context_meshcat_contact,
-            AbstractValue.Make(self.contact_results))
+        if draw_forces:
+            self.contact_viz.GetInputPort("contact_results").FixValue(
+                self.context_meshcat_contact,
+                AbstractValue.Make(self.contact_results))
+            self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
-        self.contact_viz.DoPublish(self.context_meshcat_contact, [])
+    def animate_system_trajectory(self, h: float,
+            q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]):
+        self.viz.draw_period = h
+        self.viz.reset_recording()
+        self.viz.start_recording()
+        for q_dict in q_dict_traj:
+            self.update_configuration(q_dict)
+            self.draw_current_configuration(draw_forces=False)
+
+        self.viz.stop_recording()
+        self.viz.publish_recording()
 
     def update_normal_and_tangential_jacobian_rows(
             self,
@@ -603,7 +615,7 @@ class QuasistaticSimulator:
                 raise RuntimeError(
                     "CVX solver status is {}".format(status))
 
-    def form_Q_and_tau_h_for_cvx_problem(
+    def form_Q_and_tau_h(
             self,
             q_dict: Dict[ModelInstanceIndex, np.ndarray],
             q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -631,61 +643,55 @@ class QuasistaticSimulator:
                 self.Kq_a[model].diagonal() * h**2
         return Q, tau_h
 
-    def step_qp(self,
-                q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-                h: float,
-                phi_constraints: np.ndarray,
-                J: np.ndarray,
-                requires_grad: bool):
+    def step_qp_mp(self,
+                   q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                   q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                   tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                   h: float,
+                   phi_constraints: np.ndarray,
+                   J: np.ndarray,
+                   requires_grad: bool):
+        Q, tau_h = self.form_Q_and_tau_h(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h)
 
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
-        vh = prog.NewContinuousVariables(self.n_v, "v_h")
-        v_h_dict = dict()
-        for model in self.models_all:
-            v_h_dict[model] = vh[self.velocity_indices_dict[model]]
+        v = prog.NewContinuousVariables(self.n_v, "v")
 
-        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
-        for model in self.models_unactuated:
-            idx_v_model = self.velocity_indices_dict[model]
-            ixgrid = np.ix_(idx_v_model, idx_v_model)
-
-            if self.sim_params.is_quasi_dynamic:
-                prog.AddQuadraticCost(M[ixgrid] / h,
-                                      -tau_ext_dict[model] * h,
-                                      v_h_dict[model])
-            else:
-                prog.AddLinearCost(
-                    -tau_ext_dict[model] * h, 0, v_h_dict[model])
-
-        for model in self.models_actuated:
-            dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
-            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
-            prog.AddQuadraticCost(self.Kq_a[model] * h,
-                                  -tau_a * h,
-                                  v_h_dict[model])
-
+        prog.AddQuadraticCost(Q, -tau_h, v)
+        e = phi_constraints / h
         constraints = prog.AddLinearConstraint(
-            J, -phi_constraints, np.full_like(phi_constraints, np.inf), vh)
+            A=-J,
+            lb=np.full_like(phi_constraints, -np.inf),
+            ub=e,
+            vars=v)
 
         result = self.solver.Solve(prog, None, None)
         # self.optimizer_time_log.append(
         #     result.get_solver_details().optimizer_time)
-        assert result.get_solution_result() == mp.SolutionResult.kSolutionFound
-        beta = result.GetDualSolution(constraints)
+        assert result.is_success()
+        beta = -result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
 
         # extract v_h from vector into a dictionary.
+        v_values = result.GetSolution(v)
         v_h_value_dict = dict()
-        for model in v_h_dict.keys():
-            v_h_value_dict[model] = result.GetSolution(v_h_dict[model])
+        for model in self.models_all:
+            indices = self.velocity_indices_dict[model]
+            v_h_value_dict[model] = v_values[indices] * h
 
         # compute DvDb and DvDe
         DvDb, DvDe = None, None
         if requires_grad:
-            pass
+            self.dqp_kkt.update_problem(
+                Q=Q, b=-tau_h, G=-J, e=e, z_star=v_values, lambda_star=beta)
+            DvDb = self.dqp_kkt.calc_DzDb()
+            DvDe = self.dqp_kkt.calc_DzDe()
+
+            # print('DvDb mp\n', DvDb)
+            # print('DvDe mp\n', DvDe)
+            # print('G @ z_star - e\n', -J @ v_values - e)
+            # print('lambda_star\n', beta)
 
         return v_h_value_dict, beta, DvDb, DvDe
 
@@ -697,7 +703,7 @@ class QuasistaticSimulator:
                     phi_constraints: np.ndarray,
                     J: np.ndarray,
                     requires_grad: bool):
-        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+        Q, tau_h = self.form_Q_and_tau_h(
             q_dict, q_a_cmd_dict, tau_ext_dict, h)
 
         # Make a CVX problem.
@@ -729,21 +735,20 @@ class QuasistaticSimulator:
         e_cp.value = phi_constraints / h
 
         v = cp.Variable(self.n_v)
-        v_dict = dict()
-        for model in self.models_all:
-            v_dict[model] = v[self.velocity_indices_dict[model]]
 
+        constraints = [e_cp + J @ v >= 0]
         prob = cp.Problem(
             cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) + b_cp @ v),
-            [e_cp + J @ v >= 0])
+            constraints)
 
         prob.solve(requires_grad=requires_grad)
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
-        for model in v_dict.keys():
-            v_h_value_dict[model] = v_dict[model].value * h
+        for model in self.models_all:
+            indices = self.velocity_indices_dict[model]
+            v_h_value_dict[model] = v.value[indices] * h
 
         # compute DvDb and DvDe
         DvDb, DvDe = None, None
@@ -758,6 +763,21 @@ class QuasistaticSimulator:
 
                 DvDb[i] = b_cp.gradient
                 DvDe[i] = e_cp.gradient
+            # print('-----------------------')
+            # print('DvDb cvx\n', DvDb)
+            # print('DvDe cvx\n', DvDe)
+
+            self.dqp_kkt.update_problem(
+                Q=Q, b=-tau_h, G=-J, e=e_cp.value, z_star=v.value,
+                lambda_star=constraints[0].dual_value)
+            DvDb = self.dqp_kkt.calc_DzDb()
+            DvDe = self.dqp_kkt.calc_DzDe()
+
+            # print('DvDb\n', DvDb)
+            # print('DvDe\n', DvDe)
+            # print('G @ z_star - e\n', -J @ v.value - e_cp.value)
+            # print('lambda_star\n', constraints[0].dual_value)
+            # print('-----------------------')
 
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
@@ -769,13 +789,10 @@ class QuasistaticSimulator:
                            phi_constraints: np.ndarray,
                            J: np.ndarray,
                            requires_grad: bool):
-        Q, tau_h = self.form_Q_and_tau_h_for_cvx_problem(
+        Q, tau_h = self.form_Q_and_tau_h(
             q_dict, q_a_cmd_dict, tau_ext_dict, h)
 
         v = cp.Variable(self.n_v)
-        v_dict = dict()
-        for model in self.models_all:
-            v_dict[model] = v[self.velocity_indices_dict[model]]
 
         t = self.sim_params.log_barrier_weight
         log_barriers_sum = 0.
@@ -790,8 +807,9 @@ class QuasistaticSimulator:
 
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
-        for model in v_dict.keys():
-            v_h_value_dict[model] = v_dict[model].value * h
+        for model in self.models_all:
+            indices = self.velocity_indices_dict[model]
+            v_h_value_dict[model] = v.value[indices] * h
 
         # TODO: gradient not supported yet.
         DvDb, DvDe = None, None

@@ -85,12 +85,12 @@
       <inertial>
         <mass>1.0</mass>
         <inertia>
-          <ixx>0.166666666666667</ixx>
+          <ixx>0.1</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.166666666666667</iyy>
+          <iyy>0.1</iyy>
           <iyz>0</iyz>
-          <izz>0.166666666666667</izz>
+          <izz>0.1</izz>
         </inertia>
       </inertial>
       <visual name="sphere">

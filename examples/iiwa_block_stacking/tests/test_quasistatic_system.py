@@ -69,7 +69,7 @@ class TestQuasistaticSystem(unittest.TestCase):
         q_logs_dict_str, t_quasistatic = \
             run_quasistatic_sim_manually(h=0.2, is_visualizing=False)
 
-        tolerance = 2e-5
+        tolerance = 1e-6
         duraiton = t_quasistatic[-1]
         for model_name in q0_dict_str.keys():
             q_log_system = loggers_dict_systems_str[model_name].data().T
