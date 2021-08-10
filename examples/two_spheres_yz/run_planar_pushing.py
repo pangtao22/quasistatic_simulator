@@ -64,7 +64,7 @@ if __name__ == "__main__":
     plant = q_sys.plant
     for model in q_sys.q_sim.models_all:
         print(model, plant.GetModelInstanceName(model),
-              q_sys.q_sim.velocity_indices_dict[model])
+              q_sys.q_sim.velocity_indices_[model])
 
 
 #%% construct q and v vectors of MBP from log.
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     for name, logger in loggers_dict_quasistatic_str.items():
         model = name_to_model_dict[name]
-        for i, j in enumerate(q_sys.q_sim.velocity_indices_dict[model]):
+        for i, j in enumerate(q_sys.q_sim.velocity_indices_[model]):
             q_log[:, j] = logger.data().T[:, i]
 
     v_log[1:, :] = (q_log[1:, :] - q_log[:-1, :]) / h

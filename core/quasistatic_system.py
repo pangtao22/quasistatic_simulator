@@ -10,6 +10,18 @@ from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
 
 
+def cpp_params_from_py_params(
+        sim_params: QuasistaticSimParameters) -> QuasistaticSimParametersCpp:
+    sim_params_cpp = QuasistaticSimParametersCpp()
+    sim_params_cpp.gravity = sim_params.gravity
+    sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
+    sim_params_cpp.contact_detection_tolerance = (
+        sim_params.contact_detection_tolerance)
+    sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
+    sim_params_cpp.requires_grad = sim_params.requires_grad
+    return sim_params_cpp
+
+
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
                  time_step: float,
@@ -44,19 +56,11 @@ class QuasistaticSystem(LeafSystem):
                 sim_params=sim_params,
                 internal_vis=False)
         elif backend == "cpp":
-            sim_params_cpp = QuasistaticSimParametersCpp()
-            sim_params_cpp.gravity = sim_params.gravity
-            sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
-            sim_params_cpp.contact_detection_tolerance = (
-                sim_params.contact_detection_tolerance)
-            sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
-            sim_params_cpp.requires_grad = sim_params.requires_grad
-
             self.q_sim = QuasistaticSimulatorCpp(
                 model_directive_path=model_directive_path,
                 robot_stiffness_str=robot_stiffness_dict,
                 object_sdf_paths=object_sdf_paths,
-                sim_params=sim_params_cpp)
+                sim_params=cpp_params_from_py_params(sim_params))
         else:
             raise RuntimeError(
                 "QuasistaticSystem backend must be either python or cpp.")

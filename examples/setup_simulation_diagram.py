@@ -262,7 +262,7 @@ def run_mbp_sim(
 
     # logs.
     loggers_dict = dict()
-    for model in (robot_models + object_models):
+    for model in robot_models.union(object_models):
         logger = LogOutput(plant.get_state_output_port(model), builder)
         logger.set_publish_period(0.01)
         loggers_dict[model] = logger

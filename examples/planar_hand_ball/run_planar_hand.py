@@ -70,13 +70,13 @@ if __name__ == "__main__":
     plant = q_sys.plant
     for model in q_sys.q_sim.models_all:
         print(model, plant.GetModelInstanceName(model),
-              q_sys.q_sim.velocity_indices_dict[model])
+              q_sys.q_sim.velocity_indices_[model])
 
 
 #%% index for tau_a.
     indices = []
     for model in q_sys.q_sim.models_actuated:
-        indices += q_sys.q_sim.velocity_indices_dict[model].tolist()
+        indices += q_sys.q_sim.velocity_indices_[model].tolist()
     indices.sort()
     indices_map = {j: i for i, j in enumerate(indices)}
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     for name, logger in loggers_dict_quasistatic_str.items():
         model = name_to_model_dict[name]
-        for i, j in enumerate(q_sys.q_sim.velocity_indices_dict[model]):
+        for i, j in enumerate(q_sys.q_sim.velocity_indices_[model]):
             q_log[:, j] = logger.data().T[:, i]
 
     v_log[1:, :] = (q_log[1:, :] - q_log[:-1, :]) / h
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     for name in robot_stiffness_dict.keys():
         model = name_to_model_dict[name]
         logger_qa = loggers_dict_quasistatic_str[name]
-        idx_v = q_sys.q_sim.velocity_indices_dict[model]
+        idx_v = q_sys.q_sim.velocity_indices_[model]
         idx_tau_a = [indices_map[i] for i in idx_v]
         for l in range(T - 1):
             qa_l = logger_qa.data().T[l]
