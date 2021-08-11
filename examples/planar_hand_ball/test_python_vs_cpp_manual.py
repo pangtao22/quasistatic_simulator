@@ -14,8 +14,6 @@ from pydrake.all import ModelInstanceIndex
 from quasistatic_simulator.core.quasistatic_simulator import (
     QuasistaticSimulator, QuasistaticSimParameters)
 
-sys.path.append(
-    '/Users/pangtao/ClionProjects/quasistatic_sim/cmake-build-release/src/')
 from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
 

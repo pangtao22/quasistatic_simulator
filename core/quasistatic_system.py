@@ -4,8 +4,6 @@ from pydrake.all import LeafSystem, BasicVector, PortDataType
 
 from .quasistatic_simulator import *
 
-sys.path.append(
-    '/Users/pangtao/ClionProjects/quasistatic_sim/cmake-build-release/src/')
 from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
 
