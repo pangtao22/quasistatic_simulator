@@ -66,19 +66,19 @@ def create_plant_with_robots_and_objects(builder: DiagramBuilder,
                            plant, parser)
 
     # Objects
-    object_models_list = []
+    object_models = set()
     for name, sdf_path in object_sdf_paths.items():
-        object_models_list.append(
+        object_models.add(
             parser.AddModelFromFile(sdf_path, model_name=name))
 
     # Robots
-    robot_models_list = []
+    robot_models = set()
     for name in robot_names:
         robot_model = plant.GetModelInstanceByName(name)
-        robot_models_list.append(robot_model)
+        robot_models.add(robot_model)
 
     # gravity
     plant.mutable_gravity_field().set_gravity_vector(gravity)
     plant.Finalize()
 
-    return plant, scene_graph, robot_models_list, object_models_list
+    return plant, scene_graph, robot_models, object_models

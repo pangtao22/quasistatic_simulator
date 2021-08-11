@@ -17,7 +17,8 @@ from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults,
     CalcContactFrictionFromSurfaceProperties)
 
-from robotics_utilities.qp_derivatives.qp_derivatives import QpDerivativesKkt
+from robotics_utilities.qp_derivatives.qp_derivatives import (
+    QpDerivativesKktPinv)
 
 from .utils import create_plant_with_robots_and_objects, calc_tangent_vectors
 
@@ -91,7 +92,7 @@ class QuasistaticSimulator:
         self.sim_params = sim_params
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
-        plant, scene_graph, robot_model_list, object_model_list = \
+        plant, scene_graph, robot_models, object_models = \
             create_plant_with_robots_and_objects(
                 builder=builder,
                 model_directive_path=model_directive_path,
@@ -135,23 +136,23 @@ class QuasistaticSimulator:
             self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
                 self.contact_viz, self.context)
 
-        self.models_unactuated = object_model_list
-        self.models_actuated = robot_model_list
-        self.models_all = object_model_list + robot_model_list
+        self.models_unactuated = object_models
+        self.models_actuated = robot_models
+        self.models_all = object_models.union(robot_models)
 
         # body indices for each model in self.models_list.
-        self.body_indices_dict = dict()
+        self.body_indices_ = dict()
         # velocity indices (into the generalized velocity vector of the MBP)
-        self.velocity_indices_dict = dict()
+        self.velocity_indices_ = dict()
         self.n_v_dict = dict()
         self.n_v = plant.num_velocities()
 
         n_v = 0
         for model in self.models_all:
             velocity_indices = self.get_velocity_indices_for_model(model)
-            self.velocity_indices_dict[model] = velocity_indices
+            self.velocity_indices_[model] = velocity_indices
             self.n_v_dict[model] = len(velocity_indices)
-            self.body_indices_dict[model] = plant.GetBodyIndices(model)
+            self.body_indices_[model] = plant.GetBodyIndices(model)
 
             n_v += len(velocity_indices)
 
@@ -210,7 +211,7 @@ class QuasistaticSimulator:
         self.Dv_nextDe = None
         self.Dq_nextDq = None
         self.Dq_nextDqa_cmd = None
-        self.dqp_kkt = QpDerivativesKkt()
+        self.dqp_kkt = QpDerivativesKktPinv()
 
         # TODO: these are not used right now.
         # Logging num of contacts and solver time.
@@ -218,19 +219,43 @@ class QuasistaticSimulator:
         self.nd_log = []
         self.optimizer_time_log = []
 
-    def num_actuated_dof(self):
+    def get_plant(self):
+        return self.plant
+
+    def get_scene_graph(self):
+        return self.scene_graph
+
+    def get_all_models(self):
+        return self.models_all
+
+    def get_actuated_models(self):
+        return self.models_actuated
+
+    def get_Dq_nextDq(self):
+        return self.Dq_nextDq
+
+    def get_Dq_nextDqa_cmd(self):
+        return self.Dq_nextDqa_cmd
+
+    def get_positions(self, model: ModelInstanceIndex):
+        return self.plant.GetPositions(self.context_plant, model)
+
+    def get_query_object(self):
+        return self.query_object
+
+    def get_contact_results(self):
+        return self.contact_results
+
+    def get_velocity_indices(self):
+        return self.velocity_indices_
+
+    def num_actuated_dofs(self):
         return np.sum(
             [self.n_v_dict[model] for model in self.models_actuated])
 
     def num_unactuated_dof(self):
         return np.sum(
             [self.n_v_dict[model] for model in self.models_unactuated])
-
-    def get_positions(self):
-        """
-        returns a copy of the MBP positions vector stored in self.context_plant.
-        """
-        return np.copy(self.plant.GetPositions(self.context_plant))
 
     def get_dynamics_derivatives(self):
         return (np.copy(self.Dv_nextDb), np.copy(self.Dv_nextDe),
@@ -242,11 +267,7 @@ class QuasistaticSimulator:
             name_to_model[self.plant.GetModelInstanceName(model)] = model
         return name_to_model
 
-    def get_model_instance_indices(self):
-        return (copy.copy(self.models_unactuated),
-                copy.copy(self.models_actuated))
-
-    def update_configuration(
+    def update_mbp_positions(
             self, q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
         :param q_dict: A dict of np arrays keyed by model instance indices.
@@ -265,7 +286,7 @@ class QuasistaticSimulator:
         self.query_object = self.scene_graph.get_query_output_port().Eval(
             self.context_sg)
 
-    def get_current_configuration(self):
+    def get_mbp_positions(self):
         """
         :return: a dictionary containing the current positions of all model
             instances stored in self.context_plant, keyed by
@@ -285,13 +306,30 @@ class QuasistaticSimulator:
                 AbstractValue.Make(self.contact_results))
             self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
+    def calc_tau_ext(self, easf_list: List[ExternallyAppliedSpatialForce]):
+        """
+        Combines tau_a_ext from
+            self.get_generalized_force_from_external_spatial_force
+         and tau_u_ext from
+            self.calc_gravity_for_unactuated_models.
+        """
+
+        # Gravity for unactuated models.
+        tau_ext_u_dict = self.calc_gravity_for_unactuated_models()
+
+        # external spatial force for actuated models.
+        tau_ext_a_dict = \
+            self.get_generalized_force_from_external_spatial_force(
+                easf_list)
+        return {**tau_ext_a_dict, **tau_ext_u_dict}
+
     def animate_system_trajectory(self, h: float,
             q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]):
         self.viz.draw_period = h
         self.viz.reset_recording()
         self.viz.start_recording()
         for q_dict in q_dict_traj:
-            self.update_configuration(q_dict)
+            self.update_mbp_positions(q_dict)
             self.draw_current_configuration(draw_forces=False)
 
         self.viz.stop_recording()
@@ -347,14 +385,14 @@ class QuasistaticSimulator:
         Jf[i_f_start: i_f_start + n_di] += d_W.dot(J_WBi)
 
     def find_model_instance_index_for_body(self, body):
-        for model, body_indices in self.body_indices_dict.items():
+        for model, body_indices in self.body_indices_.items():
             if body.index() in body_indices:
                 return model
 
     def calc_gravity_for_unactuated_models(self):
         gravity_all = self.plant.CalcGravityGeneralizedForces(
             self.context_plant)
-        return {model: gravity_all[self.velocity_indices_dict[model]]
+        return {model: gravity_all[self.velocity_indices_[model]]
                 for model in self.models_unactuated}
 
     def get_generalized_force_from_external_spatial_force(
@@ -379,7 +417,7 @@ class QuasistaticSimulator:
                 frame_E=self.plant.world_frame())
 
             tau_ext_actuated[model] += \
-                J[:, self.velocity_indices_dict[model]].T.dot(F_Bq_W)
+                J[:, self.velocity_indices_[model]].T.dot(F_Bq_W)
 
         return tau_ext_actuated
 
@@ -424,7 +462,7 @@ class QuasistaticSimulator:
             Fa/b is the contact geometry frame relative to the body to which
                 the contact geometry belongs. sdp.p_ACa is relative to frame 
                 Fa (geometry frame), not frame A (body frame). 
-            p_AcA_A is the coordinates of the "contact" point C1 relative
+            p_ACa_A is the coordinates of the "contact" point Ca relative
                 to the body frame A expressed in frame A.
             '''
 
@@ -435,8 +473,8 @@ class QuasistaticSimulator:
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AGa = self.inspector.GetPoseInFrame(sdp.id_A)
             X_BGb = self.inspector.GetPoseInFrame(sdp.id_B)
-            p_AcA_A = X_AGa.multiply(sdp.p_ACa)
-            p_BcB_B = X_BGb.multiply(sdp.p_BCb)
+            p_ACa_A = X_AGa.multiply(sdp.p_ACa)
+            p_BCb_B = X_BGb.multiply(sdp.p_BCb)
 
             # TODO: it is assumed contact exists only between model
             #  instances, not between bodies within the same model instance.
@@ -464,14 +502,14 @@ class QuasistaticSimulator:
 
                 # new Jn and Jf
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,
+                    body=bodyA, pC_D=p_ACa_A, n_W=n_A_W, d_W=d_A_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
                     position_indices=None,
                     Jn=Jn, Jf=Jf,
                     jacobian_wrt_variable=JacobianWrtVariable.kV)
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
+                    body=bodyB, pC_D=p_BCb_B, n_W=n_B_W, d_W=d_B_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
                     position_indices=None,
                     Jn=Jn, Jf=Jf,
@@ -482,7 +520,7 @@ class QuasistaticSimulator:
                 d_B_W = calc_tangent_vectors(n_B_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
+                    body=bodyB, pC_D=p_BCb_B, n_W=n_B_W, d_W=d_B_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
                     position_indices=None,
                     Jn=Jn, Jf=Jf,
@@ -493,7 +531,7 @@ class QuasistaticSimulator:
                 d_A_W = calc_tangent_vectors(n_A_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,
+                    body=bodyA, pC_D=p_ACa_A, n_W=n_A_W, d_W=d_A_W,
                     i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
                     position_indices=None,
                     Jn=Jn, Jf=Jf,
@@ -517,7 +555,7 @@ class QuasistaticSimulator:
                         bodyB_index=bodyA.index(),
                         geometry_id_A=sdp.id_B,
                         geometry_id_B=sdp.id_A,
-                        p_WC_W=X_WD.multiply(p_AcA_A),
+                        p_WC_W=X_WD.multiply(p_ACa_A),
                         n_W=n_A_W,
                         dC_W=d_A_W))
             elif is_B_in:
@@ -529,7 +567,7 @@ class QuasistaticSimulator:
                         bodyB_index=bodyB.index(),
                         geometry_id_A=sdp.id_A,
                         geometry_id_B=sdp.id_B,
-                        p_WC_W=X_WD.multiply(p_BcB_B),
+                        p_WC_W=X_WD.multiply(p_BCb_B),
                         n_W=n_B_W,
                         dC_W=d_B_W))
             else:
@@ -625,7 +663,7 @@ class QuasistaticSimulator:
         Q = np.zeros((self.n_v, self.n_v))
         tau_h = np.zeros(self.n_v)
         for model in self.models_unactuated:
-            idx_v_model = self.velocity_indices_dict[model]
+            idx_v_model = self.velocity_indices_[model]
             tau_h[idx_v_model] = tau_ext_dict[model] * h
 
             if self.sim_params.is_quasi_dynamic:
@@ -634,7 +672,7 @@ class QuasistaticSimulator:
 
         idx_i, idx_j = np.diag_indices(self.n_v)
         for model in self.models_actuated:
-            idx_v_model = self.velocity_indices_dict[model]
+            idx_v_model = self.velocity_indices_[model]
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
             tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
             tau_h[idx_v_model] = tau_a * h
@@ -677,7 +715,7 @@ class QuasistaticSimulator:
         v_values = result.GetSolution(v)
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_dict[model]
+            indices = self.velocity_indices_[model]
             v_h_value_dict[model] = v_values[indices] * h
 
         # compute DvDb and DvDe
@@ -687,11 +725,6 @@ class QuasistaticSimulator:
                 Q=Q, b=-tau_h, G=-J, e=e, z_star=v_values, lambda_star=beta)
             DvDb = self.dqp_kkt.calc_DzDb()
             DvDe = self.dqp_kkt.calc_DzDe()
-
-            # print('DvDb mp\n', DvDb)
-            # print('DvDe mp\n', DvDe)
-            # print('G @ z_star - e\n', -J @ v_values - e)
-            # print('lambda_star\n', beta)
 
         return v_h_value_dict, beta, DvDb, DvDe
 
@@ -747,7 +780,7 @@ class QuasistaticSimulator:
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_dict[model]
+            indices = self.velocity_indices_[model]
             v_h_value_dict[model] = v.value[indices] * h
 
         # compute DvDb and DvDe
@@ -763,21 +796,12 @@ class QuasistaticSimulator:
 
                 DvDb[i] = b_cp.gradient
                 DvDe[i] = e_cp.gradient
-            # print('-----------------------')
-            # print('DvDb cvx\n', DvDb)
-            # print('DvDe cvx\n', DvDe)
 
             self.dqp_kkt.update_problem(
                 Q=Q, b=-tau_h, G=-J, e=e_cp.value, z_star=v.value,
                 lambda_star=constraints[0].dual_value)
             DvDb = self.dqp_kkt.calc_DzDb()
             DvDe = self.dqp_kkt.calc_DzDe()
-
-            # print('DvDb\n', DvDb)
-            # print('DvDe\n', DvDe)
-            # print('G @ z_star - e\n', -J @ v.value - e_cp.value)
-            # print('lambda_star\n', constraints[0].dual_value)
-            # print('-----------------------')
 
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
@@ -808,7 +832,7 @@ class QuasistaticSimulator:
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_dict[model]
+            indices = self.velocity_indices_[model]
             v_h_value_dict[model] = v.value[indices] * h
 
         # TODO: gradient not supported yet.
@@ -840,7 +864,7 @@ class QuasistaticSimulator:
          :return: system configuration at the next time step, stored in a
              dictionary keyed by ModelInstanceIndex.
          """
-        q_dict = self.get_current_configuration()
+        q_dict = self.get_mbp_positions()
 
         phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
             self.calc_jacobian_and_phi(
@@ -873,7 +897,7 @@ class QuasistaticSimulator:
                 dq_dict[model] = dq_u
 
         self.step_configuration(q_dict, dq_dict)
-        self.update_configuration(q_dict)
+        self.update_mbp_positions(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
         if not requires_grad:
@@ -909,10 +933,10 @@ class QuasistaticSimulator:
             j_start += n_d[i_c]
 
         DbDq = np.zeros((self.n_v, self.n_v))
-        DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dof()))
+        DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dofs()))
         j_start = 0
         for model in self.models_actuated:
-            idx_v_model = self.velocity_indices_dict[model]
+            idx_v_model = self.velocity_indices_[model]
             n_v_i = len(idx_v_model)
             idx_rows = idx_v_model[:, None]
             idx_cols = np.arange(j_start, j_start + n_v_i)[None, :]

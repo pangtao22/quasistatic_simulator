@@ -94,7 +94,7 @@ class TrajectoryOptimizer:
         # Update configuration in self.q_sim.context_plant.
         q_dict = {model: autoDiffToValueMatrix(q_ad).squeeze()
                   for model, q_ad in q_ad_dict.items()}
-        self.q_sim.update_configuration(q_dict)
+        self.q_sim.update_mbp_positions(q_dict)
 
         # Update state in self.plant_context_ad.
         for model_instance_idx, q_ad in q_ad_dict.items():
@@ -194,7 +194,7 @@ class TrajectoryOptimizer:
         for model, q_i in q_dict.items():
             if isinstance(model, str):
                 model = self.name_to_model_idx_map[model]
-            indices = self.q_sim.velocity_indices_dict[model]
+            indices = self.q_sim.velocity_indices_[model]
             q_vec[indices] = q_i
 
         return q_vec
@@ -202,7 +202,7 @@ class TrajectoryOptimizer:
     def vec_to_q_dict(self, q_vec: np.ndarray):
         q_dict = dict()
         for model in self.q_sim.models_all:
-            indices = self.q_sim.velocity_indices_dict[model]
+            indices = self.q_sim.velocity_indices_[model]
             q_dict[model] = q_vec[indices]
         return q_dict
 
@@ -309,7 +309,7 @@ class TrajectoryOptimizer:
         tau = np.zeros(n_v, dtype=object)
 
         for model in self.q_sim.models_unactuated:
-            idx_v_model = self.q_sim.velocity_indices_dict[model]
+            idx_v_model = self.q_sim.velocity_indices_[model]
             tau[idx_v_model] = tau_ext_u_dict[model]
 
             ixgrid = np.ix_(idx_v_model, idx_v_model)
@@ -318,7 +318,7 @@ class TrajectoryOptimizer:
         idx_i, idx_j = np.diag_indices(n_v)
         h = self.q_sim.sim_settings.time_step
         for i, model in enumerate(self.q_sim.models_actuated):
-            idx_v_model = self.q_sim.velocity_indices_dict[model]
+            idx_v_model = self.q_sim.velocity_indices_[model]
             # tau_a = Kq_a[model].dot(dq_a_cmd).
             # TODO: this is hard-coded.
             tau[idx_v_model] = tau_a[i * 2: (i+1) * 2]
@@ -436,13 +436,13 @@ for i in range(1, T):
 
     # tau_a_cmd.
     model_l = name_to_model_map[robot_l_name]
-    indices_l = traj_opt.q_sim.velocity_indices_dict[model_l]
+    indices_l = traj_opt.q_sim.velocity_indices_[model_l]
     q_a_l_cmd = q_a_traj_dict_str[robot_l_name].value(i * h).squeeze()
     q_a_l = q_traj_initial[i][indices_l]
     tau_a_cmd_l = traj_opt.q_sim.Kq_a[model_l].dot(q_a_l_cmd - q_a_l)
 
     model_r = name_to_model_map[robot_r_name]
-    indices_r = traj_opt.q_sim.velocity_indices_dict[model_r]
+    indices_r = traj_opt.q_sim.velocity_indices_[model_r]
     q_a_r_cmd = q_a_traj_dict_str[robot_r_name].value(i * h).squeeze()
     q_a_r = q_traj_initial[i][indices_r]
     tau_a_cmd_r = traj_opt.q_sim.Kq_a[model_r].dot(q_a_r_cmd - q_a_r)
@@ -486,7 +486,7 @@ prog.SetInitialGuess(tau_a_traj, tau_a_traj_initial)
 
 # Cost
 prog.AddQuadraticCost((tau_a_traj[1:]**2).sum())
-idx_object = traj_opt.q_sim.velocity_indices_dict[name_to_model_map[object_name]]
+idx_object = traj_opt.q_sim.velocity_indices_[name_to_model_map[object_name]]
 prog.AddQuadraticCost(10 * ((q_traj[-1][idx_object] - np.array([0, 1.4, 0]))**2).sum())
 
 #%% Solve.
