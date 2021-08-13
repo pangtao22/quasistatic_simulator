@@ -1,0 +1,12 @@
+directives:
+
+- add_model:
+    name: gripper
+    file: package://quasistatic_simulator/gripper_yz.sdf
+
+- add_frame:
+    name: fixed_top
+    X_PF:
+      base_frame: world
+      translation: [0, 0, 1]
+      rotation: !Rpy { deg: [0, 0, 0]}

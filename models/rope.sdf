@@ -1,0 +1,1565 @@
+# This sdf file is auto-generated.
+# Manual modification is not recommended.
+<sdf version='1.6'>
+  <model name='rope'>
+
+  <link name='link_000'>
+  <pose> 0 0 0.000000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_000_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.000000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_000'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_001'>
+  <pose> 0 0 -0.020000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_001_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.033333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_001'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_002'>
+  <pose> 0 0 -0.040000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_002_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.066667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_002'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_003'>
+  <pose> 0 0 -0.060000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_003_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.100000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_003'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_004'>
+  <pose> 0 0 -0.080000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_004_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.133333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_004'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_005'>
+  <pose> 0 0 -0.100000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_005_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.166667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_005'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_006'>
+  <pose> 0 0 -0.120000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_006_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.200000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_006'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_007'>
+  <pose> 0 0 -0.140000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_007_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.233333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_007'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_008'>
+  <pose> 0 0 -0.160000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_008_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.266667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_008'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_009'>
+  <pose> 0 0 -0.180000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_009_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.300000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_009'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_010'>
+  <pose> 0 0 -0.200000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_010_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.333333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_010'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_011'>
+  <pose> 0 0 -0.220000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_011_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.366667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_011'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_012'>
+  <pose> 0 0 -0.240000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_012_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.400000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_012'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_013'>
+  <pose> 0 0 -0.260000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_013_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.433333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_013'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_014'>
+  <pose> 0 0 -0.280000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_014_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.466667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_014'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_015'>
+  <pose> 0 0 -0.300000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_015_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.500000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_015'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_016'>
+  <pose> 0 0 -0.320000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_016_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.533333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_016'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_017'>
+  <pose> 0 0 -0.340000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_017_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.566667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_017'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_018'>
+  <pose> 0 0 -0.360000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_018_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.600000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_018'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_019'>
+  <pose> 0 0 -0.380000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_019_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.633333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_019'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_020'>
+  <pose> 0 0 -0.400000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_020_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.666667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_020'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_021'>
+  <pose> 0 0 -0.420000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_021_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.700000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_021'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_022'>
+  <pose> 0 0 -0.440000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_022_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.733333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_022'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_023'>
+  <pose> 0 0 -0.460000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_023_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.766667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_023'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_024'>
+  <pose> 0 0 -0.480000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_024_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.800000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_024'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_025'>
+  <pose> 0 0 -0.500000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_025_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.833333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_025'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_026'>
+  <pose> 0 0 -0.520000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_026_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.866667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_026'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_027'>
+  <pose> 0 0 -0.540000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_027_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.900000 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_027'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_028'>
+  <pose> 0 0 -0.560000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_028_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.933333 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_028'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+  <link name='link_029'>
+  <pose> 0 0 -0.580000 0 0 0 </pose>
+  <inertial>
+     <mass> 0.001000 </mass>
+     <inertia>
+       <ixx>0.000000</ixx>
+       <iyy>0.000000</iyy>
+       <izz>0.000000</izz>
+       <ixy>0.000000</ixy>
+       <iyz>0.000000</iyz>
+       <ixz>0.000000</ixz>
+     </inertia>
+  </inertial>
+
+  <visual name='link_029_1'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.010000</radius>
+    </sphere>
+  </geometry>
+  <material>
+    <diffuse>0.966667 0.5 1.0 0.7</diffuse>
+  </material>
+  </visual>
+
+  <collision name='collision_029'>
+  <pose> 0 0 0 0 0 0 </pose>
+  <geometry>
+    <sphere>
+       <radius>0.009000</radius>
+    </sphere>
+  </geometry>
+  <surface>
+    <friction>
+      <ode>
+        <mu>0.800000</mu>
+        <mu2>0.800000</mu2>
+      </ode>
+    </friction>
+  </surface>
+  </collision>
+  </link>
+
+
+  <joint name='joint_weld' type='fixed'>
+      <parent>world</parent>
+      <child>link_000</child>
+  </joint>
+
+  <joint name='joint_000' type='revolute'>
+    <parent>link_000</parent>
+    <child>link_001</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_001' type='revolute'>
+    <parent>link_001</parent>
+    <child>link_002</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_002' type='revolute'>
+    <parent>link_002</parent>
+    <child>link_003</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_003' type='revolute'>
+    <parent>link_003</parent>
+    <child>link_004</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_004' type='revolute'>
+    <parent>link_004</parent>
+    <child>link_005</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_005' type='revolute'>
+    <parent>link_005</parent>
+    <child>link_006</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_006' type='revolute'>
+    <parent>link_006</parent>
+    <child>link_007</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_007' type='revolute'>
+    <parent>link_007</parent>
+    <child>link_008</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_008' type='revolute'>
+    <parent>link_008</parent>
+    <child>link_009</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_009' type='revolute'>
+    <parent>link_009</parent>
+    <child>link_010</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_010' type='revolute'>
+    <parent>link_010</parent>
+    <child>link_011</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_011' type='revolute'>
+    <parent>link_011</parent>
+    <child>link_012</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_012' type='revolute'>
+    <parent>link_012</parent>
+    <child>link_013</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_013' type='revolute'>
+    <parent>link_013</parent>
+    <child>link_014</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_014' type='revolute'>
+    <parent>link_014</parent>
+    <child>link_015</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_015' type='revolute'>
+    <parent>link_015</parent>
+    <child>link_016</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_016' type='revolute'>
+    <parent>link_016</parent>
+    <child>link_017</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_017' type='revolute'>
+    <parent>link_017</parent>
+    <child>link_018</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_018' type='revolute'>
+    <parent>link_018</parent>
+    <child>link_019</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_019' type='revolute'>
+    <parent>link_019</parent>
+    <child>link_020</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_020' type='revolute'>
+    <parent>link_020</parent>
+    <child>link_021</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_021' type='revolute'>
+    <parent>link_021</parent>
+    <child>link_022</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_022' type='revolute'>
+    <parent>link_022</parent>
+    <child>link_023</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_023' type='revolute'>
+    <parent>link_023</parent>
+    <child>link_024</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_024' type='revolute'>
+    <parent>link_024</parent>
+    <child>link_025</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_025' type='revolute'>
+    <parent>link_025</parent>
+    <child>link_026</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_026' type='revolute'>
+    <parent>link_026</parent>
+    <child>link_027</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_027' type='revolute'>
+    <parent>link_027</parent>
+    <child>link_028</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  <joint name='joint_028' type='revolute'>
+    <parent>link_028</parent>
+    <child>link_029</child>
+    <pose> 0 0 0.020000 0 0 0 </pose>    <axis>
+      <xyz expressed_in='__model__'> 1 0 0 </xyz>
+    </axis>
+  </joint>
+
+  </model>
+</sdf>
