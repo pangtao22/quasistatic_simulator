@@ -103,8 +103,6 @@ class QuasistaticSimulator:
                 time_step=1e-3,  # Only useful for MBP simulations.
                 gravity=sim_params.gravity)
 
-        print(sim_params.gravity)
-
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
@@ -160,8 +158,6 @@ class QuasistaticSimulator:
 
         self.nd_per_contact = sim_params.nd_per_contact
         # Sanity check.
-        print(plant.num_velocities())
-        print(n_v)
         assert plant.num_velocities() == n_v
 
         # stiffness matrices.
@@ -169,8 +165,6 @@ class QuasistaticSimulator:
         for i, model in enumerate(self.models_actuated):
             model_name = plant.GetModelInstanceName(model)
             joint_stiffness = robot_stiffness_dict[model_name]
-
-            print(self.n_v_dict[model])
             assert self.n_v_dict[model] == joint_stiffness.size
             self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
