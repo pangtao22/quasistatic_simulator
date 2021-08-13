@@ -69,9 +69,11 @@ QuasistaticSimParameters = namedtuple(
     "QuasistaticSimParameters",
     field_names=[
         "gravity", "nd_per_contact", "contact_detection_tolerance",
-        "is_quasi_dynamic", "is_unconstrained", "log_barrier_weight"])
+        "is_quasi_dynamic", "mode", "log_barrier_weight", "requires_grad"
+        ])
 QuasistaticSimParameters.__new__.__defaults__ = (
-    np.array([0, 0, -9.81]), 4, 0.01, False, False, 1e4)
+    np.array([0, 0, -9.81]), 4, 0.01,
+    False, "qp_mp", 1e4, False)
     
 QuasistaticSimParameters = QuasistaticSimParameters
 
@@ -158,6 +160,8 @@ class QuasistaticSimulator:
 
         self.nd_per_contact = sim_params.nd_per_contact
         # Sanity check.
+        print(plant.num_velocities())
+        print(n_v)
         assert plant.num_velocities() == n_v
 
         # stiffness matrices.
@@ -165,6 +169,8 @@ class QuasistaticSimulator:
         for i, model in enumerate(self.models_actuated):
             model_name = plant.GetModelInstanceName(model)
             joint_stiffness = robot_stiffness_dict[model_name]
+
+            print(self.n_v_dict[model])
             assert self.n_v_dict[model] == joint_stiffness.size
             self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
