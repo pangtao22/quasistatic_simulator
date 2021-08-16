@@ -1,52 +1,50 @@
 import os
 import numpy as np
 
-from pydrake.all import PiecewisePolynomial
+from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from core.quasistatic_simulator import QuasistaticSimParameters
 from examples.model_paths import models_dir
 
-object_sdf_path = os.path.join(models_dir, "sphere_yz_small.sdf")
-model_directive_path = os.path.join(models_dir, "carrot.yml")
+object_sdf_path = os.path.join(models_dir, "box_1m_rotation.sdf")
+model_directive_path = os.path.join(models_dir, "box_pivoting.yml")
 
 #%% sim setup
-h = 0.2
-T = int(round(3 / h))  # num of time steps to simulate forward.
+h = 0.1
+T = int(round(5. / h))  # num of time steps to simulate forward.
 duration = T * h
 sim_settings = QuasistaticSimParameters(
-    gravity=np.array([0, 0, 0]),
+    gravity=np.array([0, 0, -9.81]),
     nd_per_contact=2,
     contact_detection_tolerance=0.1,
     is_quasi_dynamic=True)
 
 # robots.
-Kp = np.array([50, 50, 100, 50, 50], dtype=float)
-robot_stiffness_dict = {"gripper": Kp}
+Kp = np.array([50, 50], dtype=float)
+robot_stiffness_dict = {"hand": Kp}
 
 # object
-num_pieces = 100
-object_sdf_dict = {
-    "carrot_{:02d}".format(i): object_sdf_path for i in range(num_pieces)}
+object_name = "box"
+object_sdf_dict = {object_name: object_sdf_path}
 
 # trajectory and initial conditions.
-nq_a = 5
+nq_a = 2
 qa_knots = np.zeros((2, nq_a))
 # x, y, z, dy1, dy2
-qa_knots[0] = [-0.1, 0.25, 0, -0.05, 0.05]
-qa_knots[1] = [0.4, 0.25, 0, -0.05, 0.05]
+qa_knots[0] = [-0.7, 0.5]
+qa_knots[1] = [1.0, 1.2]
 q_robot_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, h * T], qa_knots.T)
+    [0, T * h], qa_knots.T)
 
-q_a_traj_dict_str = {"gripper": q_robot_traj}
+q_a_traj_dict_str = {"hand": q_robot_traj}
 
-q0_dict_str = {"gripper": qa_knots[0]}
+q_u0 = np.array([0, 0.5, 0])
 
-q_u0 = 0.5 * np.random.rand(num_pieces,2)
-for i in range(num_pieces):
-    object_name = "carrot_{:02d}".format(i)
-    q0_dict_str[object_name] = q_u0[i]
+q0_dict_str = {"box": q_u0,
+               "hand": qa_knots[0]}
+
 
 #%% run sim.
 if __name__ == "__main__":

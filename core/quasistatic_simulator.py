@@ -2,6 +2,7 @@ from typing import List, Union, Dict, Tuple
 from collections import namedtuple
 import copy
 import warnings
+import sys
 
 import numpy as np
 import cvxpy as cp
@@ -65,17 +66,24 @@ class MyContactInfo:
 :param requires_grad: whether the gradient of v_next w.r.t the parameters of 
     the QP are computed. 
 """
-QuasistaticSimParameters = namedtuple(
-    "QuasistaticSimParameters",
-    field_names=[
+field_names=[
         "gravity", "nd_per_contact", "contact_detection_tolerance",
         "is_quasi_dynamic", "mode", "log_barrier_weight", "requires_grad"
-        ])
-QuasistaticSimParameters.__new__.__defaults__ = (
-    np.array([0, 0, -9.81]), 4, 0.01,
-    False, "qp_mp", 1e4, False)
-    
-QuasistaticSimParameters = QuasistaticSimParameters
+        ]
+defaults=[np.array([0, 0, -9.81]), 4, 0.01,
+          False, "qp_mp", 1e4, False]
+
+if sys.version_info >= (3, 7):
+    QuasistaticSimParameters = namedtuple(
+        "QuasistaticSimParameters",
+        field_names=field_names,
+        defaults=defaults)
+else:
+    QuasistaticSimParameters = namedtuple(
+        "QuasistaticSimParameters",
+        field_names=field_names)
+    QuasistaticSimParameters.__new__.__defaults__ = tuple(defaults)
+    QuasistaticSimParameters = QuasistaticSimParameters
 
 class QuasistaticSimulator:
     def __init__(self, model_directive_path: str,
