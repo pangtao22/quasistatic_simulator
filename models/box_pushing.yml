@@ -1,0 +1,5 @@
+directives:
+
+- add_model:
+    name: hand
+    file: package://quasistatic_simulator/sphere_yz_actuated.sdf

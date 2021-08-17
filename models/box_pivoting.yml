@@ -1,0 +1,13 @@
+directives:
+
+- add_model:
+    name: hand
+    file: package://quasistatic_simulator/sphere_yz_actuated.sdf
+
+- add_model:
+    name: ground
+    file: package://quasistatic_simulator/ground_box_thin.sdf
+
+- add_weld:
+    parent: world
+    child: ground

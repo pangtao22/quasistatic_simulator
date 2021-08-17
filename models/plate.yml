@@ -1,0 +1,43 @@
+directives:
+
+- add_model:
+    name: gripper
+    file: package://quasistatic_simulator/gripper_yz.sdf
+    
+- add_model:
+    name: ground
+    file: package://quasistatic_simulator/ground_box_thin.sdf    
+
+- add_model:
+    name: wall
+    file: package://quasistatic_simulator/wall_box.sdf 
+
+- add_model:
+    name: wall_left
+    file: package://quasistatic_simulator/wall_box_left.sdf        
+
+- add_frame:
+    name: wall_frame1
+    X_PF:
+        base_frame: ground
+        translation: [0, -0.3, 0]
+        rotation: !Rpy {deg: [0, 0, 0]}
+
+- add_frame:
+    name: wall_frame2
+    X_PF:
+        base_frame: ground
+        translation: [0.3, 0, 0]
+        rotation: !Rpy {deg: [0, 0, 90]}
+
+- add_weld:
+    parent: world
+    child: ground
+
+- add_weld:
+    parent: wall_frame1
+    child: wall
+
+- add_weld:
+    parent: wall_frame2
+    child: wall_left    
