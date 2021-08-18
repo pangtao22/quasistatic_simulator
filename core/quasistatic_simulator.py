@@ -1,23 +1,20 @@
-from typing import List, Union, Dict, Tuple
-from collections import namedtuple
-import copy
-import warnings
 import sys
+import warnings
+from collections import namedtuple
+from typing import List, Union, Dict
 
-import numpy as np
 import cvxpy as cp
-
+import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, DiagramBuilder, MultibodyPlant,
                          ExternallyAppliedSpatialForce, Context,
                          JacobianWrtVariable, RigidBody,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
                          MeshcatContactVisualizer)
-from pydrake.solvers import mathematicalprogram as mp
 from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults,
     CalcContactFrictionFromSurfaceProperties)
-
+from pydrake.solvers import mathematicalprogram as mp
 from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktPinv)
 
@@ -66,12 +63,12 @@ class MyContactInfo:
 :param requires_grad: whether the gradient of v_next w.r.t the parameters of 
     the QP are computed. 
 """
-field_names=[
-        "gravity", "nd_per_contact", "contact_detection_tolerance",
-        "is_quasi_dynamic", "mode", "log_barrier_weight", "requires_grad"
-        ]
-defaults=[np.array([0, 0, -9.81]), 4, 0.01,
-          False, "qp_mp", 1e4, False]
+field_names = [
+    "gravity", "nd_per_contact", "contact_detection_tolerance",
+    "is_quasi_dynamic", "mode", "log_barrier_weight", "requires_grad"
+]
+defaults = [np.array([0, 0, -9.81]), 4, 0.01,
+            False, "qp_mp", 1e4, False]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(
@@ -84,6 +81,7 @@ else:
         field_names=field_names)
     QuasistaticSimParameters.__new__.__defaults__ = tuple(defaults)
     QuasistaticSimParameters = QuasistaticSimParameters
+
 
 class QuasistaticSimulator:
     def __init__(self, model_directive_path: str,
@@ -332,7 +330,8 @@ class QuasistaticSimulator:
         return {**tau_ext_a_dict, **tau_ext_u_dict}
 
     def animate_system_trajectory(self, h: float,
-            q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]):
+                                  q_dict_traj: List[
+                                      Dict[ModelInstanceIndex, np.ndarray]]):
         self.viz.draw_period = h
         self.viz.reset_recording()
         self.viz.start_recording()
@@ -405,7 +404,7 @@ class QuasistaticSimulator:
 
     def get_generalized_force_from_external_spatial_force(
             self, easf_list: List[ExternallyAppliedSpatialForce]):
-        #TODO: test this more thoroughly.
+        # TODO: test this more thoroughly.
         tau_ext_actuated = {
             model: np.zeros(self.n_v_dict[model])
             for model in self.models_actuated}
@@ -552,7 +551,7 @@ class QuasistaticSimulator:
             i_f_start += n_d[i_c]
 
             # Store contact positions in order to draw contact forces later.
-            #TODO: contact forces at step (l+1) is drawn with the
+            # TODO: contact forces at step (l+1) is drawn with the
             # configuration at step l.
             if is_A_in:
                 X_WD = self.plant.EvalBodyPoseInWorld(
@@ -686,7 +685,7 @@ class QuasistaticSimulator:
             tau_h[idx_v_model] = tau_a * h
 
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.Kq_a[model].diagonal() * h**2
+                self.Kq_a[model].diagonal() * h ** 2
         return Q, tau_h
 
     def step_qp_mp(self,

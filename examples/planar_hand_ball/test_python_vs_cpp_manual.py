@@ -82,8 +82,9 @@ class TestPlanarHandBall(unittest.TestCase):
 
         q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
             q_sim, q0_dict, h, T)
+
         q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = simulate(
-            q_sim, q0_dict_cpp, h, T)
+            q_sim_cpp, q0_dict_cpp, h, T)
 
         models_all = q_sim.models_all
         # match trajectories.
