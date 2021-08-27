@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
-
 from examples.log_comparison import *
-from examples.model_paths import box2d_big_sdf_path, sphere2d_big_sdf_path
-from examples.three_link_arm_block_pushing.utils import *
+from examples.model_paths import box2d_big_sdf_path
 from examples.setup_simulation_diagram import shift_q_traj_to_start_at_minus_h
+from examples.three_link_arm_block_pushing.utils import *
 
 # box initial state.
 q_u0 = np.array([1.7, 0.5, 0])
@@ -11,8 +10,8 @@ q0_dict_str = {robot_name: qa_knots[0], box_name: q_u0}
 
 
 def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
-     q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic):
-
+                         q_robot_log_quasistatic, q_box_log_quasistatic,
+                         t_quasistatic):
     shift_q_traj_to_start_at_minus_h(q_robot_traj, 0)
     qa_mbp_traj = PiecewisePolynomial.ZeroOrderHold(t_mbp, q_robot_log_mbp.T)
 
@@ -74,20 +73,19 @@ if __name__ == "__main__":
         q_robot_log_mbp, q_box_log_mbp, t_mbp,
         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic)
 
-    #%%
+    # %%
     print("Quasistatic vs MBP, robot", e_robot)
 
-    #%% Orientation (angle).
+    # %% Orientation (angle).
     print("Quasistatic vs MBP, object angle", e_angle_box)
     plt.plot(t_angle_box, e_vec_angle_box)
     plt.title("Box angle difference, mbp vs. quasistatic [rad]")
     plt.xlabel("t [s]")
     plt.show()
 
-    #%% Position.
+    # %% Position.
     print("Quasistatic vs MBP, object position", e_xyz_box)
     plt.plot(t_xyz_box, e_vec_xyz_box)
     plt.title("Box position difference, mbp vs. quasistatic [m]")
     plt.xlabel("t [s]")
     plt.show()
-

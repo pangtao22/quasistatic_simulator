@@ -609,8 +609,6 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
-        print('n contacts', contact_results.num_point_pair_contacts())
-
         self.contact_results = contact_results
 
     def get_mbp_body_from_scene_graph_geometry(self, g_id):

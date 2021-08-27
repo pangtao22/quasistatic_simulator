@@ -64,7 +64,7 @@ if __name__ == "__main__":
         h=h,
         sim_params=sim_settings,
         is_visualizing=True,
-        real_time_rate=0.1)
+        real_time_rate=1.0)
 
 #%% look into the plant.
     plant = q_sys.plant
@@ -104,8 +104,3 @@ if __name__ == "__main__":
             qa_l1_cmd = q_a_traj_dict_str[name].value((l + 1) * h).squeeze()
             tau_a_log[l][idx_tau_a] = Kp * (qa_l1_cmd - qa_l)
 
-
-#%% look into contact forces
-    rc = q_sys.q_sim.contact_results
-    for i in range(rc.num_point_pair_contacts()):
-        print(rc.point_pair_contact_info(i).contact_force())
