@@ -46,19 +46,19 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        if backend == "python":
+        if backend == "cpp":
+            self.q_sim = QuasistaticSimulatorCpp(
+                model_directive_path=model_directive_path,
+                robot_stiffness_str=robot_stiffness_dict,
+                object_sdf_paths=object_sdf_paths,
+                sim_params=cpp_params_from_py_params(sim_params))
+        elif backend == "python":
             self.q_sim = QuasistaticSimulator(
                 model_directive_path=model_directive_path,
                 robot_stiffness_dict=robot_stiffness_dict,
                 object_sdf_paths=object_sdf_paths,
                 sim_params=sim_params,
                 internal_vis=False)
-        elif backend == "cpp":
-            self.q_sim = QuasistaticSimulatorCpp(
-                model_directive_path=model_directive_path,
-                robot_stiffness_str=robot_stiffness_dict,
-                object_sdf_paths=object_sdf_paths,
-                sim_params=cpp_params_from_py_params(sim_params))
         else:
             raise RuntimeError(
                 "QuasistaticSystem backend must be either python or cpp.")

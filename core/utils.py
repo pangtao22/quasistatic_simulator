@@ -66,6 +66,7 @@ def create_plant_with_robots_and_objects(builder: DiagramBuilder,
                            plant, parser)
 
     # Objects
+    # It is important that object_models and robot_models are ordered.
     object_models = set()
     for name, sdf_path in object_sdf_paths.items():
         object_models.add(

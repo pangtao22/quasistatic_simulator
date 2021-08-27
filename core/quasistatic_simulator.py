@@ -147,18 +147,18 @@ class QuasistaticSimulator:
         self.models_all = object_models.union(robot_models)
 
         # body indices for each model in self.models_list.
-        self.body_indices_ = dict()
+        self.body_indices = dict()
         # velocity indices (into the generalized velocity vector of the MBP)
-        self.velocity_indices_ = dict()
+        self.velocity_indices = dict()
         self.n_v_dict = dict()
         self.n_v = plant.num_velocities()
 
         n_v = 0
         for model in self.models_all:
             velocity_indices = self.get_velocity_indices_for_model(model)
-            self.velocity_indices_[model] = velocity_indices
+            self.velocity_indices[model] = velocity_indices
             self.n_v_dict[model] = len(velocity_indices)
-            self.body_indices_[model] = plant.GetBodyIndices(model)
+            self.body_indices[model] = plant.GetBodyIndices(model)
 
             n_v += len(velocity_indices)
 
@@ -253,7 +253,7 @@ class QuasistaticSimulator:
         return self.contact_results
 
     def get_velocity_indices(self):
-        return self.velocity_indices_
+        return self.velocity_indices
 
     def num_actuated_dofs(self):
         return np.sum(
@@ -392,14 +392,14 @@ class QuasistaticSimulator:
         Jf[i_f_start: i_f_start + n_di] += d_W.dot(J_WBi)
 
     def find_model_instance_index_for_body(self, body):
-        for model, body_indices in self.body_indices_.items():
+        for model, body_indices in self.body_indices.items():
             if body.index() in body_indices:
                 return model
 
     def calc_gravity_for_unactuated_models(self):
         gravity_all = self.plant.CalcGravityGeneralizedForces(
             self.context_plant)
-        return {model: gravity_all[self.velocity_indices_[model]]
+        return {model: gravity_all[self.velocity_indices[model]]
                 for model in self.models_unactuated}
 
     def get_generalized_force_from_external_spatial_force(
@@ -424,7 +424,7 @@ class QuasistaticSimulator:
                 frame_E=self.plant.world_frame())
 
             tau_ext_actuated[model] += \
-                J[:, self.velocity_indices_[model]].T.dot(F_Bq_W)
+                J[:, self.velocity_indices[model]].T.dot(F_Bq_W)
 
         return tau_ext_actuated
 
@@ -609,6 +609,8 @@ class QuasistaticSimulator:
 
             i_f_start += n_d[i_c]
 
+        print('n contacts', contact_results.num_point_pair_contacts())
+
         self.contact_results = contact_results
 
     def get_mbp_body_from_scene_graph_geometry(self, g_id):
@@ -670,7 +672,7 @@ class QuasistaticSimulator:
         Q = np.zeros((self.n_v, self.n_v))
         tau_h = np.zeros(self.n_v)
         for model in self.models_unactuated:
-            idx_v_model = self.velocity_indices_[model]
+            idx_v_model = self.velocity_indices[model]
             tau_h[idx_v_model] = tau_ext_dict[model] * h
 
             if self.sim_params.is_quasi_dynamic:
@@ -679,7 +681,7 @@ class QuasistaticSimulator:
 
         idx_i, idx_j = np.diag_indices(self.n_v)
         for model in self.models_actuated:
-            idx_v_model = self.velocity_indices_[model]
+            idx_v_model = self.velocity_indices[model]
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
             tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
             tau_h[idx_v_model] = tau_a * h
@@ -722,7 +724,7 @@ class QuasistaticSimulator:
         v_values = result.GetSolution(v)
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_[model]
+            indices = self.velocity_indices[model]
             v_h_value_dict[model] = v_values[indices] * h
 
         # compute DvDb and DvDe
@@ -787,7 +789,7 @@ class QuasistaticSimulator:
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_[model]
+            indices = self.velocity_indices[model]
             v_h_value_dict[model] = v.value[indices] * h
 
         # compute DvDb and DvDe
@@ -839,7 +841,7 @@ class QuasistaticSimulator:
         # extract v_h from vector into a dictionary.
         v_h_value_dict = dict()
         for model in self.models_all:
-            indices = self.velocity_indices_[model]
+            indices = self.velocity_indices[model]
             v_h_value_dict[model] = v.value[indices] * h
 
         # TODO: gradient not supported yet.
@@ -943,7 +945,7 @@ class QuasistaticSimulator:
         DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dofs()))
         j_start = 0
         for model in self.models_actuated:
-            idx_v_model = self.velocity_indices_[model]
+            idx_v_model = self.velocity_indices[model]
             n_v_i = len(idx_v_model)
             idx_rows = idx_v_model[:, None]
             idx_cols = np.arange(j_start, j_start + n_v_i)[None, :]
@@ -975,6 +977,58 @@ class QuasistaticSimulator:
             h=h,
             mode=self.sim_params.mode,
             requires_grad=self.sim_params.requires_grad)
+
+    @staticmethod
+    def copy_model_instance_index_dict(q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+        return {key: np.array(value) for key, value in q_dict.items()}
+
+    def calc_dfdu_numerical(self,
+                            q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                            qa_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                            du: float, h: float):
+        """
+        Not an efficient way to compute gradients. For debugging only.
+        :param q_dict: nominal state (x) of the quasistatic system.
+        :param qa_cmd_dict: nominal input (u) of the quaistatic system.
+        :param du: perturbation to each element of u made to compute the numerical
+            gradient.
+        """
+        tau_ext_dict = self.calc_tau_ext([])
+
+        n_a = self.num_actuated_dofs()
+        dfdu = np.zeros((self.n_v, n_a))
+
+        idx_a = 0  # index for actuated DOFs (into u).
+        for model_a in self.models_actuated:
+            n_v_i = len(self.velocity_indices[model_a])
+
+            for i in range(n_v_i):
+                qa_cmd_dict_plus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_plus[model_a][i] += du
+                self.update_mbp_positions(q_dict)
+                q_dict_plus = self.step(q_a_cmd_dict=qa_cmd_dict_plus,
+                                        tau_ext_dict=tau_ext_dict,
+                                        h=h,
+                                        mode='qp_mp',
+                                        requires_grad=False)
+
+                qa_cmd_dict_minus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_minus[model_a][i] -= du
+                self.update_mbp_positions(q_dict)
+                q_dict_minus = self.step(q_a_cmd_dict=qa_cmd_dict_minus,
+                                         tau_ext_dict=tau_ext_dict,
+                                         h=h,
+                                         mode='qp_mp',
+                                         requires_grad=False)
+
+                for model in self.models_all:
+                    idx_v_model = self.velocity_indices[model]
+                    dfdu[idx_v_model, idx_a] = (
+                       q_dict_plus[model] - q_dict_minus[ model]) / 2 / du
+
+                idx_a += 1
+
+        return dfdu
 
     def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
                            dq_dict: Dict[ModelInstanceIndex, np.ndarray]):

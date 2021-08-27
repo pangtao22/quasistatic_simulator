@@ -5,7 +5,7 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
 
 try:
     from ..core.quasistatic_system import *
-except ImportError:
+except (ImportError, ValueError):
     from core.quasistatic_system import *
 
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
@@ -150,6 +150,11 @@ def run_quasistatic_sim(
             scene_graph=q_sys.q_sim.get_scene_graph(),
             output_port=q_sys.query_object_output_port,
             draw_period=max(h, 1 / 30.))
+
+        contact_viz = MeshcatContactVisualizer(meshcat_vis, plant=q_sys.plant)
+        builder.AddSystem(contact_viz)
+        builder.Connect(q_sys.contact_results_output_port,
+                        contact_viz.GetInputPort("contact_results"))
 
     diagram = builder.Build()
     # RenderSystemWithGraphviz(diagram)
