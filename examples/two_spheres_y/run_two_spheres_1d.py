@@ -23,8 +23,7 @@ quasistatic_sim_params = QuasistaticSimParameters(
     nd_per_contact=2,
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
-    mode='qp_mp',
-    requires_grad=True)
+    mode='qp_mp')
 
 # robot
 Kp = np.array([500], dtype=float)
@@ -110,22 +109,37 @@ if __name__ == "__main__":
     q_dict = {idx_a: np.array([0.8]),
               idx_u: np.array([1.0])}
 
-    q_a_cmd_dict = {idx_a: np.array([0.80])}
+    q_a_cmd_dict = {idx_a: np.array([0.79])}
 
     # numerical gradients.
     dfdu_numerical = q_sim.calc_dfdu_numerical(
         q_dict=q_dict, qa_cmd_dict=q_a_cmd_dict, du=1e-3, h=h)
 
-    # kkt gradients.
+    # kkt active gradients.
     q_sim.update_mbp_positions(q_dict)
     tau_ext_dict = q_sim.calc_tau_ext([])
+    q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+               tau_ext_dict=tau_ext_dict,
+               h=h, mode="qp_mp", requires_grad=True,
+               grad_from_active_constraints=True)
+    dfdu_active = q_sim.get_Dq_nextDqa_cmd()
+
+    print("dfdu_numerical\n", dfdu_numerical)
+    print("dfdu_active\n", dfdu_active)
+    print("dfdx_active\n", q_sim.get_Dq_nextDq())
+
+    # kkt gradients
     q_sim.update_mbp_positions(q_dict)
     q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
                tau_ext_dict=tau_ext_dict,
-               h=h, mode="qp_mp", requires_grad=True)
-    dfdu_kkt = q_sim.get_Dq_nextDqa_cmd()
+               h=h, mode="qp_mp", requires_grad=True,
+               grad_from_active_constraints=False)
 
-    print("dfdu_numerical\n", dfdu_numerical)
-    print("dfdu_kkt\n", dfdu_kkt)
+    print("dfdu_kkt\n", q_sim.get_Dq_nextDqa_cmd())
+    print("dfdx_kkt\n", q_sim.get_Dq_nextDq())
+
+
+    # kkt active gradients.
+
 
 
