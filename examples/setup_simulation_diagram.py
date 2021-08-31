@@ -1,7 +1,8 @@
+from typing import Union
 import numpy as np
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          LogOutput, SpatialForce, BodyIndex, InputPort,
-                         Multiplexer, LeafSystem, PidController)
+                         Multiplexer, DiagramBuilder, PidController, MultibodyPlant)
 
 try:
     from ..core.quasistatic_system import *

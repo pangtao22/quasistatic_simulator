@@ -1,11 +1,14 @@
-import sys
+from typing import Dict
+import numpy as np
 
-from pydrake.all import LeafSystem, BasicVector, PortDataType
-
-from .quasistatic_simulator import *
+from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
+                         QueryObject, ModelInstanceIndex, ContactResults,
+                         ExternallyAppliedSpatialForce)
 
 from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
+
+from .quasistatic_simulator import QuasistaticSimulator, QuasistaticSimParameters
 
 
 def cpp_params_from_py_params(
