@@ -9,15 +9,35 @@ friction = 0.8
 
 xy_coord = []
 
-# record positions.
+# Dense plate
+"""
 for i in range(len(plate)):
     width = plate[i]
     leftmost = -int(width / 2)
     rightmost = int(width / 2)
-    for j in range(leftmost, rightmost+1):
+
+    xy_coord.append([radius * 2.0 * leftmost, radius * 2.0 * i])
+    xy_coord.append([radius * 2.0 * rightmost, radius * 2.0 * i])
+
+    for j in range(leftmost, rightmost+1,4):
         xy_coord.append([radius * 2.0 * j, radius * 2.0 * i])
 
 xy_coord = np.array(xy_coord)
+"""
+
+# Sparse plate.
+xy_coord = []
+xy_coord.append([0.0, 0.0, 0.025])
+xy_coord.append([-0.05, 0.0, 0.025])
+xy_coord.append([0.05, 0.0, 0.025])
+xy_coord.append([-0.09, 0.008, 0.02])
+xy_coord.append([0.09, 0.008, 0.02])
+xy_coord.append([0.125, 0.011, 0.015])
+xy_coord.append([-0.125, 0.011, 0.015])
+xy_coord.append([0.15, 0.017, 0.01])
+xy_coord.append([-0.15, 0.017, 0.01])
+xy_coord = np.array(xy_coord)
+
 
 """
 plt.figure()
@@ -132,6 +152,8 @@ for i in range(0, xy_coord.shape[0]):
     f.write("  <visual name='visual_{:03d}'>\n".format(i))
     f.write("  <pose> 0 {:03f} {:03f} 0 0 0 </pose>\n".format(
         xy_coord[i,0], xy_coord[i,1]))
+
+    radius = xy_coord[i,2]
 
     f.write("  <geometry>\n")
     f.write("    <sphere>\n")
