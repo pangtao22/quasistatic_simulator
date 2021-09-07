@@ -11,12 +11,12 @@ from quasistatic_sim import *
 from plotting import PlotForceDistance, PlotLeftFingerPosition
 
 #%%
-q_sim = QuasistaticSimulator()
+q_sim = QuasistaticSimulator(is_quasi_dynamic=False)
 
 #%% Anitescu
 
 q = q0.copy()
-q_sim.UpdateVisualizer(q)
+q_sim.update_visualizer(q)
 print(q0)
 # input("start?")
 q_log = [q0.copy()]
@@ -27,18 +27,17 @@ constraint_values_log = []
 input("start")
 for i in range(n_steps):
     q_a_cmd = q_traj.value((i + 1) * h).squeeze()
-    dq_a, dq_u, beta, constraint_values, result = q_sim.StepAnitescu(q, q_a_cmd)
+    dq_a, dq_u, beta, constraint_values, result = q_sim.step_anitescu(q, q_a_cmd)
 
     # Update q
     q += np.hstack([dq_u, dq_a])
-    q_sim.UpdateVisualizer(q)
+    q_sim.update_visualizer(q)
 
     # logging
     q_log.append(q.copy())
     beta_log.append(beta)
     qa_cmd_log.append(q_a_cmd)
     constraint_values_log.append(constraint_values)
-    time.sleep(h * 10)
 
 
 q_log = np.array(q_log)
@@ -49,7 +48,7 @@ constraint_values_log = np.array(constraint_values_log)
 #%% compute data for plots
 t_sim1 = np.arange(n_steps + 1) * h
 t_sim = np.arange(n_steps) * h
-phi_log = np.array([CalcPhi(q) for q in q_log])
+phi_log = np.array([calc_phi(q) for q in q_log])
 
 lambda_n_log = np.zeros((n_steps, n_c))
 friction_log = np.zeros((n_steps, n_c))

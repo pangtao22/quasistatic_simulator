@@ -9,11 +9,11 @@ from quasistatic_sim import *
 from plotting import PlotForceDistance, PlotLeftFingerPosition
 
 #%%
-q_sim = QuasistaticSimulator()
+q_sim = QuasistaticSimulator(is_quasi_dynamic=True)
 
 #%% new "impedance robot" formulation, which I think is correct.
 q = q0.copy()
-q_sim.UpdateVisualizer(q)
+q_sim.update_visualizer(q)
 print(q0)
 input("start?")
 lambda_n_log = []
@@ -23,11 +23,11 @@ qa_cmd_log = []
 
 for i in range(n_steps):
     q_a_cmd = q_traj.value((i + 1) * h).squeeze()
-    dq_a, dq_u, lambda_n, lambda_f, result = q_sim.StepLcp(q, q_a_cmd)
+    dq_a, dq_u, lambda_n, lambda_f, result = q_sim.step_lcp(q, q_a_cmd)
 
     # Update q.
     q += np.hstack([dq_u, dq_a])
-    q_sim.UpdateVisualizer(q)
+    q_sim.update_visualizer(q)
 
     # logging.
     lambda_n_log.append(lambda_n)
@@ -50,7 +50,7 @@ t_sim1 = np.arange(n_steps + 1) * h
 t_sim = np.arange(n_steps) * h
 friction_log = np.zeros((n_steps, n_c))
 contact_velocity_log = np.zeros((n_c, n_steps))
-phi_log = np.array([CalcPhi(q) for q in q_log])
+phi_log = np.array([calc_phi(q) for q in q_log])
 
 for i in range(n_c):
     idx = i * 2
