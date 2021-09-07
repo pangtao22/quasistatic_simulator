@@ -34,14 +34,14 @@ def CalcE(n_d, n_c):
 E = CalcE(n_d, n_c)
 U = np.eye(n_c) * 0.5
 
-
+M_u = np.eye(n_u) * 1.0
 tau_ext = np.array([0., -10])
 r = 0.1
 
 Kq_a = np.eye(n_a) * 1000
 
 
-def CalcPhi(q):
+def calc_phi(q):
     """
     Computes signed distance function for contacts.
     :param q: q: q = [qu, qa]
@@ -52,7 +52,9 @@ def CalcPhi(q):
 
     x_c, y_c = q_u
     x_l, x_r, y_g = q_a
-    return np.array([x_c - x_l - r, x_r - x_c - r, y_c - r])
+    phi = np.array([x_c - x_l - r, x_r - x_c - r, y_c - r])
+    assert len(phi) == n_c
+    return phi
 
 
 h = 0.01  # simulation time step

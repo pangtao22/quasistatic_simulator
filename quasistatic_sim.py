@@ -1,44 +1,50 @@
+import warnings
+
 import meshcat
 
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
 
-from problem_definition_pinch import *
+# from problem_definition_pinch import *
+from problem_definition_graze import *
 from meshcat_camera_utils import SetOrthographicCameraXY
 
 
 class QuasistaticSimulator:
-    def __init__(self):
+    def __init__(self, visualize=False, is_quasi_dynamic=False):
         self.solver = GurobiSolver()
         assert self.solver.available()
 
-        self.vis = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
-        self.vis["cylinder"].set_object(
-            meshcat.geometry.Cylinder(height=0.1, radius=r),
-            meshcat.geometry.MeshLambertMaterial(
-                color=0xffffff, opacity=0.5))
-        self.vis["cylinder"].set_transform(
-            meshcat.transformations.euler_matrix(np.pi / 2, 0, 0))
-        self.finger_thickness = 0.02
-        self.vis["left_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
-            meshcat.geometry.MeshLambertMaterial(
-                color=0xff0000, opacity=1.0))
-        self.vis["right_finger"].set_object(
-            meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
-            meshcat.geometry.MeshLambertMaterial(
-                color=0xff0000, opacity=1.0))
-        self.vis["support"].set_object(
-            meshcat.geometry.Box([1, 1, 0.1]),
-            meshcat.geometry.MeshLambertMaterial(
-                color=0x00ff00, opacity=1.0))
-        self.vis["support"].set_transform(
-            meshcat.transformations.translation_matrix([0, -0.5, 0]))
+        self.is_quasi_dynamic = is_quasi_dynamic
 
-        SetOrthographicCameraXY(self.vis)
+        self.vis = None
+        if visualize:
+            self.vis = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
+            self.vis["cylinder"].set_object(
+                meshcat.geometry.Cylinder(height=0.1, radius=r),
+                meshcat.geometry.MeshLambertMaterial(
+                    color=0xffffff, opacity=0.5))
+            self.vis["cylinder"].set_transform(
+                meshcat.transformations.euler_matrix(np.pi / 2, 0, 0))
+            self.finger_thickness = 0.02
+            self.vis["left_finger"].set_object(
+                meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
+                meshcat.geometry.MeshLambertMaterial(
+                    color=0xff0000, opacity=1.0))
+            self.vis["right_finger"].set_object(
+                meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
+                meshcat.geometry.MeshLambertMaterial(
+                    color=0xff0000, opacity=1.0))
+            self.vis["support"].set_object(
+                meshcat.geometry.Box([1, 1, 0.1]),
+                meshcat.geometry.MeshLambertMaterial(
+                    color=0x00ff00, opacity=1.0))
+            self.vis["support"].set_transform(
+                meshcat.transformations.translation_matrix([0, -0.5, 0]))
 
-    @staticmethod
-    def InitProgram(phi_l):
+            SetOrthographicCameraXY(self.vis)
+
+    def init_program(self, phi_l):
         prog = mp.MathematicalProgram()
 
         # Declare decision variables.
@@ -70,13 +76,16 @@ class QuasistaticSimulator:
 
         # Force balance constraint
         tau_sum = Jn_u.T.dot(P_n) + Jf_u.T.dot(P_f) + P_ext
-        for tau_sum_i in tau_sum:
-            prog.AddLinearConstraint(tau_sum_i == 0)
+        rhs = np.zeros(n_u)
+        if self.is_quasi_dynamic:
+            rhs = M_u @ dq_u / h
+        for rhs_i, tau_sum_i in zip(rhs, tau_sum):
+            prog.AddLinearConstraint(tau_sum_i == rhs_i)
 
         return prog, dq_u, dq_a, P_n, P_f, Gamma, phi_l1, rho, s, tau_sum
 
     @staticmethod
-    def FindBigM(phi_l):
+    def find_big_M(phi_l):
         M_phi = np.zeros(n_c)
         # Jn_u * dq_u + Jn_a * dq_a + phi_l >= 0
         for i in range(n_c):
@@ -108,13 +117,13 @@ class QuasistaticSimulator:
 
         return M_phi, M_rho, M_s
 
-    def StepMiqp(self, q, v_a_cmd):
-        phi_l = CalcPhi(q)
+    def step_miqp(self, q, v_a_cmd):
+        phi_l = calc_phi(q)
         dq_a_cmd = v_a_cmd * h
 
         (prog, dq_u, dq_a, P_n, P_f, Gamma, phi_l1, rho, s,
-         tau_sum) = self.InitProgram(phi_l)
-        M_phi, M_rho, M_s = self.FindBigM(phi_l)
+         tau_sum) = self.init_program(phi_l)
+        M_phi, M_rho, M_s = self.find_big_M(phi_l)
 
         z_phi = prog.NewBinaryVariables(n_c, "z_phi")
         z_rho = prog.NewBinaryVariables(n_f, "z_rho")
@@ -146,7 +155,7 @@ class QuasistaticSimulator:
 
         return dq_a, dq_u, lambda_n, lambda_f, result
 
-    def StepLcp(self, q, q_a_cmd):
+    def step_lcp(self, q, q_a_cmd):
         """
         The problem is an LCP although it is solved as an MIQP due to the
         lack of the PATH solver.
@@ -154,12 +163,12 @@ class QuasistaticSimulator:
         :param v_a_cmd:
         :return:
         """
-        phi_l = CalcPhi(q)
+        phi_l = calc_phi(q)
         dq_a_cmd = q_a_cmd - q[n_u:]
 
         (prog, dq_u, dq_a, P_n, P_f, Gamma, phi_l1, rho, s,
-         tau_sum) = self.InitProgram(phi_l)
-        M_phi, M_rho, M_s = self.FindBigM(phi_l)
+         tau_sum) = self.init_program(phi_l)
+        M_phi, M_rho, M_s = self.find_big_M(phi_l)
 
         z_phi = prog.NewBinaryVariables(n_c, "z_phi")
         z_rho = prog.NewBinaryVariables(n_f, "z_rho")
@@ -192,16 +201,18 @@ class QuasistaticSimulator:
 
         return dq_a, dq_u, lambda_n, lambda_f, result
 
-    def StepAnitescu(self, q, q_a_cmd):
-        phi_l = CalcPhi(q)
+    def step_anitescu(self, q, q_a_cmd):
+        phi_l = calc_phi(q)
         dq_a_cmd = q_a_cmd - q[n_u:]
 
         prog = mp.MathematicalProgram()
-        dq_u = prog.NewContinuousVariables(n_u, "dq_u")
-        dq_a = prog.NewContinuousVariables(n_a, "dq_a")
+        v_u = prog.NewContinuousVariables(n_u, "dq_u")
+        v_a = prog.NewContinuousVariables(n_a, "dq_a")
 
-        prog.AddQuadraticCost(Kq_a * h, -Kq_a.dot(dq_a_cmd) * h, dq_a)
-        prog.AddLinearCost(-P_ext, 0, dq_u)
+        prog.AddQuadraticCost(Kq_a * h**2, -Kq_a.dot(dq_a_cmd) * h, v_a)
+        prog.AddLinearCost(-P_ext, 0, v_u)
+        if self.is_quasi_dynamic:
+            prog.AddQuadraticCost(M_u, np.zeros(n_u), v_u)
 
         Jn = np.hstack([Jn_u, Jn_a])
         Jf = np.hstack([Jf_u, Jf_a])
@@ -216,20 +227,24 @@ class QuasistaticSimulator:
                 phi_constraints[idx] = phi_l[i]
             j_start += n_d[i]
 
-        dq = np.hstack([dq_u, dq_a])
+        v = np.hstack([v_u, v_a])
         constraints = prog.AddLinearConstraint(
-            J, -phi_constraints, np.full_like(phi_constraints, np.inf), dq)
+            J, -phi_constraints / h, np.full_like(phi_constraints, np.inf), v)
 
         result = self.solver.Solve(prog, None, None)
         beta = result.GetDualSolution(constraints)
         beta = np.array(beta).squeeze()
-        dq_a = result.GetSolution(dq_a)
-        dq_u = result.GetSolution(dq_u)
+        dq_a = result.GetSolution(v_a) * h
+        dq_u = result.GetSolution(v_u) * h
         constraint_values = phi_constraints + result.EvalBinding(constraints)
 
         return dq_a, dq_u, beta, constraint_values, result
 
-    def UpdateVisualizer(self, q):
+    def update_visualizer(self, q):
+        if not self.vis:
+            warnings.warn("Simulator is not set up to visualize.")
+            return
+
         qu = q[:n_u]
         qa = q[n_u:]
         xc, yc = qu
