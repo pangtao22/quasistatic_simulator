@@ -2,7 +2,9 @@ from typing import Union
 import numpy as np
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          LogOutput, SpatialForce, BodyIndex, InputPort,
-                         Multiplexer, DiagramBuilder, PidController, MultibodyPlant)
+                         Multiplexer, DiagramBuilder, PidController,
+                         MultibodyPlant, MeshcatContactVisualizer,
+                         ConnectMeshcatVisualizer)
 
 try:
     from ..core.quasistatic_system import *

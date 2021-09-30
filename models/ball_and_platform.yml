@@ -1,0 +1,18 @@
+directives:
+- add_model:
+    name: ground
+    file: package://quasistatic_simulator/ground_with_platform.sdf
+
+- add_frame:
+    name: ground_world_offset
+    X_PF:
+        base_frame: world
+        translation: [ 0, 0, -0.5]
+
+- add_weld:
+    parent: ground_world_offset
+    child: ground::ground
+
+- add_model:
+    name: hand
+    file: package://quasistatic_simulator/sphere_yz_actuated.sdf

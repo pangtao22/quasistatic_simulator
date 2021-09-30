@@ -20,6 +20,8 @@ def cpp_params_from_py_params(
         sim_params.contact_detection_tolerance)
     sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
     sim_params_cpp.requires_grad = sim_params.requires_grad
+    sim_params_cpp.gradient_from_active_constraints = (
+        sim_params.grad_from_active_constraints)
     return sim_params_cpp
 
 
