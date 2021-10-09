@@ -31,12 +31,10 @@ robot_stiffness_dict = {robot_name: Kp}
 
 # trajectory and initial conditions.
 nq_a = 2
-qa_knots = np.zeros((3, nq_a))
-qa_knots[0] = [-1, 1]
-qa_knots[1] = [-1, 1.5]
-qa_knots[2] = qa_knots[1]
-qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.8, duration],
-                                             qa_knots.T)
+qa_knots = np.zeros((2, nq_a))
+qa_knots[0] = [-0.6, 1.2]
+qa_knots[1] = [-0.6, 1.2]
+qa_traj = PiecewisePolynomial.ZeroOrderHold([0, duration], qa_knots.T)
 q_a_traj_dict_str = {robot_name: qa_traj}
 q0_dict_str = {robot_name: qa_knots[0]}
 
