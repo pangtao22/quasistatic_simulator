@@ -8,8 +8,10 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
 
 try:
     from ..core.quasistatic_system import *
+    from ..core.utils import create_plant_with_robots_and_objects
 except (ImportError, ValueError):
     from core.quasistatic_system import *
+    from core.utils import create_plant_with_robots_and_objects
 
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)

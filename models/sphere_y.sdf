@@ -22,6 +22,9 @@
         <limit>
           <effort>0</effort>
         </limit>
+        <dynamics>
+          <damping>50</damping>
+        </dynamics>
       </axis>
     </joint>
     <!-- The model for a solid sphere of uniform density. -->
