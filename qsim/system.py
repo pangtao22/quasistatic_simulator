@@ -8,7 +8,7 @@ from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
 from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
 
-from .quasistatic_simulator import QuasistaticSimulator, QuasistaticSimParameters
+from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 
 
 def cpp_params_from_py_params(

@@ -1,4 +1,4 @@
-from core.quasistatic_simulator import *
+from qsim.simulator import *
 
 #%%
 Kq_a = np.ones(3) * 1000
