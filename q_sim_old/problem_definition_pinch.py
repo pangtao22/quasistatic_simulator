@@ -20,25 +20,14 @@ Jf_u[:, 1] = [1, -1, 1, -1, 0, 0]
 Jf_a = np.zeros((n_f, n_a))
 Jf_a[:, 2] = [-1, 1, -1, 1, 0, 0]
 
-
-def CalcE(n_d, n_c):
-    E = np.zeros((n_d.sum(), n_c))
-    i_start = 0
-    for i in range(n_c):
-        i_end = i_start + n_d[i]
-        E[i_start: i_end, i] = 1
-        i_start += n_d[i]
-    return E
-
-
-E = CalcE(n_d, n_c)
 U = np.eye(n_c) * 0.5
 
 M_u = np.eye(n_u) * 1.0
 tau_ext = np.array([0., -10])
-r = 0.1
 
 Kq_a = np.eye(n_a) * 1000
+
+r = 0.1
 
 
 def calc_phi(q):
@@ -62,19 +51,25 @@ dq_max = 1 * h  # 1m/s
 impulse_max = 50 * h  # 50N
 P_ext = tau_ext * h
 
-# define actuated trajectory
-q0 = np.array([0, r, -1.06*r, 1.06*r, 0])
 
-qa_knots = np.zeros((4, 3))
-qa_knots[0] = q0[2:]
-qa_knots[1] = [-0.9*r, 0.9*r, 0]
-qa_knots[2] = [-0.9*r, 0.9*r, -0.03]
-qa_knots[3] = [-0.9*r, 0.9*r, -0.03]
+problem_definition = dict()
+problem_definition['n_u'] = n_u
+problem_definition['n_a'] = n_a
+problem_definition['n_c'] = n_c
+problem_definition['n_d'] = n_d
+problem_definition['n_f'] = n_f
+problem_definition['Jn_u'] = Jn_u
+problem_definition['Jn_a'] = Jn_a
+problem_definition['Jf_u'] = Jf_u
+problem_definition['Jf_a'] = Jf_a
+problem_definition['U'] = U
+problem_definition['M_u'] = M_u
+problem_definition['tau_ext'] = tau_ext
+problem_definition['Kq_a'] = Kq_a
+problem_definition['calc_phi'] = calc_phi
+problem_definition['h'] = h
+problem_definition['dq_max'] = dq_max
+problem_definition['impulse_max'] = impulse_max
+problem_definition['P_ext'] = P_ext
 
-n_steps = 35
-t_knots = [0, 8*h, (8 + 15)*h, n_steps * h]
-q_traj = PiecewisePolynomial.FirstOrderHold(t_knots, qa_knots.T)
-
-t_contact_mode_change = [0.03, 0.13, 0.23]
-
-
+problem_definition['r'] = r
