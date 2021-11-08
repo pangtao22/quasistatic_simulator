@@ -9,7 +9,7 @@ from pydrake.solvers.gurobi import GurobiSolver
 #
 # # from problem_definition_pinch import *
 # from q_sim_old.problem_definition_graze import *
-from q_sim_old.meshcat_camera_utils import SetOrthographicCameraXY
+from qsim_old.meshcat_camera_utils import SetOrthographicCameraXY
 
 
 def calc_E(n_d, n_c):

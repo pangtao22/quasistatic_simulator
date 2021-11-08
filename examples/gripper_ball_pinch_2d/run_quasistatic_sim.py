@@ -6,8 +6,8 @@ rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 from pydrake.all import PiecewisePolynomial
 
-from q_sim_old.simulator import QuasistaticSimulator
-from q_sim_old.problem_definition_pinch import problem_definition
+from qsim_old.simulator import QuasistaticSimulator
+from qsim_old.problem_definition_pinch import problem_definition
 from plotting import PlotForceDistance, PlotLeftFingerPosition
 
 #%%

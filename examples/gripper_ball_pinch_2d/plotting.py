@@ -4,7 +4,7 @@ from matplotlib import rc
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 
-from q_sim_old.problem_definition_pinch import *
+from qsim_old.problem_definition_pinch import *
 
 
 #%%
