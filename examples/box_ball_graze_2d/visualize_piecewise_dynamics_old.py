@@ -1,17 +1,11 @@
-import time
-
 import tqdm
 import meshcat
 import numpy as np
-from matplotlib import rc
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
-rc('text', usetex=True)
-from pydrake.all import PiecewisePolynomial
 
 from qsim_old.simulator import QuasistaticSimulator
 from qsim_old.problem_definition_graze import problem_definition
 
-#%%
+#%% sim old
 q_sim = QuasistaticSimulator(problem_definition, is_quasi_dynamic=True)
 viz = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
 

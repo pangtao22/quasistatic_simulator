@@ -6,12 +6,9 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          MultibodyPlant, MeshcatContactVisualizer,
                          ConnectMeshcatVisualizer)
 
-try:
-    from ..qsim.system import *
-    from ..qsim.utils import create_plant_with_robots_and_objects
-except (ImportError, ValueError):
-    from qsim.system import *
-    from qsim.utils import create_plant_with_robots_and_objects
+
+from qsim.system import *
+from qsim.utils import create_plant_with_robots_and_objects
 
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)

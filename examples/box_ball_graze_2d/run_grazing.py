@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial
 
 from examples.setup_simulation_diagram import run_quasistatic_sim
 from qsim.simulator import QuasistaticSimParameters
