@@ -5,7 +5,7 @@ from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
-from core.quasistatic_simulator import QuasistaticSimParameters
+from qsim.simulator import QuasistaticSimParameters
 from examples.model_paths import models_dir
 
 object_sdf_path = os.path.join(models_dir, "sphere_yz_rotation_r_0.25m.sdf")
@@ -19,7 +19,9 @@ sim_settings = QuasistaticSimParameters(
     gravity=np.array([0, 0, -10.]),
     nd_per_contact=2,
     contact_detection_tolerance=0.5,
-    is_quasi_dynamic=True)
+    is_quasi_dynamic=True,
+    mode='unconstrained',
+    log_barrier_weight=20)
 
 # robots.
 Kp = np.array([50, 25], dtype=float)
@@ -46,7 +48,7 @@ q_robot_r_traj = PiecewisePolynomial.ZeroOrderHold(
 q_a_traj_dict_str = {robot_l_name: q_robot_l_traj,
                      robot_r_name: q_robot_r_traj}
 
-q_u0 = np.array([0, 0.35, 0])
+q_u0 = np.array([0, 0.5, 0])
 
 q0_dict_str = {object_name: q_u0,
                robot_l_name: qa_l_knots[0],

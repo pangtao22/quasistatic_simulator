@@ -16,7 +16,7 @@
   </visual>
 
   <collision name='collision'>
-    <pose frame=''> 0 0 0 0 0 0 </pose>
+    <pose> 0 0 0 0 0 0 </pose>
     <geometry>
       <box>
        <size>10 10 1</size>

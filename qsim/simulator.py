@@ -832,7 +832,8 @@ class QuasistaticSimulator:
                            h: float,
                            phi_constraints: np.ndarray,
                            J: np.ndarray,
-                           requires_grad: bool):
+                           requires_grad: bool,
+                           **kwargs):
         Q, tau_h = self.form_Q_and_tau_h(
             q_dict, q_a_cmd_dict, tau_ext_dict, h)
 

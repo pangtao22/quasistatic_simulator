@@ -5,7 +5,7 @@ from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
 
 from examples.setup_simulation_diagram import (
     run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
-from core.quasistatic_simulator import QuasistaticSimParameters
+from qsim.simulator import QuasistaticSimParameters
 from examples.model_paths import models_dir
 
 object_sdf_path = os.path.join(models_dir, "plate.sdf")
