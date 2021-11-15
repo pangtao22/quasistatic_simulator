@@ -2,7 +2,7 @@ import os.path
 from typing import Dict
 
 import numpy as np
-from core.quasistatic_simulator import (
+from qsim.simulator import (
     QuasistaticSimParameters)
 from examples.model_paths import add_package_paths_local, models_dir
 from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim

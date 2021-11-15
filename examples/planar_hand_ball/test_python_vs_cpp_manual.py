@@ -10,9 +10,9 @@ from examples.planar_hand_ball.run_planar_hand import (model_directive_path,
 from examples.setup_simulation_diagram import (
     create_dict_keyed_by_model_instance_index)
 from pydrake.all import ModelInstanceIndex
-from quasistatic_simulator.core.quasistatic_simulator import (
+from quasistatic_simulator.qsim.simulator import (
     QuasistaticSimulator, QuasistaticSimParameters)
-from quasistatic_simulator.core.quasistatic_system import cpp_params_from_py_params
+from quasistatic_simulator.qsim.system import cpp_params_from_py_params
 
 from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
                                       QuasistaticSimulatorCpp)
@@ -100,14 +100,14 @@ class TestPlanarHandBall(unittest.TestCase):
                     self.assertTrue(np.allclose(q_dict[model], q_dict_cpp[model]))
 
             # match gradients along trajectories.
-            print('-------------------------------------------------')
+            # print('-------------------------------------------------')
             for i in range(len(Dq_nextDq_log)):
                 Dq_next_Dq = Dq_nextDq_log[i]
                 Dq_next_Dq_cpp = Dq_nextDq_log_cpp[i]
                 Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[i]
                 Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[i]
-                print(i, abs(Dq_next_Dq - Dq_next_Dq_cpp).max(),
-                      abs(Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max())
+                # print(i, abs(Dq_next_Dq - Dq_next_Dq_cpp).max(),
+                #       abs(Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max())
 
                 self.assertTrue(np.allclose(Dq_next_Dq, Dq_next_Dq_cpp, atol=atol))
                 self.assertTrue(np.allclose(Dq_nextDqa_cmd, Dq_nextDqa_cmd_cpp,

@@ -1,11 +1,9 @@
-import numpy as np
-
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 12})
 from matplotlib import rc
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
-from problem_definition_pinch import *
+from qsim_old.problem_definition_pinch import *
 
 q_log = np.load("q_log.npy")
 q_log_anitescu = np.load("q_log_anitescu.npy")

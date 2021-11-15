@@ -87,6 +87,7 @@ def get_label(i):
         label = r"$h$={}s".format(dt)
     return label
 
+
 #%% plot integral error
 e_cube_integral_list, e_cube_list = compute_error_integral(q_u0_logs)
 for i, dt in enumerate(time_steps[:-1]):

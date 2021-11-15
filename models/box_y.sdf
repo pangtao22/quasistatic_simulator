@@ -14,7 +14,7 @@
     -->
     <joint name="y_slider" type="prismatic">
       <parent>world</parent>
-      <child>sphere</child>
+      <child>box</child>
       <axis>
         <xyz>0 1 0</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
@@ -28,7 +28,8 @@
       </axis>
     </joint>
     <!-- The model for a solid sphere of uniform density. -->
-    <link name="sphere">
+    <link name="box">
+      <pose>0 0 -0.6 0 0 0</pose>
       <inertial>
         <mass>1.0</mass>
         <inertia>
@@ -42,27 +43,27 @@
       </inertial>
       <visual name="visual">
         <geometry>
-          <sphere>
-            <radius>0.1</radius>
-          </sphere>
+          <box>
+            <size>1.0 1.0 1.0</size>
+          </box>
         </geometry>
         <material>
-          <diffuse>0.8 0.8 0.8 0.8</diffuse>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
         </material>
       </visual>
       <collision name="collision">
         <geometry>
-          <sphere>
-            <radius>0.1</radius>
-          </sphere>
+          <box>
+            <size>1.0 1.0 1.0</size>
+          </box>
         </geometry>
         <surface>
           <friction>
             <ode>
               <!-- MultibodyPlant's time stepping only uses the static
                    coefficient of friction, <mu>. -->
-              <mu>0.8</mu>
-              <mu2>0.8</mu2>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
             </ode>
           </friction>
         </surface>

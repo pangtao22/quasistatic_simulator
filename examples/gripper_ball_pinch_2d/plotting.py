@@ -1,17 +1,15 @@
-import numpy as np
-
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 12})
 from matplotlib import rc
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 
-from problem_definition_pinch import *
-
+from qsim_old.problem_definition_pinch import *
 
 
 #%%
 def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
+                      t_contact_mode_change,
                       figsize, save_name):
     """
     plot normal, friction force and distance
@@ -60,7 +58,7 @@ def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
     plt.close()
 
 
-def PlotVelocity(t_sim, v_tangent, v_normal):
+def PlotVelocity(t_sim, v_tangent, v_normal, t_contact_mode_change):
     """
     plot normal and tangent velocity
     :return:
@@ -85,7 +83,7 @@ def PlotVelocity(t_sim, v_tangent, v_normal):
     plt.close()
 
 
-def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log,
+def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log, t_contact_mode_change,
                            fig_size, save_name):
     """
     plot xy cmd vs xy true

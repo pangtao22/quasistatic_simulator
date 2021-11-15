@@ -76,8 +76,8 @@
             <ode>
               <!-- MultibodyPlant's time stepping only uses the static
                    coefficient of friction, <mu>. -->
-              <mu>0.8</mu>
-              <mu2>0.8</mu2>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
             </ode>
           </friction>
         </surface>
