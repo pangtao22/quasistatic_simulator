@@ -1,7 +1,7 @@
 from typing import Union
 import numpy as np
-from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
-                         LogOutput, SpatialForce, BodyIndex, InputPort,
+from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator, VectorLogSink,
+                         LogVectorOutput, SpatialForce, BodyIndex, InputPort,
                          Multiplexer, DiagramBuilder, PidController,
                          MultibodyPlant, MeshcatContactVisualizer,
                          ConnectMeshcatVisualizer)
@@ -88,6 +88,16 @@ def add_externally_applied_generalized_force(
         load_applier.spatial_force_output_port, spatial_force_input_port)
 
 
+def get_logs_from_sim(log_sinks_dict: Dict[ModelInstanceIndex, VectorLogSink],
+                      sim: Simulator):
+    loggers_dict = dict()
+
+    context = sim.get_context()
+    for model, log_sink in log_sinks_dict.items():
+        loggers_dict[model] = log_sink.GetLog(log_sink.GetMyContextFromRoot(context))
+    return loggers_dict
+
+
 def run_quasistatic_sim(
         model_directive_path: str,
         object_sdf_paths: Dict[str, str],
@@ -140,9 +150,9 @@ def run_quasistatic_sim(
             body_idx=body_idx)
 
     # log states.
-    loggers_dict = dict()
+    log_sinks_dict = dict()
     for model in q_sys.q_sim.get_all_models():
-        loggers_dict[model] = LogOutput(
+        log_sinks_dict[model] = LogVectorOutput(
             q_sys.get_state_output_port(model), builder)
 
     # visualization
@@ -173,11 +183,15 @@ def run_quasistatic_sim(
 
     sim.AdvanceTo(t_final)
 
+    # get logs from sim context.
+
     if is_visualizing:
         meshcat_vis.publish_recording()
         res = meshcat_vis.vis.static_html()
         with open("quasistatic_sim.html", "w") as f:
             f.write(res)
+
+    loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
     return create_dict_keyed_by_string(q_sys.plant, loggers_dict), q_sys
 
 
@@ -268,11 +282,10 @@ def run_mbp_sim(
         meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)
 
     # logs.
-    loggers_dict = dict()
+    log_sinks_dict = dict()
     for model in robot_models.union(object_models):
-        logger = LogOutput(plant.get_state_output_port(model), builder)
-        logger.set_publish_period(0.01)
-        loggers_dict[model] = logger
+        logger = LogVectorOutput(plant.get_state_output_port(model), builder, 0.01)
+        log_sinks_dict[model] = logger
 
     diagram = builder.Build()
 
@@ -313,4 +326,5 @@ def run_mbp_sim(
         with open("mbp_sim.html", "w") as f:
             f.write(res)
 
+    loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
     return create_dict_keyed_by_string(plant, loggers_dict)
