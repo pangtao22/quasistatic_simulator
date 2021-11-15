@@ -71,7 +71,7 @@ field_names = [
     "grad_from_active_constraints"
 ]
 defaults = [np.array([0, 0, -9.81]), 4, 0.01,
-            False, "qp_mp", 1e4, False, False]
+            False, "qp_mp", 1e4, False, True]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(
@@ -220,8 +220,8 @@ class QuasistaticSimulator:
         self.Dv_nextDe = None
         self.Dq_nextDq = None
         self.Dq_nextDqa_cmd = None
-        self.dqp_kkt = QpDerivativesKktPinv()
-        self.dqp_active = QpDerivativesKktActive()
+        self.dqp_all = QpDerivativesKktPinv()  # gradient from all constraints.
+        self.dqp_active = QpDerivativesKktActive()  # gradient from active constraints.
 
         # TODO: these are not used right now.
         # Logging num of contacts and solver time.
@@ -741,10 +741,10 @@ class QuasistaticSimulator:
                 DvDb = self.dqp_active.calc_DzDb()
                 DvDe = self.dqp_active.calc_DzDe()
             else:
-                self.dqp_kkt.update_problem(
+                self.dqp_all.update_problem(
                     Q=Q, b=-tau_h, G=-J, e=e, z_star=v_values, lambda_star=beta)
-                DvDb = self.dqp_kkt.calc_DzDb()
-                DvDe = self.dqp_kkt.calc_DzDe()
+                DvDb = self.dqp_all.calc_DzDb()
+                DvDe = self.dqp_all.calc_DzDe()
 
         return v_h_value_dict, beta, DvDb, DvDe
 
@@ -817,11 +817,11 @@ class QuasistaticSimulator:
                 DvDb[i] = b_cp.gradient
                 DvDe[i] = e_cp.gradient
 
-            self.dqp_kkt.update_problem(
+            self.dqp_all.update_problem(
                 Q=Q, b=-tau_h, G=-J, e=e_cp.value, z_star=v.value,
                 lambda_star=constraints[0].dual_value)
-            DvDb = self.dqp_kkt.calc_DzDb()
-            DvDe = self.dqp_kkt.calc_DzDe()
+            DvDb = self.dqp_all.calc_DzDb()
+            DvDe = self.dqp_all.calc_DzDe()
 
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
@@ -866,7 +866,7 @@ class QuasistaticSimulator:
              h: float,
              mode: str,
              requires_grad: bool,
-             grad_from_active_constraints: bool = False):
+             grad_from_active_constraints: bool = True):
         """
          This function does the following:
          1. Extracts q_dict, a dictionary containing current system
