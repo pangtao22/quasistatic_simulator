@@ -1,16 +1,11 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
-from pydrake.all import (RigidTransform, DiagramBuilder, PiecewisePolynomial,
-    TrajectorySource, PidController, Multiplexer, ConnectMeshcatVisualizer,
-    LogOutput, Simulator)
+from pydrake.all import (PiecewisePolynomial)
 
-from examples.setup_simulation_diagram import (
-    run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
 from qsim.simulator import (
-    QuasistaticSimParameters, create_plant_with_robots_and_objects)
-from examples.model_paths import models_dir
+    QuasistaticSimParameters)
+from qsim.model_paths import models_dir
 
 
 #%% sim setup

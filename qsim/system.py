@@ -1,6 +1,7 @@
 from typing import Dict
-import numpy as np
+import enum
 
+import numpy as np
 from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
                          QueryObject, ModelInstanceIndex, ContactResults,
                          ExternallyAppliedSpatialForce)
@@ -25,6 +26,11 @@ def cpp_params_from_py_params(
     return sim_params_cpp
 
 
+class QuasistaticSystemBackend(enum.Enum):
+    PYTHON = enum.auto()
+    CPP = enum.auto()
+
+
 class QuasistaticSystem(LeafSystem):
     def __init__(self,
                  time_step: float,
@@ -32,7 +38,7 @@ class QuasistaticSystem(LeafSystem):
                  robot_stiffness_dict: Dict[str, np.ndarray],
                  object_sdf_paths: Dict[str, str],
                  sim_params: QuasistaticSimParameters,
-                 backend: str = "python"):
+                 backend=QuasistaticSystemBackend.PYTHON):
         """
         Also refer to the docstring of quasistatic simulator.
         :param time_step:  quasistatic simulation time step in seconds.
@@ -51,13 +57,13 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        if backend == "cpp":
+        if backend == QuasistaticSystemBackend.CPP:
             self.q_sim = QuasistaticSimulatorCpp(
                 model_directive_path=model_directive_path,
                 robot_stiffness_str=robot_stiffness_dict,
                 object_sdf_paths=object_sdf_paths,
                 sim_params=cpp_params_from_py_params(sim_params))
-        elif backend == "python":
+        elif backend == QuasistaticSystemBackend.PYTHON:
             self.q_sim = QuasistaticSimulator(
                 model_directive_path=model_directive_path,
                 robot_stiffness_dict=robot_stiffness_dict,

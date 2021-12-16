@@ -1,14 +1,17 @@
 from typing import Union
 import numpy as np
-from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator, VectorLogSink,
-                         LogVectorOutput, SpatialForce, BodyIndex, InputPort,
+from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
+                         VectorLogSink, LogVectorOutput, SpatialForce,
+                         BodyIndex, InputPort,
                          Multiplexer, DiagramBuilder, PidController,
                          MultibodyPlant, MeshcatContactVisualizer,
                          ConnectMeshcatVisualizer)
 
 
 from qsim.system import *
+from qsim.parser import QuasistaticParser
 from qsim.utils import create_plant_with_robots_and_objects
+
 
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
@@ -99,25 +102,16 @@ def get_logs_from_sim(log_sinks_dict: Dict[ModelInstanceIndex, VectorLogSink],
 
 
 def run_quasistatic_sim(
-        model_directive_path: str,
-        object_sdf_paths: Dict[str, str],
+        q_parser: QuasistaticParser,
+        h: float,
+        backend: QuasistaticSystemBackend,
         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
         q0_dict_str: Dict[str, np.ndarray],
-        robot_stiffness_dict: Dict[str, np.ndarray],
-        h: float,
-        sim_params: QuasistaticSimParameters,
         is_visualizing: bool,
-        real_time_rate: float,
-        backend: str = "python", **kwargs):
+        real_time_rate: float, **kwargs):
 
     builder = DiagramBuilder()
-    q_sys = QuasistaticSystem(
-        time_step=h,
-        model_directive_path=model_directive_path,
-        robot_stiffness_dict=robot_stiffness_dict,
-        object_sdf_paths=object_sdf_paths,
-        sim_params=sim_params,
-        backend=backend)
+    q_sys = q_parser.make_system(time_step=h, backend=backend)
     builder.AddSystem(q_sys)
 
     # update dictionaries with ModelInstanceIndex keys.

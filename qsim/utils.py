@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 import numpy as np
-from quasistatic_simulator.examples.model_paths import add_package_paths_local
+from qsim.model_paths import add_package_paths_local
 from pydrake.all import (MultibodyPlant, Parser, DiagramBuilder,
                          AddMultibodyPlantSceneGraph,
                          ProcessModelDirectives, LoadModelDirectives)

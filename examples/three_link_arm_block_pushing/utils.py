@@ -4,19 +4,25 @@ from typing import Dict
 import numpy as np
 from qsim.simulator import (
     QuasistaticSimParameters)
-from examples.model_paths import add_package_paths_local, models_dir
-from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
 from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
                          PiecewisePolynomial, MultibodyPlant)
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
+from qsim.model_paths import add_package_paths_local, models_dir
+from qsim.system import QuasistaticSystemBackend
+from qsim.parser import QuasistaticParser
+from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
+
 # Simulation parameters.
-gravity = np.array([0, 0, -10.])
+quasistatic_model_path = 'q_sys/3_link_arm_2d_box.yml'
+
+
+# gravity = np.array([0, 0, -10.])
 robot_name = "arm"
 box_name = "box0"
-Kp = np.array([1000, 1000, 1000], dtype=float)
-robot_stiffness_dict = {robot_name: Kp}
+# Kp = np.array([1000, 1000, 1000], dtype=float)
+# robot_stiffness_dict = {robot_name: Kp}
 h_quasistatic = 0.02
 h_mbp = 1e-3
 
@@ -30,9 +36,9 @@ q_robot_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
     sample_dot_at_start=np.zeros(nq_a),
     sample_dot_at_end=np.zeros(nq_a))
 
-# model directive paths
-model_directive_path = os.path.join(
-    models_dir, 'three_link_arm_and_ground.yml')
+# # model directive paths
+# model_directive_path = os.path.join(
+#     models_dir, 'three_link_arm_and_ground.yml')
 
 
 def create_3link_arm_controller_plant(gravity: np.ndarray):
@@ -49,38 +55,38 @@ def create_3link_arm_controller_plant(gravity: np.ndarray):
     return plant, None
 
 
-def run_mbp_quasistatic_comparison(box_sdf_path: str,
-                                   q0_dict_str: Dict[str, np.ndarray],
-                                   quasistatic_sim_params: QuasistaticSimParameters,
+def run_mbp_quasistatic_comparison(q0_dict_str: Dict[str, np.ndarray],
                                    is_visualizing=False, real_time_rate=0.0):
+    q_parser = QuasistaticParser(
+        os.path.join(models_dir, quasistatic_model_path))
+
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths={box_name: box_sdf_path},
+        q_parser=q_parser,
+        h=h_quasistatic,
+        backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str={robot_name: q_robot_traj},
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
-        h=h_quasistatic,
-        sim_params=quasistatic_sim_params,
         is_visualizing=is_visualizing, real_time_rate=real_time_rate)
 
     # MBP
     # create controller system for robot.
-    plant_robot, _ = create_3link_arm_controller_plant(gravity)
+    plant_robot, _ = create_3link_arm_controller_plant(q_parser.get_gravity())
     controller_robot = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=Kp,
+        plant_robot=plant_robot,
+        joint_stiffness=q_parser.get_robot_stiffness_by_name(robot_name),
         controller_mode="impedance")
     robot_controller_dict = {robot_name: controller_robot}
 
     loggers_dict_mbp_str = run_mbp_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths={box_name: box_sdf_path},
+        model_directive_path=q_parser.model_directive_path,
+        object_sdf_paths=q_parser.object_sdf_paths,
         q_a_traj_dict={robot_name: q_robot_traj},
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
+        robot_stiffness_dict=q_parser.robot_stiffness_dict,
         robot_controller_dict=robot_controller_dict,
         h=h_mbp,
-        gravity=gravity,
+        gravity=q_parser.get_gravity(),
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate)
 

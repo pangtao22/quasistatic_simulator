@@ -1,11 +1,11 @@
 import os
 import numpy as np
 
-from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial
 
 from examples.setup_simulation_diagram import run_quasistatic_sim
 from qsim.simulator import QuasistaticSimParameters
-from examples.model_paths import models_dir
+from qsim.model_paths import models_dir
 
 object_sdf_path = os.path.join(models_dir, "sphere_yz.sdf")
 model_directive_path = os.path.join(models_dir, "sphere_yz_actuated.yml")

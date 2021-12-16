@@ -1,17 +1,16 @@
 import os
-from typing import List, Dict
+from typing import List
 
 import numpy as np
 
 from pydrake.math import RollPitchYaw
-from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
-                         ModelInstanceIndex, RigidTransform)
+from pydrake.all import (PiecewisePolynomial, RigidTransform)
 from qsim.simulator import (
     QuasistaticSimParameters)
 from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
-from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
-    box3d_7cm_sdf_path, box3d_6cm_sdf_path)
+from qsim.model_paths import (models_dir, box3d_8cm_sdf_path,
+                              box3d_7cm_sdf_path, box3d_6cm_sdf_path)
 
 from .inverse_kinematics import calc_iwa_trajectory_for_point_tracking
 

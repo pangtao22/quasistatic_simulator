@@ -6,9 +6,7 @@ import numpy as np
 
 from qsim.simulator import QuasistaticSimParameters, QuasistaticSimulator
 from qsim_old.problem_definition_graze import problem_definition
-from examples.model_paths import models_dir
-from examples.setup_simulation_diagram import (
-    create_dict_keyed_by_model_instance_index)
+from qsim.model_paths import models_dir
 
 object_sdf_path = os.path.join(models_dir, "box_y.sdf")
 model_directive_path = os.path.join(models_dir, "box_ball_graze_2d.yml")
