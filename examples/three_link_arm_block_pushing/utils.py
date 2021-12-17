@@ -16,13 +16,8 @@ from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
 
 # Simulation parameters.
 quasistatic_model_path = 'q_sys/3_link_arm_2d_box.yml'
-
-
-# gravity = np.array([0, 0, -10.])
 robot_name = "arm"
 box_name = "box0"
-# Kp = np.array([1000, 1000, 1000], dtype=float)
-# robot_stiffness_dict = {robot_name: Kp}
 h_quasistatic = 0.02
 h_mbp = 1e-3
 
@@ -35,10 +30,6 @@ q_robot_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
     breaks=[0, 10], samples=qa_knots.T,
     sample_dot_at_start=np.zeros(nq_a),
     sample_dot_at_end=np.zeros(nq_a))
-
-# # model directive paths
-# model_directive_path = os.path.join(
-#     models_dir, 'three_link_arm_and_ground.yml')
 
 
 def create_3link_arm_controller_plant(gravity: np.ndarray):
