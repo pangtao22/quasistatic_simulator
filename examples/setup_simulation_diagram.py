@@ -178,7 +178,6 @@ def run_quasistatic_sim(
     sim.AdvanceTo(t_final)
 
     # get logs from sim context.
-
     if is_visualizing:
         meshcat_vis.publish_recording()
         res = meshcat_vis.vis.static_html()

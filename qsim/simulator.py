@@ -42,6 +42,7 @@ class MyContactInfo:
 
 
 """
+:param nd_per_contact: int, number of extreme rays per contact point.
 :param contact_detection_tolerance: Signed distance pairs whose distances are 
     greater than this value are ignored in the simulator's non-penetration 
     constraints. Unit is in meters.
@@ -51,6 +52,8 @@ class MyContactInfo:
     The mass matrix for unactuated objects is always added when the 
     unconstrained version of the problem is solved. Not having a mass 
     matrix can sometimes makes the unconstrained program unbounded. 
+/*----------------------------------------------------------------------*/
+/*---------Experimental features only supported in python.--------------*/
 :param mode: Union['qp_mp', 'qp_cvx', 'unconstrained']. 
     - 'qp_mp': solves the standard QP for system states at the next time 
         step, using MathematicalProgram. 
@@ -59,7 +62,7 @@ class MyContactInfo:
         moving inequality constraints into the objective with 
         log barrier functions. 
 :param log_barrier_weight: float, used only when is_unconstrained == True.
-:param nd_per_contact: int, number of extreme rays per contact point.
+/*----------------------------------------------------------------------*/
 :param requires_grad: whether the gradient of v_next w.r.t the parameters of 
     the QP are computed. 
 :param gradient_from_active_constraints: bool. Whether the dynamics gradient is 

@@ -39,8 +39,19 @@ class QuasistaticParser:
         self.q_sim_params = QuasistaticSimParameters(
             gravity=np.array(q_sim_params['gravity'], dtype=float),
             nd_per_contact=q_sim_params['nd_per_contact'],
-            contact_detection_tolerance=d,
-            is_quasi_dynamic=q_sim_params['is_quasi_dynamic'])
+            contact_detection_tolerance=d)
+
+    def set_quasi_dynamic(self, is_quasi_dynamic: bool):
+        param_old = self.q_sim_params
+        self.q_sim_params = QuasistaticSimParameters(
+            gravity=param_old.gravity,
+            nd_per_contact=param_old.nd_per_contact,
+            contact_detection_tolerance=param_old.contact_detection_tolerance,
+            is_quasi_dynamic=is_quasi_dynamic,
+            mode=param_old.mode,
+            log_barrier_weight=param_old.log_barrier_weight,
+            requires_grad=param_old.requires_grad,
+            grad_from_active_constraints=param_old.grad_from_active_constraints)
 
     def get_gravity(self):
         return np.array(self.q_sim_params.gravity)
