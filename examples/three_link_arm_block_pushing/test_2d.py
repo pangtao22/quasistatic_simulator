@@ -4,33 +4,25 @@ from .run_3link_arm_pushing_2d import *
 
 class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
-        self.quasistatic_sim_params = QuasistaticSimParameters(
-            gravity=gravity,
-            nd_per_contact=2,
-            contact_detection_tolerance=np.inf)
+        self.q_parser = QuasistaticParser(
+            os.path.join(models_dir, quasistatic_model_path))
 
     def test_python_vs_cpp(self):
         loggers_dict_quasistatic_str_cpp, q_sys_cpp = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths={box_name: box2d_big_sdf_path},
+            q_parser=self.q_parser,
+            h=h_quasistatic,
+            backend=QuasistaticSystemBackend.CPP,
             q_a_traj_dict_str={robot_name: q_robot_traj},
             q0_dict_str=q0_dict_str,
-            robot_stiffness_dict=robot_stiffness_dict,
-            h=h_quasistatic,
-            sim_params=self.quasistatic_sim_params,
-            is_visualizing=False, real_time_rate=0.,
-            backend="cpp")
+            is_visualizing=False, real_time_rate=0.)
 
         loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths={box_name: box2d_big_sdf_path},
+            q_parser=self.q_parser,
+            h=h_quasistatic,
+            backend=QuasistaticSystemBackend.PYTHON,
             q_a_traj_dict_str={robot_name: q_robot_traj},
             q0_dict_str=q0_dict_str,
-            robot_stiffness_dict=robot_stiffness_dict,
-            h=h_quasistatic,
-            sim_params=self.quasistatic_sim_params,
-            is_visualizing=False, real_time_rate=0.,
-            backend="python")
+            is_visualizing=False, real_time_rate=0.)
 
         for name in loggers_dict_quasistatic_str_cpp.keys():
             q_log_cpp = loggers_dict_quasistatic_str_cpp[name].data()
@@ -48,10 +40,9 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
 
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
          q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
-            run_mbp_quasistatic_comparison(
-                box2d_big_sdf_path, q0_dict_str,
-                quasistatic_sim_params=self.quasistatic_sim_params,
-                is_visualizing=False, real_time_rate=0.0)
+            run_mbp_quasistatic_comparison(q0_dict_str,
+                                           is_visualizing=False,
+                                           real_time_rate=0.0)
 
         (e_robot, e_vec_robot, t_e_robot,
          e_angle_box, e_vec_angle_box, t_angle_box,
