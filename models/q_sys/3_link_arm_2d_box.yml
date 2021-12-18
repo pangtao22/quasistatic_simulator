@@ -1,7 +1,7 @@
 # model directive includes robots and the environment.
 # the name field in robots and objects must match the name in the respective
 # model directive/sdf files.
-model_directive_name: 'three_link_arm_and_ground.yml'
+model_directive: package://quasistatic_simulator/three_link_arm_and_ground.yml
 robots:
   -
     name: arm
@@ -10,8 +10,13 @@ robots:
 objects:
   -
     name: box0
-    file_name: "box_yz_rotation_big.sdf"
+    file: package://quasistatic_simulator/box_yz_rotation_big.sdf
 
+# Note that some parameters that are not intrinsic to the model, such as
+# whether the simulation is quasi-dynamic or whether gradient is needed, is
+# not and should not be set here.
+# If such parameters are not set otherwise, the default values defined in
+#  /qsim/sim_parameters.py will be used.
 quasistatic_sim_params:
   gravity: [0, 0, -10]
   nd_per_contact: 2

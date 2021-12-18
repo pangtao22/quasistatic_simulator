@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from examples.log_comparison import *
-from qsim.model_paths import box2d_big_sdf_path
 from examples.setup_simulation_diagram import shift_q_traj_to_start_at_minus_h
 from examples.three_link_arm_block_pushing.utils import *
 
@@ -46,7 +45,7 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
 if __name__ == "__main__":
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
-        run_mbp_quasistatic_comparison(q0_dict_str,
+        run_mbp_quasistatic_comparison(model_path_2d, q0_dict_str,
                                        is_visualizing=True,
                                        real_time_rate=0.0)
 #%%

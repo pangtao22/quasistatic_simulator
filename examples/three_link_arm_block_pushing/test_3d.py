@@ -15,15 +15,12 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
         The accuracy thershold are chosen based on a simulation run that
             looks reasonable.
         """
-        quasistatic_sim_params = QuasistaticSimParameters(
-            gravity=gravity,
-            nd_per_contact=4,
-            contact_detection_tolerance=np.inf)
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
          q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
-            run_mbp_quasistatic_comparison(box3d_big_sdf_path, q0_dict_str,
-                                           quasistatic_sim_params=quasistatic_sim_params,
-                                           is_visualizing=False, real_time_rate=0.0)
+            run_mbp_quasistatic_comparison(
+                model_path_3d, q0_dict_str,
+                is_visualizing=False,
+                real_time_rate=0.0)
 
         (e_robot, e_vec_robot, t_e_robot,
          e_angle_box, e_vec_angle_box, t_angle_box,

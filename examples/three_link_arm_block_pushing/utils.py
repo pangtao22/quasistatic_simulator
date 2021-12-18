@@ -15,7 +15,8 @@ from qsim.parser import QuasistaticParser
 from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
 
 # Simulation parameters.
-quasistatic_model_path = 'q_sys/3_link_arm_2d_box.yml'
+model_path_2d = 'q_sys/3_link_arm_2d_box.yml'
+model_path_3d = 'q_sys/3_link_arm_3d_box.yml'
 robot_name = "arm"
 box_name = "box0"
 h_quasistatic = 0.02
@@ -46,8 +47,10 @@ def create_3link_arm_controller_plant(gravity: np.ndarray):
     return plant, None
 
 
-def run_mbp_quasistatic_comparison(q0_dict_str: Dict[str, np.ndarray],
-                                   is_visualizing=False, real_time_rate=0.0):
+def run_mbp_quasistatic_comparison(
+        quasistatic_model_path: str,
+        q0_dict_str: Dict[str, np.ndarray],
+        is_visualizing=False, real_time_rate=0.0):
     q_parser = QuasistaticParser(
         os.path.join(models_dir, quasistatic_model_path))
 

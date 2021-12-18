@@ -2,10 +2,11 @@ import os
 
 import numpy as np
 import yaml
+import parse
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 from .system import QuasistaticSystem, QuasistaticSystemBackend
-from .model_paths import models_dir
+from .model_paths import package_paths_dict
 
 
 class QuasistaticParser:
@@ -13,8 +14,8 @@ class QuasistaticParser:
         with open(quasistatic_model_path, 'r') as f:
             config = yaml.safe_load(f)
 
-        self.model_directive_path = os.path.join(
-            models_dir, config['model_directive_name'])
+        self.model_directive_path = self.parse_path(config['model_directive'])
+
         # robots
         robot_stiffness_dict = {}
         for robot in config['robots']:
@@ -25,8 +26,7 @@ class QuasistaticParser:
         # objects
         object_sdf_paths = {}
         for obj in config['objects']:
-            object_sdf_paths[obj['name']] = os.path.join(
-                models_dir, obj['file_name'])
+            object_sdf_paths[obj['name']] = self.parse_path(obj['file'])
         self.object_sdf_paths = object_sdf_paths
 
         # quasistatic_sim_params
@@ -40,6 +40,14 @@ class QuasistaticParser:
             gravity=np.array(q_sim_params['gravity'], dtype=float),
             nd_per_contact=q_sim_params['nd_per_contact'],
             contact_detection_tolerance=d)
+
+    def parse_path(self, model_path: str):
+        """
+        A model_path read from the yaml file should have the format
+            package://package_name/file_name
+        """
+        package_name, file_name = parse.parse("package://{}/{}", model_path)
+        return os.path.join(package_paths_dict[package_name], file_name)
 
     def set_quasi_dynamic(self, is_quasi_dynamic: bool):
         param_old = self.q_sim_params
