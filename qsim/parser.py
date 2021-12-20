@@ -5,8 +5,11 @@ import yaml
 import parse
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-from .system import QuasistaticSystem, QuasistaticSystemBackend
+from .system import (QuasistaticSystem, QuasistaticSystemBackend,
+                     cpp_params_from_py_params)
 from .model_paths import package_paths_dict
+from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
+                                      QuasistaticSimulatorCpp)
 
 
 class QuasistaticParser:
@@ -78,3 +81,19 @@ class QuasistaticParser:
             object_sdf_paths=self.object_sdf_paths,
             sim_params=self.q_sim_params,
             backend=backend)
+
+    def make_simulator_py(self, internal_vis: bool):
+        return QuasistaticSimulator(
+            model_directive_path=self.model_directive_path,
+            robot_stiffness_dict=self.robot_stiffness_dict,
+            object_sdf_paths=self.object_sdf_paths,
+            sim_params=self.q_sim_params,
+            internal_vis=internal_vis)
+
+    def make_simulator_cpp(self):
+        return QuasistaticSimulatorCpp(
+            model_directive_path=self.model_directive_path,
+            robot_stiffness_str=self.robot_stiffness_dict,
+            object_sdf_paths=self.object_sdf_paths,
+            sim_params=cpp_params_from_py_params(self.q_sim_params))
+

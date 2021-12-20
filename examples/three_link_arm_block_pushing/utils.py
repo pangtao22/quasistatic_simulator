@@ -2,8 +2,6 @@ import os.path
 from typing import Dict
 
 import numpy as np
-from qsim.simulator import (
-    QuasistaticSimParameters)
 from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
                          PiecewisePolynomial, MultibodyPlant)
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
