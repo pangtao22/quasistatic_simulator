@@ -13,8 +13,8 @@ from qsim.parser import QuasistaticParser
 from examples.setup_simulation_diagram import run_quasistatic_sim, run_mbp_sim
 
 # Simulation parameters.
-model_path_2d = 'q_sys/3_link_arm_2d_box.yml'
-model_path_3d = 'q_sys/3_link_arm_3d_box.yml'
+q_model_path_2d = 'q_sys/3_link_arm_2d_box.yml'
+q_model_path_3d = 'q_sys/3_link_arm_3d_box.yml'
 robot_name = "arm"
 box_name = "box0"
 h_quasistatic = 0.02

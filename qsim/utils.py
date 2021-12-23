@@ -1,10 +1,13 @@
 from typing import Dict, List
 
 import numpy as np
-from qsim.model_paths import add_package_paths_local
 from pydrake.all import (MultibodyPlant, Parser, DiagramBuilder,
                          AddMultibodyPlantSceneGraph,
                          ProcessModelDirectives, LoadModelDirectives)
+
+from .model_paths import add_package_paths_local
+from .simulator import QuasistaticSimParameters, GradientMode
+from qsim_cpp import QuasistaticSimParametersCpp, GradientModeCpp
 
 
 def get_rotation_matrix_from_normal(normal):
@@ -83,3 +86,18 @@ def create_plant_with_robots_and_objects(builder: DiagramBuilder,
     plant.Finalize()
 
     return plant, scene_graph, robot_models, object_models
+
+
+def cpp_params_from_py_params(
+        sim_params: QuasistaticSimParameters) -> QuasistaticSimParametersCpp:
+    sim_params_cpp = QuasistaticSimParametersCpp()
+    sim_params_cpp.gravity = sim_params.gravity
+    sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
+    sim_params_cpp.contact_detection_tolerance = (
+        sim_params.contact_detection_tolerance)
+    sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
+    sim_params_cpp.gradient_mode = GradientModeCpp(
+        sim_params.gradient_mode.value)
+    sim_params_cpp.gradient_from_active_constraints = (
+        sim_params.grad_from_active_constraints)
+    return sim_params_cpp

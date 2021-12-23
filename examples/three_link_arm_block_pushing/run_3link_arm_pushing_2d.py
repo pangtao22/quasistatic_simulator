@@ -45,7 +45,7 @@ def calc_integral_errors(q_robot_log_mbp, q_box_log_mbp, t_mbp,
 if __name__ == "__main__":
     (q_robot_log_mbp, q_box_log_mbp, t_mbp,
      q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, q_sys) = \
-        run_mbp_quasistatic_comparison(model_path_2d, q0_dict_str,
+        run_mbp_quasistatic_comparison(q_model_path_2d, q0_dict_str,
                                        is_visualizing=True,
                                        real_time_rate=0.0)
 #%%

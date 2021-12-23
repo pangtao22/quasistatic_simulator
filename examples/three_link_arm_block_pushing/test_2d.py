@@ -5,7 +5,7 @@ from .run_3link_arm_pushing_2d import *
 class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
         self.q_parser = QuasistaticParser(
-            os.path.join(models_dir, model_path_2d))
+            os.path.join(models_dir, q_model_path_2d))
 
     def test_python_vs_cpp(self):
         loggers_dict_quasistatic_str_cpp, q_sys_cpp = run_quasistatic_sim(
@@ -41,7 +41,7 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
          q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic,
          q_sys) = run_mbp_quasistatic_comparison(
-            model_path_2d, q0_dict_str,
+            q_model_path_2d, q0_dict_str,
             is_visualizing=False,
             real_time_rate=0.0)
 

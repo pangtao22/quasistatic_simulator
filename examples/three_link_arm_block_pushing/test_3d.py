@@ -18,7 +18,7 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
          q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
             run_mbp_quasistatic_comparison(
-                model_path_3d, q0_dict_str,
+                q_model_path_3d, q0_dict_str,
                 is_visualizing=False,
                 real_time_rate=0.0)
 

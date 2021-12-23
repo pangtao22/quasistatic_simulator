@@ -58,12 +58,9 @@ for i in tqdm.tqdm(range(n)):
     q_sim.update_mbp_positions(q0_dict)
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
     tau_ext_dict = q_sim.calc_tau_ext([])
-    q_next_dict = q_sim.step(
-        q_a_cmd_dict=q_a_cmd_dict,
-        tau_ext_dict=tau_ext_dict,
-        h=h,
-        mode='unconstrained',
-        requires_grad=False)
+    q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+                             tau_ext_dict=tau_ext_dict, h=h,
+                             mode='unconstrained', gradient_mode=False)
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
 

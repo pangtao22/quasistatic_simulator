@@ -1,15 +1,15 @@
 import os
 
 import numpy as np
-import yaml
 import parse
+import yaml
 
-from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-from .system import (QuasistaticSystem, QuasistaticSystemBackend,
-                     cpp_params_from_py_params)
+from qsim_cpp import QuasistaticSimParametersCpp, QuasistaticSimulatorCpp
+
 from .model_paths import package_paths_dict
-from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
-                                      QuasistaticSimulatorCpp)
+from .simulator import QuasistaticSimulator, QuasistaticSimParameters
+from .system import (QuasistaticSystem, QuasistaticSystemBackend)
+from .utils import cpp_params_from_py_params
 
 
 class QuasistaticParser:
@@ -53,6 +53,10 @@ class QuasistaticParser:
         return os.path.join(package_paths_dict[package_name], file_name)
 
     def set_quasi_dynamic(self, is_quasi_dynamic: bool):
+        """
+        Set self.q_sim_params.is_quasi_dynamic to the input is_quasi_dynamic,
+            the default value is False.
+        """
         param_old = self.q_sim_params
         self.q_sim_params = QuasistaticSimParameters(
             gravity=param_old.gravity,
@@ -61,7 +65,7 @@ class QuasistaticParser:
             is_quasi_dynamic=is_quasi_dynamic,
             mode=param_old.mode,
             log_barrier_weight=param_old.log_barrier_weight,
-            requires_grad=param_old.requires_grad,
+            gradient_mode=param_old.gradient_mode,
             grad_from_active_constraints=param_old.grad_from_active_constraints)
 
     def get_gravity(self):
@@ -69,9 +73,6 @@ class QuasistaticParser:
 
     def get_robot_stiffness_by_name(self, name: str):
         return np.array(self.robot_stiffness_dict[name])
-
-    def make_simulator(self):
-        pass
 
     def make_system(self, time_step: float, backend: QuasistaticSystemBackend):
         return QuasistaticSystem(
@@ -96,4 +97,3 @@ class QuasistaticParser:
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
             sim_params=cpp_params_from_py_params(self.q_sim_params))
-

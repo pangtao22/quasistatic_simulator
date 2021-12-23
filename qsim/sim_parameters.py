@@ -1,7 +1,21 @@
+import enum
 import sys
 from collections import namedtuple
 
 import numpy as np
+
+
+class GradientMode(enum.Enum):
+    """
+    Gradient computation mode of QuasistaticSimulator.
+    - kNone: do not compute gradient, just roll out the dynamics.
+    - kBOnly: only computes dfdu, where x_next = f(x, u).
+    - kAB: computes both dfdx and dfdu.
+    """
+    kNone = 0
+    kBOnly = 1
+    kAB = 2
+
 
 """
 :param nd_per_contact: int, number of extreme rays per contact point.
@@ -27,16 +41,22 @@ import numpy as np
 /*----------------------------------------------------------------------*/
 :param requires_grad: whether the gradient of v_next w.r.t the parameters of 
     the QP are computed. 
+    Note that this parameter is only effective in 
+        QuasistaticSimulator.step_default(...),
+    which is only used by QuasistaticSystem, which almost never computes 
+    gradients. In applications that does compute gradient, such as 
+    QuasistaticDynamics from irs_lqr, QuasistaticSimulator.step function is 
+    invoked and a separate GradientMode value is passed to it explicitly. 
 :param gradient_from_active_constraints: bool. Whether the dynamics gradient is 
     computed from all constraints or only the active constraints.
 """
 field_names = [
     "gravity", "nd_per_contact", "contact_detection_tolerance",
-    "is_quasi_dynamic", "mode", "log_barrier_weight", "requires_grad",
+    "is_quasi_dynamic", "mode", "log_barrier_weight", "gradient_mode",
     "grad_from_active_constraints"
 ]
 defaults = [np.array([0, 0, -9.81]), 4, 0.01,
-            False, "qp_mp", 1e4, False, True]
+            False, "qp_mp", 1e4, GradientMode.kAB, True]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(

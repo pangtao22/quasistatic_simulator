@@ -6,24 +6,10 @@ from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
                          QueryObject, ModelInstanceIndex, ContactResults,
                          ExternallyAppliedSpatialForce)
 
-from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
-                                      QuasistaticSimulatorCpp)
+from qsim_cpp import QuasistaticSimulatorCpp
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-
-
-def cpp_params_from_py_params(
-        sim_params: QuasistaticSimParameters) -> QuasistaticSimParametersCpp:
-    sim_params_cpp = QuasistaticSimParametersCpp()
-    sim_params_cpp.gravity = sim_params.gravity
-    sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
-    sim_params_cpp.contact_detection_tolerance = (
-        sim_params.contact_detection_tolerance)
-    sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
-    sim_params_cpp.requires_grad = sim_params.requires_grad
-    sim_params_cpp.gradient_from_active_constraints = (
-        sim_params.grad_from_active_constraints)
-    return sim_params_cpp
+from .utils import cpp_params_from_py_params
 
 
 class QuasistaticSystemBackend(enum.Enum):

@@ -14,8 +14,7 @@ from quasistatic_simulator.qsim.simulator import (
     QuasistaticSimulator, QuasistaticSimParameters)
 from quasistatic_simulator.qsim.system import cpp_params_from_py_params
 
-from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
-                                      QuasistaticSimulatorCpp)
+from qsim_cpp import (QuasistaticSimParametersCpp, QuasistaticSimulatorCpp)
 
 
 def simulate(sim: Union[QuasistaticSimulator, QuasistaticSimulatorCpp],
@@ -56,7 +55,8 @@ class TestPlanarHandBall(unittest.TestCase):
         atol_list = [1e-9, 1e-9, 1e-4]
 
         for grad_active_py, grad_active_cpp, atol in zip(grad_active_py_list,
-                                                         grad_active_cpp_list, atol_list):
+                                                         grad_active_cpp_list,
+                                                         atol_list):
             sim_params = QuasistaticSimParameters(
                 gravity=np.array([0, 0, -10.]),
                 nd_per_contact=2,
