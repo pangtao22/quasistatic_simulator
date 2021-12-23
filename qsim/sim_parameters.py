@@ -1,21 +1,8 @@
 import enum
 import sys
 from collections import namedtuple
-
+from qsim_cpp import GradientMode
 import numpy as np
-
-
-class GradientMode(enum.Enum):
-    """
-    Gradient computation mode of QuasistaticSimulator.
-    - kNone: do not compute gradient, just roll out the dynamics.
-    - kBOnly: only computes dfdu, where x_next = f(x, u).
-    - kAB: computes both dfdx and dfdu.
-    """
-    kNone = 0
-    kBOnly = 1
-    kAB = 2
-
 
 """
 :param nd_per_contact: int, number of extreme rays per contact point.

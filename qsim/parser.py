@@ -4,7 +4,8 @@ import numpy as np
 import parse
 import yaml
 
-from qsim_cpp import QuasistaticSimParametersCpp, QuasistaticSimulatorCpp
+from qsim_cpp import (QuasistaticSimParametersCpp, QuasistaticSimulatorCpp,
+                      GradientMode)
 
 from .model_paths import package_paths_dict
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
@@ -75,6 +76,7 @@ class QuasistaticParser:
         return np.array(self.robot_stiffness_dict[name])
 
     def make_system(self, time_step: float, backend: QuasistaticSystemBackend):
+        self.check_params_validity(self.q_sim_params)
         return QuasistaticSystem(
             time_step=time_step,
             model_directive_path=self.model_directive_path,
@@ -84,6 +86,7 @@ class QuasistaticParser:
             backend=backend)
 
     def make_simulator_py(self, internal_vis: bool):
+        self.check_params_validity(self.q_sim_params)
         return QuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_dict=self.robot_stiffness_dict,
@@ -92,8 +95,16 @@ class QuasistaticParser:
             internal_vis=internal_vis)
 
     def make_simulator_cpp(self):
+        self.check_params_validity(self.q_sim_params)
         return QuasistaticSimulatorCpp(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
             sim_params=cpp_params_from_py_params(self.q_sim_params))
+
+    @staticmethod
+    def check_params_validity(q_params: QuasistaticSimParameters):
+        if (q_params.nd_per_contact > 2 and q_params.gradient_mode ==
+                GradientMode.kAB):
+            raise RuntimeError("Computing A matrix for 3D systems is not yet "
+                               "supported.")

@@ -6,8 +6,8 @@ from pydrake.all import (MultibodyPlant, Parser, DiagramBuilder,
                          ProcessModelDirectives, LoadModelDirectives)
 
 from .model_paths import add_package_paths_local
-from .simulator import QuasistaticSimParameters, GradientMode
-from qsim_cpp import QuasistaticSimParametersCpp, GradientModeCpp
+from .simulator import QuasistaticSimParameters
+from qsim_cpp import QuasistaticSimParametersCpp
 
 
 def get_rotation_matrix_from_normal(normal):
@@ -96,8 +96,7 @@ def cpp_params_from_py_params(
     sim_params_cpp.contact_detection_tolerance = (
         sim_params.contact_detection_tolerance)
     sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
-    sim_params_cpp.gradient_mode = GradientModeCpp(
-        sim_params.gradient_mode.value)
+    sim_params_cpp.gradient_mode = sim_params.gradient_mode
     sim_params_cpp.gradient_from_active_constraints = (
         sim_params.grad_from_active_constraints)
     return sim_params_cpp
