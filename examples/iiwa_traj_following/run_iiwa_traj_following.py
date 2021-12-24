@@ -3,9 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from examples.log_comparison import calc_error_integral
-from examples.setup_simulation_diagram import (run_mbp_sim,
-                                               run_quasistatic_sim,
-                                               shift_q_traj_to_start_at_minus_h)
+from examples.setup_simulations import (run_mbp_sim,
+                                        run_quasistatic_sim,
+                                        shift_q_traj_to_start_at_minus_h)
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 from robotics_utilities.iiwa_controller.utils import (

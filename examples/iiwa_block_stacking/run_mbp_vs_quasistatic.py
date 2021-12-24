@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from pydrake.all import PidController
-from examples.setup_simulation_diagram import (
+from examples.setup_simulations import (
     run_quasistatic_sim, run_mbp_sim, shift_q_traj_to_start_at_minus_h)
 # from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_mbp_sim
 from examples.iiwa_block_stacking.simulation_parameters import *

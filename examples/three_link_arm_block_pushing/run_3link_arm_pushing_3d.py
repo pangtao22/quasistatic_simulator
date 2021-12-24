@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from examples.log_comparison import *
 from examples.three_link_arm_block_pushing.utils import *
-from examples.setup_simulation_diagram import shift_q_traj_to_start_at_minus_h
+from examples.setup_simulations import shift_q_traj_to_start_at_minus_h
 
 # box initial state.
 q_u0 = np.array([1, 0, 0, 0, 0.0, 1.7, 0.5])

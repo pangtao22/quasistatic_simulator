@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from examples.log_comparison import *
-from examples.setup_simulation_diagram import shift_q_traj_to_start_at_minus_h
+from examples.setup_simulations import shift_q_traj_to_start_at_minus_h
 from examples.three_link_arm_block_pushing.utils import *
 
 # box initial state.

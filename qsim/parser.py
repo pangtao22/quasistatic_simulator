@@ -10,7 +10,7 @@ from qsim_cpp import (QuasistaticSimParametersCpp, QuasistaticSimulatorCpp,
 from .model_paths import package_paths_dict
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 from .system import (QuasistaticSystem, QuasistaticSystemBackend)
-from .utils import cpp_params_from_py_params
+from qsim.sim_parameters import cpp_params_from_py_params
 
 
 class QuasistaticParser:
@@ -40,10 +40,10 @@ class QuasistaticParser:
             assert d == 'inf'
             d = np.inf
 
-        self.q_sim_params = QuasistaticSimParameters(
+        self.q_sim_params_dict = QuasistaticSimParameters(
             gravity=np.array(q_sim_params['gravity'], dtype=float),
             nd_per_contact=q_sim_params['nd_per_contact'],
-            contact_detection_tolerance=d)
+            contact_detection_tolerance=d)._asdict()
 
     def parse_path(self, model_path: str):
         """
@@ -58,49 +58,48 @@ class QuasistaticParser:
         Set self.q_sim_params.is_quasi_dynamic to the input is_quasi_dynamic,
             the default value is False.
         """
-        param_old = self.q_sim_params
-        self.q_sim_params = QuasistaticSimParameters(
-            gravity=param_old.gravity,
-            nd_per_contact=param_old.nd_per_contact,
-            contact_detection_tolerance=param_old.contact_detection_tolerance,
-            is_quasi_dynamic=is_quasi_dynamic,
-            mode=param_old.mode,
-            log_barrier_weight=param_old.log_barrier_weight,
-            gradient_mode=param_old.gradient_mode,
-            grad_from_active_constraints=param_old.grad_from_active_constraints)
+        self.q_sim_params_dict['is_quasi_dynamic'] = is_quasi_dynamic
+
+    def set_sim_params(self, **kwargs):
+        for name, value in kwargs.items():
+            assert name in self.q_sim_params_dict.keys()
+            self.q_sim_params_dict[name] = value
 
     def get_gravity(self):
-        return np.array(self.q_sim_params.gravity)
+        return np.array(self.q_sim_params_dict['gravity'])
 
     def get_robot_stiffness_by_name(self, name: str):
         return np.array(self.robot_stiffness_dict[name])
 
     def make_system(self, time_step: float, backend: QuasistaticSystemBackend):
-        self.check_params_validity(self.q_sim_params)
+        q_sim_params = QuasistaticSimParameters(**self.q_sim_params_dict)
+        self.check_params_validity(q_sim_params)
         return QuasistaticSystem(
             time_step=time_step,
             model_directive_path=self.model_directive_path,
             robot_stiffness_dict=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
-            sim_params=self.q_sim_params,
+            sim_params=q_sim_params,
             backend=backend)
 
     def make_simulator_py(self, internal_vis: bool):
-        self.check_params_validity(self.q_sim_params)
+        q_sim_params = QuasistaticSimParameters(**self.q_sim_params_dict)
+        self.check_params_validity(q_sim_params)
         return QuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_dict=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
-            sim_params=self.q_sim_params,
+            sim_params=q_sim_params,
             internal_vis=internal_vis)
 
     def make_simulator_cpp(self):
-        self.check_params_validity(self.q_sim_params)
+        q_sim_params = QuasistaticSimParameters(**self.q_sim_params_dict)
+        self.check_params_validity(q_sim_params)
         return QuasistaticSimulatorCpp(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
-            sim_params=cpp_params_from_py_params(self.q_sim_params))
+            sim_params=cpp_params_from_py_params(q_sim_params))
 
     @staticmethod
     def check_params_validity(q_params: QuasistaticSimParameters):

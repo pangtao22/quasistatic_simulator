@@ -1,20 +1,20 @@
+import os.path
 import unittest
 import sys
 from typing import Union, Dict
 
 import numpy as np
-from examples.planar_hand_ball.run_planar_hand import (model_directive_path,
-                                                       robot_stiffness_dict,
-                                                       object_sdf_dict,
-                                                       q0_dict_str)
-from examples.setup_simulation_diagram import (
+from examples.planar_hand_ball.run_planar_hand import q0_dict_str
+from examples.setup_simulations import (
     create_dict_keyed_by_model_instance_index)
 from pydrake.all import ModelInstanceIndex
-from quasistatic_simulator.qsim.simulator import (
-    QuasistaticSimulator, QuasistaticSimParameters)
-from quasistatic_simulator.qsim.system import cpp_params_from_py_params
+from qsim.parser import (QuasistaticParser, QuasistaticSimulator,
+                         QuasistaticSimulatorCpp)
+from qsim.model_paths import models_dir
+from qsim.sim_parameters import GradientMode
 
-from qsim_cpp import (QuasistaticSimParametersCpp, QuasistaticSimulatorCpp)
+q_model_path = os.path.join(
+    models_dir, 'q_sys', 'planar_hand_ball_vertical.yml')
 
 
 def simulate(sim: Union[QuasistaticSimulator, QuasistaticSimulatorCpp],
@@ -52,34 +52,23 @@ class TestPlanarHandBall(unittest.TestCase):
 
         grad_active_py_list = [False, True, False]
         grad_active_cpp_list = [False, True, True]
-        atol_list = [1e-9, 1e-9, 1e-4]
+        atol_list = [1e-7, 1e-7, 1e-4]
 
         for grad_active_py, grad_active_cpp, atol in zip(grad_active_py_list,
                                                          grad_active_cpp_list,
                                                          atol_list):
-            sim_params = QuasistaticSimParameters(
-                gravity=np.array([0, 0, -10.]),
-                nd_per_contact=2,
-                contact_detection_tolerance=1.0,
-                is_quasi_dynamic=True,
-                requires_grad=True,
+            parser = QuasistaticParser(q_model_path)
+
+            # python sim
+            parser.set_sim_params(
+                is_quasi_dynamic=True, gradient_mode=GradientMode.kAB,
                 grad_from_active_constraints=grad_active_py)
 
-            sim_params_cpp = cpp_params_from_py_params(sim_params)
-            sim_params_cpp.gradient_from_active_constraints = grad_active_cpp
+            q_sim = parser.make_simulator_py(internal_vis=False)
 
-            q_sim_cpp = QuasistaticSimulatorCpp(
-                model_directive_path=model_directive_path,
-                robot_stiffness_str=robot_stiffness_dict,
-                object_sdf_paths=object_sdf_dict,
-                sim_params=sim_params_cpp)
-
-            q_sim = QuasistaticSimulator(
-                model_directive_path=model_directive_path,
-                robot_stiffness_dict=robot_stiffness_dict,
-                object_sdf_paths=object_sdf_dict,
-                sim_params=sim_params,
-                internal_vis=False)
+            # cpp sim
+            parser.set_sim_params(grad_from_active_constraints=grad_active_cpp)
+            q_sim_cpp = parser.make_simulator_cpp()
 
             q0_dict = create_dict_keyed_by_model_instance_index(
                 q_sim.get_plant(), q0_dict_str)
@@ -87,28 +76,54 @@ class TestPlanarHandBall(unittest.TestCase):
             q0_dict_cpp = create_dict_keyed_by_model_instance_index(
                 q_sim_cpp.get_plant(), q0_dict_str)
 
+            # # -----------------------------------------------------------------
+            # q_dict_log_list = []
+            # Dq_nextDq_log_list = []
+            # Dq_nextDqa_cmd_log_list = []
+            # for _ in range(10):
+            #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
+            #         q_sim, q0_dict, h, T)
+            #     q_dict_log_list.append(q_dict_log)
+            #     Dq_nextDq_log_list.append(Dq_nextDq_log)
+            #     Dq_nextDqa_cmd_log_list.append(Dq_nextDqa_cmd_log)
+            #
+            # # -----------------------------------------------------------------
+            # q_dict_log_cpp_list = []
+            # Dq_nextDq_log_cpp_list = []
+            # Dq_nextDqa_cmd_log_cpp_list = []
+            # for _ in range(10):
+            #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
+            #         q_sim_cpp, q0_dict, h, T)
+            #     q_dict_log_cpp_list.append(q_dict_log)
+            #     Dq_nextDq_log_cpp_list.append(Dq_nextDq_log)
+            #     Dq_nextDqa_cmd_log_cpp_list.append(Dq_nextDqa_cmd_log)
+            #
+            # # -----------------------------------------------------------------
+
             q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
                 q_sim, q0_dict, h, T)
 
-            q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = simulate(
-                q_sim_cpp, q0_dict_cpp, h, T)
+            q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = \
+                simulate(q_sim_cpp, q0_dict_cpp, h, T)
 
             models_all = q_sim.models_all
             # match trajectories.
             for q_dict, q_dict_cpp in zip(q_dict_log, q_dict_log_cpp):
                 for model in models_all:
-                    self.assertTrue(np.allclose(q_dict[model], q_dict_cpp[model]))
+                    self.assertTrue(np.allclose(q_dict[model],
+                                                q_dict_cpp[model]))
 
             # match gradients along trajectories.
-            # print('-------------------------------------------------')
+            print('------------------------------------------------------')
             for i in range(len(Dq_nextDq_log)):
                 Dq_next_Dq = Dq_nextDq_log[i]
                 Dq_next_Dq_cpp = Dq_nextDq_log_cpp[i]
                 Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[i]
                 Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[i]
-                # print(i, abs(Dq_next_Dq - Dq_next_Dq_cpp).max(),
-                #       abs(Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max())
+                print(i, abs(Dq_next_Dq - Dq_next_Dq_cpp).max(),
+                      abs(Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max())
 
-                self.assertTrue(np.allclose(Dq_next_Dq, Dq_next_Dq_cpp, atol=atol))
+                self.assertTrue(np.allclose(Dq_next_Dq, Dq_next_Dq_cpp,
+                                            atol=atol))
                 self.assertTrue(np.allclose(Dq_nextDqa_cmd, Dq_nextDqa_cmd_cpp,
                                             atol=atol))

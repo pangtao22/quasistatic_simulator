@@ -9,7 +9,7 @@ from qsim_old.problem_definition_graze import problem_definition
 from qsim_old.simulator import QuasistaticSimulator as QsimOld
 from qsim.simulator import QuasistaticSimParameters
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
+from examples.setup_simulations import run_quasistatic_sim
 
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.model_paths import models_dir

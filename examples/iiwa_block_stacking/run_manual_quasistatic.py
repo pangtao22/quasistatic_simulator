@@ -2,7 +2,7 @@ import os
 
 from qsim.simulator import *
 from examples.iiwa_block_stacking.simulation_parameters import *
-from examples.setup_simulation_diagram import (
+from examples.setup_simulations import (
     shift_q_traj_to_start_at_minus_h,
     create_dict_keyed_by_model_instance_index,
     create_dict_keyed_by_string)

@@ -3,15 +3,15 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulation_diagram import (
+from examples.setup_simulations import (
     run_quasistatic_sim)
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.model_paths import models_dir
 
-object_sdf_path = os.path.join(models_dir, "sphere_yz_rotation_r_0.25m.sdf")
-model_directive_path = os.path.join(models_dir, "planar_hand.yml")
 
 #%% sim setup
+q_model_path = os.path.join(models_dir, 'q_sys', 'planar_hand_ball.yml')
+
 h = 0.1
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
@@ -45,8 +45,7 @@ q0_dict_str = {object_name: q_u0,
 
 #%% run sim.
 if __name__ == "__main__":
-    model_path = os.path.join(models_dir, 'q_sys', 'planar_hand_ball.yml')
-    q_parser = QuasistaticParser(model_path)
+    q_parser = QuasistaticParser(q_model_path)
 
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,

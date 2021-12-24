@@ -4,20 +4,24 @@ from typing import List, Union, Dict
 import cvxpy as cp
 import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
-                         AbstractValue, DiagramBuilder, MultibodyPlant,
-                         ExternallyAppliedSpatialForce, Context,
+                         AbstractValue, ExternallyAppliedSpatialForce, Context,
                          JacobianWrtVariable, RigidBody,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
                          MeshcatContactVisualizer)
+from pydrake.multibody.parsing import Parser, ProcessModelDirectives, \
+    LoadModelDirectives
 from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults,
-    CalcContactFrictionFromSurfaceProperties)
+    CalcContactFrictionFromSurfaceProperties, MultibodyPlant,
+    AddMultibodyPlantSceneGraph)
 from pydrake.solvers import mathematicalprogram as mp
+from pydrake.systems.framework import DiagramBuilder
+from qsim.model_paths import add_package_paths_local
 from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktPinv, QpDerivativesKktActive)
 
 from .sim_parameters import QuasistaticSimParameters, GradientMode
-from .utils import create_plant_with_robots_and_objects, calc_tangent_vectors
+from .utils import calc_tangent_vectors
 
 
 class MyContactInfo:
@@ -58,7 +62,7 @@ class QuasistaticSimulator:
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
         plant, scene_graph, robot_models, object_models = \
-            create_plant_with_robots_and_objects(
+            self.create_plant_with_robots_and_objects(
                 builder=builder,
                 model_directive_path=model_directive_path,
                 robot_names=[name for name in robot_stiffness_dict.keys()],
@@ -838,8 +842,8 @@ class QuasistaticSimulator:
          :param h: simulation time step.
          :param mode: one of {'qp_mp', 'qp_cvx', 'unconstrained'}.
          :param gradient_mode: whether gradient of the dynamics is computed.
-         :param grad_from_active_constraints: whether gradient is computed only from
-            active constraints.
+         :param grad_from_active_constraints: whether gradient is computed only
+            from active constraints.
          :return: system configuration at the next time step, stored in a
              dictionary keyed by ModelInstanceIndex.
          """
@@ -930,7 +934,8 @@ class QuasistaticSimulator:
                          grad_from_active_constraints=self.sim_params.grad_from_active_constraints)
 
     @staticmethod
-    def copy_model_instance_index_dict(q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+    def copy_model_instance_index_dict(
+            q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         return {key: np.array(value) for key, value in q_dict.items()}
 
     def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float):
@@ -1011,7 +1016,8 @@ class QuasistaticSimulator:
             n_v_i = len(self.velocity_indices[model_a])
 
             for i in range(n_v_i):
-                qa_cmd_dict_plus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_plus = self.copy_model_instance_index_dict(
+                    qa_cmd_dict)
                 qa_cmd_dict_plus[model_a][i] += du
                 self.update_mbp_positions(q_dict)
                 q_dict_plus = self.step(q_a_cmd_dict=qa_cmd_dict_plus,
@@ -1019,7 +1025,8 @@ class QuasistaticSimulator:
                                         mode='qp_mp',
                                         gradient_mode=GradientMode.kNone)
 
-                qa_cmd_dict_minus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_minus = self.copy_model_instance_index_dict(
+                    qa_cmd_dict)
                 qa_cmd_dict_minus[model_a][i] -= du
                 self.update_mbp_positions(q_dict)
                 q_dict_minus = self.step(q_a_cmd_dict=qa_cmd_dict_minus,
@@ -1030,7 +1037,9 @@ class QuasistaticSimulator:
                 for model in self.models_all:
                     idx_v_model = self.velocity_indices[model]
                     dfdu[idx_v_model, idx_a] = (
-                       q_dict_plus[model] - q_dict_minus[ model]) / 2 / du
+                                                       q_dict_plus[model] -
+                                                       q_dict_minus[
+                                                           model]) / 2 / du
 
                 idx_a += 1
 
@@ -1067,3 +1076,49 @@ class QuasistaticSimulator:
         print("Solver time std: ", solver_time.std())
         print("Average num. contacts: ", n_c_s.mean())
         print("Average num. constraints: ", n_d_s.mean())
+
+    @staticmethod
+    def create_plant_with_robots_and_objects(builder: DiagramBuilder,
+                                             model_directive_path: str,
+                                             robot_names: List[str],
+                                             object_sdf_paths: Dict[str, str],
+                                             time_step: float,
+                                             gravity: np.ndarray):
+        """
+        Add plant and scene_graph constructed from a model_directive to builder.
+        :param builder:
+        :param model_directive_path:
+        :param robot_names: names in this list must be consistent with the
+            corresponding model directive .yml file.
+        :param object_names:
+        :param time_step:
+        :param gravity:
+        :return:
+        """
+
+        # MultibodyPlant
+        plant = MultibodyPlant(time_step)
+        _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
+        parser = Parser(plant=plant, scene_graph=scene_graph)
+        add_package_paths_local(parser)
+        ProcessModelDirectives(LoadModelDirectives(model_directive_path),
+                               plant, parser)
+
+        # Objects
+        # It is important that object_models and robot_models are ordered.
+        object_models = set()
+        for name, sdf_path in object_sdf_paths.items():
+            object_models.add(
+                parser.AddModelFromFile(sdf_path, model_name=name))
+
+        # Robots
+        robot_models = set()
+        for name in robot_names:
+            robot_model = plant.GetModelInstanceByName(name)
+            robot_models.add(robot_model)
+
+        # gravity
+        plant.mutable_gravity_field().set_gravity_vector(gravity)
+        plant.Finalize()
+
+        return plant, scene_graph, robot_models, object_models

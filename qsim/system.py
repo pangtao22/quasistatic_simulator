@@ -9,7 +9,7 @@ from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
 from qsim_cpp import QuasistaticSimulatorCpp
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-from .utils import cpp_params_from_py_params
+from qsim.sim_parameters import cpp_params_from_py_params
 
 
 class QuasistaticSystemBackend(enum.Enum):

@@ -1,8 +1,19 @@
 import unittest
 from examples.three_link_arm_block_pushing.run_3link_arm_pushing_3d import *
+from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class Test3linkArmBoxPushing3D(unittest.TestCase):
+    # def test_python_vs_cpp(self):
+    #     q_parser = QuasistaticParser(
+    #         os.path.join(models_dir, q_model_path_3d))
+    #     compare_q_sim_cpp_vs_py(
+    #         test_case=self,
+    #         q_parser=q_parser,
+    #         h=h_quasistatic,
+    #         q_a_traj_dict_str={robot_name: q_robot_traj},
+    #         q0_dict_str=q0_dict_str)
+
     def test_3link_arm_box_pushing_3d(self):
         """
         This is an example of "unstable pushing", which manifests the

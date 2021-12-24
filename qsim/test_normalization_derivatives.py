@@ -1,8 +1,8 @@
 import unittest
 
 import numpy as np
-from pydrake.autodiffutils import (initializeAutoDiff, AutoDiffXd,
-                                   autoDiffToGradientMatrix)
+from pydrake.autodiffutils import (InitializeAutoDiff, AutoDiffXd,
+                                   ExtractGradient)
 
 from .normalization_derivatives import calc_normalization_derivatives
 
@@ -14,8 +14,8 @@ class TestNormalizationDerivatives(unittest.TestCase):
 
         D = calc_normalization_derivatives(q)
 
-        q_ad = initializeAutoDiff(q)
+        q_ad = InitializeAutoDiff(q)
         q_bar_ad = q_ad / np.linalg.norm(q_ad)
-        D_ad = autoDiffToGradientMatrix(q_bar_ad)
+        D_ad = ExtractGradient(q_bar_ad)
 
         self.assertTrue(np.allclose(D, D_ad))

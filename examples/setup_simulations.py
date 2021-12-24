@@ -1,5 +1,6 @@
 from typing import Union
-import numpy as np
+import unittest
+
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          VectorLogSink, LogVectorOutput, SpatialForce,
                          BodyIndex, InputPort,
@@ -10,8 +11,7 @@ from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
 
 from qsim.system import *
 from qsim.parser import QuasistaticParser
-from qsim.utils import create_plant_with_robots_and_objects
-
+from qsim.simulator import QuasistaticSimulator
 
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
@@ -210,7 +210,7 @@ def run_mbp_sim(
 
     builder = DiagramBuilder()
     plant, scene_graph, robot_models, object_models = \
-        create_plant_with_robots_and_objects(
+        QuasistaticSimulator.create_plant_with_robots_and_objects(
             builder=builder,
             model_directive_path=model_directive_path,
             robot_names=[name for name in robot_stiffness_dict.keys()],
@@ -321,3 +321,38 @@ def run_mbp_sim(
 
     loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
     return create_dict_keyed_by_string(plant, loggers_dict)
+
+
+def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
+                            q_parser: QuasistaticParser,
+                            h: float,
+                            q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
+                            q0_dict_str: Dict[str, np.ndarray]):
+    """
+    This function calls run_quasistatic_sim using both the CPP and PYTHON
+        backends and makes sure that the logs are close.
+    """
+    loggers_dict_quasistatic_str_cpp, q_sys_cpp = run_quasistatic_sim(
+        q_parser=q_parser,
+        h=h,
+        backend=QuasistaticSystemBackend.CPP,
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        is_visualizing=False, real_time_rate=0.)
+
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_parser=q_parser,
+        h=h,
+        backend=QuasistaticSystemBackend.PYTHON,
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        is_visualizing=False, real_time_rate=0.)
+
+    for name in loggers_dict_quasistatic_str_cpp.keys():
+        q_log_cpp = loggers_dict_quasistatic_str_cpp[name].data()
+        q_log = loggers_dict_quasistatic_str[name].data()
+
+        test_case.assertEqual(q_log.shape, q_log_cpp.shape)
+        test_case.assertTrue(np.allclose(q_log, q_log_cpp))
+
+

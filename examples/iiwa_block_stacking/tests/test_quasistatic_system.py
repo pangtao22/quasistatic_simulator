@@ -1,6 +1,6 @@
 import unittest
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
+from examples.setup_simulations import run_quasistatic_sim
 from examples.iiwa_block_stacking.run_manual_quasistatic import *
 
 

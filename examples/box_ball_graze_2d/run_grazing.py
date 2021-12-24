@@ -3,7 +3,7 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
+from examples.setup_simulations import run_quasistatic_sim
 from qsim.simulator import QuasistaticSimParameters
 from qsim_old.problem_definition_graze import problem_definition
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend

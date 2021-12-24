@@ -1,7 +1,7 @@
 import enum
 import sys
 from collections import namedtuple
-from qsim_cpp import GradientMode
+from qsim_cpp import GradientMode, QuasistaticSimParametersCpp
 import numpy as np
 
 """
@@ -43,7 +43,7 @@ field_names = [
     "grad_from_active_constraints"
 ]
 defaults = [np.array([0, 0, -9.81]), 4, 0.01,
-            False, "qp_mp", 1e4, GradientMode.kAB, True]
+            False, "qp_mp", 1e4, GradientMode.kNone, True]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(
@@ -56,3 +56,17 @@ else:
         field_names=field_names)
     QuasistaticSimParameters.__new__.__defaults__ = tuple(defaults)
     QuasistaticSimParameters = QuasistaticSimParameters
+
+
+def cpp_params_from_py_params(
+        sim_params: QuasistaticSimParameters) -> QuasistaticSimParametersCpp:
+    sim_params_cpp = QuasistaticSimParametersCpp()
+    sim_params_cpp.gravity = sim_params.gravity
+    sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
+    sim_params_cpp.contact_detection_tolerance = (
+        sim_params.contact_detection_tolerance)
+    sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
+    sim_params_cpp.gradient_mode = sim_params.gradient_mode
+    sim_params_cpp.gradient_from_active_constraints = (
+        sim_params.grad_from_active_constraints)
+    return sim_params_cpp
