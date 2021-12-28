@@ -11,20 +11,19 @@ from robotics_utilities.iiwa_controller.robot_internal_controller import (
 from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant, get_package_path)
 from pydrake.all import PiecewisePolynomial
-from qsim.simulator import (
-    QuasistaticSimParameters)
+
+from qsim.simulator import QuasistaticSimParameters
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+from qsim.model_paths import models_dir
+
+
+q_model_path = os.path.join(models_dir, 'q_sys', 'iiwa.yml')
+
 
 # Simulation parameters.
-Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
 robot_name = "iiwa"
-robot_stiffness_dict = {robot_name: Kp_iiwa}
 h_quasistatic = 0.2
 h_mbp = 1e-4
-gravity = np.array([0, 0, -10.])
-quasistatic_sim_params = QuasistaticSimParameters(
-    gravity=gravity,
-    nd_per_contact=4,
-    contact_detection_tolerance=0.5)
 
 # Robot joint trajectory.
 nq_a = 7
@@ -38,37 +37,35 @@ q_iiwa_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
 
 q0_dict_str = {robot_name: qa_knots[0]}
 
-# model directive paths
-model_directive_path = os.path.join(
-    get_package_path(), 'models', 'iiwa.yml')
-
 
 def run_comparison(is_visualizing=False, real_time_rate=0.):
+    q_parser = QuasistaticParser(q_model_path)
+
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths=dict(),
+        q_parser=q_parser,
+        h=h_quasistatic,
+        backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
-        h=h_quasistatic,
-        sim_params=quasistatic_sim_params,
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate)
 
     # MBP
     # create controller system for robot.
+    gravity = q_parser.get_param('gravity')
     plant_robot, _ = create_iiwa_controller_plant(gravity)
     controller_robot = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=Kp_iiwa,
+        plant_robot=plant_robot,
+        joint_stiffness=q_parser.robot_stiffness_dict[robot_name],
         controller_mode="impedance")
     robot_controller_dict = {robot_name: controller_robot}
     loggers_dict_mbp_str = run_mbp_sim(
-        model_directive_path=model_directive_path,
+        model_directive_path=q_parser.model_directive_path,
         object_sdf_paths=dict(),
         q_a_traj_dict={robot_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
+        robot_stiffness_dict=q_parser.robot_stiffness_dict,
         robot_controller_dict=robot_controller_dict,
         h=h_mbp,
         gravity=gravity,

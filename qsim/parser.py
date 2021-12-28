@@ -30,8 +30,9 @@ class QuasistaticParser:
 
         # objects
         object_sdf_paths = {}
-        for obj in config['objects']:
-            object_sdf_paths[obj['name']] = self.parse_path(obj['file'])
+        if config['objects'] is not None:
+            for obj in config['objects']:
+                object_sdf_paths[obj['name']] = self.parse_path(obj['file'])
         self.object_sdf_paths = object_sdf_paths
 
         # quasistatic_sim_params
