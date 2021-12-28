@@ -8,8 +8,6 @@ from examples.log_comparison import (calc_error_integral,
                                      get_angle_from_quaternion)
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-from robotics_utilities.iiwa_controller.utils import (
-    create_iiwa_controller_plant)
 
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 

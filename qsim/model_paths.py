@@ -30,7 +30,7 @@ def add_package_paths_local(parser: Parser):
         parser.package_map().Add(name, path)
 
 
-#TODO: delete this after adding unit test for 2d gripper example.
+# TODO: delete this after adding unit test for 2d gripper example.
 def create_2d_gripper_plant(builder, *args):
     """
     This function should be called when constructing a Diagram in RobotSimulator.

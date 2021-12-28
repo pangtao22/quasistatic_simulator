@@ -9,10 +9,9 @@ from examples.setup_simulations import (run_mbp_sim,
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 from robotics_utilities.iiwa_controller.utils import (
-    create_iiwa_controller_plant, get_package_path)
+    create_iiwa_controller_plant)
 from pydrake.all import PiecewisePolynomial
 
-from qsim.simulator import QuasistaticSimParameters
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.model_paths import models_dir
 
