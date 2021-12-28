@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from pydrake.all import PidController
 from examples.setup_simulations import (
     run_quasistatic_sim, run_mbp_sim, shift_q_traj_to_start_at_minus_h)
-# from examples.iiwa_block_stacking.iiwa_block_stacking_mbp import run_mbp_sim
-from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (calc_error_integral,
                                      calc_pose_error_integral,
                                      get_angle_from_quaternion)
@@ -13,38 +11,47 @@ from robotics_utilities.iiwa_controller.robot_internal_controller import (
 from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+
+from examples.iiwa_block_stacking.simulation_parameters import *
+
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
+    q_parser = QuasistaticParser(q_model_path)
+
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths=object_sdf_paths_dict,
+        q_parser=q_parser,
+        h=h_quasistatic,
+        backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
-        h=h_quasistatic,
-        sim_params=quasistatic_sim_params,
         is_visualizing=is_visualizing,
         real_time_rate=0.0)
+
+    gravity = q_parser.get_gravity()
 
     # MBP
     plant_robot, _ = create_iiwa_controller_plant(gravity,
                                                   add_schunk_inertia=True)
     controller_iiwa = RobotInternalController(
-        plant_robot=plant_robot, joint_stiffness=Kp_iiwa,
+        plant_robot=plant_robot,
+        joint_stiffness=q_parser.robot_stiffness_dict[iiwa_name],
         controller_mode="impedance")
     # damping calculated for critical of a 2nd order system with the finger's
     # mass.
-    controller_schunk = PidController(Kp_schunk, np.zeros(2), np.ones(2) * 20)
+    controller_schunk = PidController(
+        q_parser.robot_stiffness_dict[schunk_name],
+        np.zeros(2), np.ones(2) * 20)
     robot_controller_dict = {
         iiwa_name: controller_iiwa, schunk_name: controller_schunk}
 
     loggers_dict_mbp_str = run_mbp_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths=object_sdf_paths_dict,
+        model_directive_path=q_parser.model_directive_path,
+        object_sdf_paths=q_parser.object_sdf_paths,
         q_a_traj_dict=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
+        robot_stiffness_dict=q_parser.robot_stiffness_dict,
         robot_controller_dict=robot_controller_dict,
         h=h_mbp,
         gravity=gravity,

@@ -1,6 +1,8 @@
-import os
+from typing import Dict
 
-from qsim.simulator import *
+from pydrake.all import ModelInstanceIndex
+from qsim.parser import QuasistaticParser
+
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulations import (
     shift_q_traj_to_start_at_minus_h,
@@ -27,12 +29,8 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     :param is_visualizing:
     :return:
     """
-    q_sim = QuasistaticSimulator(
-        model_directive_path=model_directive_path,
-        robot_stiffness_dict=robot_stiffness_dict,
-        object_sdf_paths=object_sdf_paths_dict,
-        sim_params=quasistatic_sim_params,
-        internal_vis=is_visualizing)
+    q_parser = QuasistaticParser(q_model_path)
+    q_sim = q_parser.make_simulator_py(internal_vis=False)
 
     q0_dict = create_dict_keyed_by_model_instance_index(
         q_sim.plant, q0_dict_str)
@@ -52,7 +50,6 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     q_log = [q0_dict]
     t_log = [0.]
     q_a_cmd_log = []
-    phi_threshold = quasistatic_sim_params.contact_detection_tolerance
 
     for i in range(n_steps):
         t = h * i

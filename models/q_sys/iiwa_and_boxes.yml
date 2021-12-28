@@ -1,0 +1,45 @@
+model_directive: package://quasistatic_simulator/iiwa_and_schunk_and_ground.yml
+robots:
+  -
+    name: iiwa
+    Kp: [800, 600, 600, 600, 400, 200, 200]
+  -
+    name: schunk
+    Kp: [1000, 1000]
+
+objects:
+  -
+    name: box0
+    file: package://quasistatic_simulator/box_0.06m.sdf
+  -
+    name: box1
+    file: package://quasistatic_simulator/box_0.08m.sdf
+  -
+    name: box2
+    file: package://quasistatic_simulator/box_0.07m.sdf
+  -
+    name: box3
+    file: package://quasistatic_simulator/box_0.08m.sdf
+  -
+    name: box4
+    file: package://quasistatic_simulator/box_0.08m.sdf
+  -
+    name: box5
+    file: package://quasistatic_simulator/box_0.07m.sdf
+  -
+    name: box6
+    file: package://quasistatic_simulator/box_0.08m.sdf
+  -
+    name: box7
+    file: package://quasistatic_simulator/box_0.08m.sdf
+  -
+    name: box8
+    file: package://quasistatic_simulator/box_0.07m.sdf
+  -
+    name: box9
+    file: package://quasistatic_simulator/box_0.08m.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, -10]
+  nd_per_contact: 4
+  contact_detection_tolerance: 0.02

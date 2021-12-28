@@ -1,4 +1,5 @@
 import os
+import copy
 
 import numpy as np
 import parse
@@ -67,6 +68,9 @@ class QuasistaticParser:
 
     def get_gravity(self):
         return np.array(self.q_sim_params_dict['gravity'])
+
+    def get_param(self, name: str):
+        return copy.deepcopy(self.q_sim_params_dict[name])
 
     def get_robot_stiffness_by_name(self, name: str):
         return np.array(self.robot_stiffness_dict[name])
