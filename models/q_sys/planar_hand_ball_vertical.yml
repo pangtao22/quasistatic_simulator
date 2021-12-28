@@ -1,0 +1,20 @@
+model_directive: package://quasistatic_simulator/planar_hand.yml
+robots:
+  -
+    name: arm_left
+    Kp: [50, 25]
+  -
+    name: arm_right
+    Kp: [50, 25]
+
+
+objects:
+  -
+    name: sphere
+    file: package://quasistatic_simulator/sphere_yz_rotation_r_0.25m.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, -10.]
+  nd_per_contact: 2
+  contact_detection_tolerance: 1.0
+

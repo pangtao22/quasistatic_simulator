@@ -1,16 +1,22 @@
+import matplotlib.pyplot as plt
+
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+from qsim.simulator import GradientMode
+from examples.setup_simulations import run_quasistatic_sim
 from sim_setup import *
 
+
 #%% Run simulation.
+q_parser = QuasistaticParser(os.path.join(models_dir, q_model_path))
+q_parser.set_quasi_dynamic(True)
+
 loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-    model_directive_path=model_directive_path,
-    object_sdf_paths=object_sdf_dict,
-    q_a_traj_dict_str=q_a_traj_dict_str,
-    q0_dict_str=q0_dict_str,
-    robot_stiffness_dict={robot_name: Kp},
+    q_parser=q_parser,
     h=h,
-    sim_params=quasistatic_sim_params,
-    is_visualizing=True,
-    real_time_rate=1.0)
+    backend=QuasistaticSystemBackend.PYTHON,
+    q_a_traj_dict_str={robot_name: qa_traj},
+    q0_dict_str=q0_dict_str,
+    is_visualizing=True, real_time_rate=0.)
 
 
 #%% look into the plant.
@@ -35,6 +41,7 @@ for name, logger in loggers_dict_quasistatic_str.items():
 
 v_log[1:, :] = (q_log[1:, :] - q_log[:-1, :]) / h
 
+Kp = q_parser.get_robot_stiffness_by_name(robot_name)
 for l in range(T - 1):
     qa_l = logger_qa.data().T[l]
     qa_l1_cmd = qa_traj.value((l + 1) * h).squeeze()
@@ -68,9 +75,8 @@ dfdu_numerical = q_sim.calc_dfdu_numerical(
 # kkt active gradients.
 q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
-q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-           tau_ext_dict=tau_ext_dict,
-           h=h, mode="qp_mp", requires_grad=True,
+q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
+           mode="qp_mp", gradient_mode=GradientMode.kAB,
            grad_from_active_constraints=True)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
 
@@ -80,9 +86,8 @@ print("dfdx_active\n", q_sim.get_Dq_nextDq())
 
 # kkt gradients
 q_sim.update_mbp_positions(q_dict)
-q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-           tau_ext_dict=tau_ext_dict,
-           h=h, mode="qp_mp", requires_grad=True,
+q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
+           mode="qp_mp", gradient_mode=GradientMode.kAB,
            grad_from_active_constraints=False)
 
 print("dfdu_kkt\n", q_sim.get_Dq_nextDqa_cmd())

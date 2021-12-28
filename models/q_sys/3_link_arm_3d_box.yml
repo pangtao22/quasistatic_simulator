@@ -1,0 +1,17 @@
+model_directive: package://quasistatic_simulator/three_link_arm_and_ground.yml
+robots:
+  -
+    name: arm
+    Kp: [1000, 1000, 1000]
+
+objects:
+  -
+    name: box0
+    file: package://quasistatic_simulator/box_1m.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, -10]
+  nd_per_contact: 4
+  contact_detection_tolerance: inf
+
+

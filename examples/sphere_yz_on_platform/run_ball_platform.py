@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulation_diagram import (
-    run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
+from examples.setup_simulations import (
+    run_quasistatic_sim)
 from qsim.simulator import (
-    QuasistaticSimParameters, create_plant_with_robots_and_objects)
-from examples.model_paths import models_dir
+    QuasistaticSimParameters)
+from qsim.model_paths import models_dir
 
 model_directive_path = os.path.join(models_dir,
                                     "ball_and_platform.yml")

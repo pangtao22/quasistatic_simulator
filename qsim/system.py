@@ -1,28 +1,20 @@
 from typing import Dict
-import numpy as np
+import enum
 
+import numpy as np
 from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
                          QueryObject, ModelInstanceIndex, ContactResults,
                          ExternallyAppliedSpatialForce)
 
-from quasistatic_simulator_py import (QuasistaticSimParametersCpp,
-                                      QuasistaticSimulatorCpp)
+from qsim_cpp import QuasistaticSimulatorCpp
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
+from qsim.sim_parameters import cpp_params_from_py_params
 
 
-def cpp_params_from_py_params(
-        sim_params: QuasistaticSimParameters) -> QuasistaticSimParametersCpp:
-    sim_params_cpp = QuasistaticSimParametersCpp()
-    sim_params_cpp.gravity = sim_params.gravity
-    sim_params_cpp.nd_per_contact = sim_params.nd_per_contact
-    sim_params_cpp.contact_detection_tolerance = (
-        sim_params.contact_detection_tolerance)
-    sim_params_cpp.is_quasi_dynamic = sim_params.is_quasi_dynamic
-    sim_params_cpp.requires_grad = sim_params.requires_grad
-    sim_params_cpp.gradient_from_active_constraints = (
-        sim_params.grad_from_active_constraints)
-    return sim_params_cpp
+class QuasistaticSystemBackend(enum.Enum):
+    PYTHON = enum.auto()
+    CPP = enum.auto()
 
 
 class QuasistaticSystem(LeafSystem):
@@ -32,7 +24,7 @@ class QuasistaticSystem(LeafSystem):
                  robot_stiffness_dict: Dict[str, np.ndarray],
                  object_sdf_paths: Dict[str, str],
                  sim_params: QuasistaticSimParameters,
-                 backend: str = "python"):
+                 backend=QuasistaticSystemBackend.PYTHON):
         """
         Also refer to the docstring of quasistatic simulator.
         :param time_step:  quasistatic simulation time step in seconds.
@@ -51,13 +43,13 @@ class QuasistaticSystem(LeafSystem):
         self.DeclareDiscreteState(1)
 
         # Quasistatic simulator instance.
-        if backend == "cpp":
+        if backend == QuasistaticSystemBackend.CPP:
             self.q_sim = QuasistaticSimulatorCpp(
                 model_directive_path=model_directive_path,
                 robot_stiffness_str=robot_stiffness_dict,
                 object_sdf_paths=object_sdf_paths,
                 sim_params=cpp_params_from_py_params(sim_params))
-        elif backend == "python":
+        elif backend == QuasistaticSystemBackend.PYTHON:
             self.q_sim = QuasistaticSimulator(
                 model_directive_path=model_directive_path,
                 robot_stiffness_dict=robot_stiffness_dict,

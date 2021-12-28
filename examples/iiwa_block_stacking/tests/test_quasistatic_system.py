@@ -1,7 +1,9 @@
 import unittest
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
+from examples.setup_simulations import run_quasistatic_sim
 from examples.iiwa_block_stacking.run_manual_quasistatic import *
+
+from qsim.parser import QuasistaticSystemBackend
 
 
 class TestQuasistaticSystem(unittest.TestCase):
@@ -50,18 +52,15 @@ class TestQuasistaticSystem(unittest.TestCase):
 
         # Simulation time step.
         h = 0.2
-        model_directive_path = os.path.join(models_dir,
-                                            'iiwa_and_schunk_and_ground.yml')
+        q_parser = QuasistaticParser(q_model_path)
 
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths=object_sdf_paths_dict,
+            q_parser=q_parser,
+            h=h,
+            backend=QuasistaticSystemBackend.PYTHON,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
-            robot_stiffness_dict=robot_stiffness_dict,
-            h=h,
-            sim_params=quasistatic_sim_params,
             is_visualizing=False,
             real_time_rate=0.0)
 

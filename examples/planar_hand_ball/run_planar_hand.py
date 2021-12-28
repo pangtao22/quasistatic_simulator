@@ -1,37 +1,25 @@
 import os
 import numpy as np
 
-from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulation_diagram import (
-    run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
-from qsim.simulator import QuasistaticSimParameters
-from examples.model_paths import models_dir
+from examples.setup_simulations import (
+    run_quasistatic_sim)
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+from qsim.model_paths import models_dir
 
-object_sdf_path = os.path.join(models_dir, "sphere_yz_rotation_r_0.25m.sdf")
-model_directive_path = os.path.join(models_dir, "planar_hand.yml")
 
 #%% sim setup
+q_model_path = os.path.join(models_dir, 'q_sys', 'planar_hand_ball.yml')
+
 h = 0.1
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
-sim_settings = QuasistaticSimParameters(
-    gravity=np.array([0, 0, -10.]),
-    nd_per_contact=2,
-    contact_detection_tolerance=0.5,
-    is_quasi_dynamic=True,
-    mode='unconstrained',
-    log_barrier_weight=20)
 
-# robots.
-Kp = np.array([50, 25], dtype=float)
+# model instance names.
 robot_l_name = "arm_left"
 robot_r_name = "arm_right"
-robot_stiffness_dict = {robot_l_name: Kp, robot_r_name: Kp}
-
-# object
 object_name = "sphere"
-object_sdf_dict = {object_name: object_sdf_path}
 
 # trajectory and initial conditions.
 nq_a = 2
@@ -57,14 +45,14 @@ q0_dict_str = {object_name: q_u0,
 
 #%% run sim.
 if __name__ == "__main__":
+    q_parser = QuasistaticParser(q_model_path)
+
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        model_directive_path=model_directive_path,
-        object_sdf_paths=object_sdf_dict,
+        q_parser=q_parser,
+        h=h,
+        backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        robot_stiffness_dict=robot_stiffness_dict,
-        h=h,
-        sim_params=sim_settings,
         is_visualizing=True,
         real_time_rate=1.0)
 

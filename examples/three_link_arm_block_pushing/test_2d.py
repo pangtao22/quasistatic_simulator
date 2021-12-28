@@ -1,43 +1,20 @@
 import unittest
 from .run_3link_arm_pushing_2d import *
+from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
-        self.quasistatic_sim_params = QuasistaticSimParameters(
-            gravity=gravity,
-            nd_per_contact=2,
-            contact_detection_tolerance=np.inf)
+        self.q_parser = QuasistaticParser(
+            os.path.join(models_dir, q_model_path_2d))
 
     def test_python_vs_cpp(self):
-        loggers_dict_quasistatic_str_cpp, q_sys_cpp = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths={box_name: box2d_big_sdf_path},
-            q_a_traj_dict_str={robot_name: q_robot_traj},
-            q0_dict_str=q0_dict_str,
-            robot_stiffness_dict=robot_stiffness_dict,
+        compare_q_sim_cpp_vs_py(
+            test_case=self,
+            q_parser=self.q_parser,
             h=h_quasistatic,
-            sim_params=self.quasistatic_sim_params,
-            is_visualizing=False, real_time_rate=0.,
-            backend="cpp")
-
-        loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths={box_name: box2d_big_sdf_path},
             q_a_traj_dict_str={robot_name: q_robot_traj},
-            q0_dict_str=q0_dict_str,
-            robot_stiffness_dict=robot_stiffness_dict,
-            h=h_quasistatic,
-            sim_params=self.quasistatic_sim_params,
-            is_visualizing=False, real_time_rate=0.,
-            backend="python")
-
-        for name in loggers_dict_quasistatic_str_cpp.keys():
-            q_log_cpp = loggers_dict_quasistatic_str_cpp[name].data()
-            q_log = loggers_dict_quasistatic_str[name].data()
-
-            self.assertEqual(q_log.shape, q_log_cpp.shape)
-            self.assertTrue(np.allclose(q_log, q_log_cpp))
+            q0_dict_str=q0_dict_str)
 
     def test_mbp_vs_quasistatic(self):
         """
@@ -47,11 +24,11 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
         """
 
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
-         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
-            run_mbp_quasistatic_comparison(
-                box2d_big_sdf_path, q0_dict_str,
-                quasistatic_sim_params=self.quasistatic_sim_params,
-                is_visualizing=False, real_time_rate=0.0)
+         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic,
+         q_sys) = run_mbp_quasistatic_comparison(
+            q_model_path_2d, q0_dict_str,
+            is_visualizing=False,
+            real_time_rate=0.0)
 
         (e_robot, e_vec_robot, t_e_robot,
          e_angle_box, e_vec_angle_box, t_angle_box,

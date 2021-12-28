@@ -10,7 +10,6 @@ from pydrake.autodiffutils import (initializeAutoDiff, autoDiffToValueMatrix,
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.snopt import SnoptSolver
 
-from qsim.utils import create_plant_with_robots_and_objects
 from qsim.simulator import QuasistaticSimulator
 
 from examples.planar_hand_ball.run_planar_hand import *

@@ -1,12 +1,12 @@
 import os
 import numpy as np
 
-from pydrake.all import RigidTransform, DiagramBuilder, PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulation_diagram import (
-    run_quasistatic_sim, shift_q_traj_to_start_at_minus_h)
+from examples.setup_simulations import (
+    run_quasistatic_sim)
 from qsim.simulator import QuasistaticSimParameters
-from examples.model_paths import models_dir
+from qsim.model_paths import models_dir
 
 object_sdf_path = os.path.join(models_dir, "box_1m_rotation.sdf")
 model_directive_path = os.path.join(models_dir, "box_pivoting.yml")

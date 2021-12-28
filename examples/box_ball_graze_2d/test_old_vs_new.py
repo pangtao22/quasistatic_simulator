@@ -9,30 +9,26 @@ from qsim_old.problem_definition_graze import problem_definition
 from qsim_old.simulator import QuasistaticSimulator as QsimOld
 from qsim.simulator import QuasistaticSimParameters
 
-from examples.setup_simulation_diagram import run_quasistatic_sim
-from examples.model_paths import models_dir
-object_sdf_path = os.path.join(models_dir, "box_y.sdf")
-model_directive_path = os.path.join(models_dir, "box_ball_graze_2d.yml")
+from examples.setup_simulations import run_quasistatic_sim
+
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+from qsim.model_paths import models_dir
 
 
 class TestBoxBallGrazeOldVsNew(unittest.TestCase):
     def test_sim_trajectory(self):
         h = problem_definition['h']
-        quasistatic_sim_params = QuasistaticSimParameters(
-            gravity=np.array([0, 0, 0.]),
-            nd_per_contact=2,
-            contact_detection_tolerance=np.inf,
-            is_quasi_dynamic=True,
-            requires_grad=False)
 
-        # robot
-        Kp = problem_definition['Kq_a'].diagonal()
+        parser = QuasistaticParser(
+            os.path.join(models_dir, 'q_sys', 'ball_grazing_2d.yml'))
+        parser.set_quasi_dynamic(True)
+
+        # model names
         robot_name = 'ball'
-        robot_stiffness_dict = {robot_name: Kp}
-
-        # object
         object_name = "box"
-        object_sdf_dict = {object_name: object_sdf_path}
+
+        self.assertTrue(np.allclose(parser.robot_stiffness_dict[robot_name],
+                                    problem_definition['Kq_a'].diagonal()))
 
         # trajectory and initial conditions
         nq_a = 2
@@ -52,15 +48,13 @@ class TestBoxBallGrazeOldVsNew(unittest.TestCase):
 
         # Run sim with new simulator.
         loggers_dict_quasistatic_str, __ = run_quasistatic_sim(
-            model_directive_path=model_directive_path,
-            object_sdf_paths=object_sdf_dict,
+            q_parser=parser,
+            h=h,
+            backend=QuasistaticSystemBackend.PYTHON,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
-            robot_stiffness_dict={robot_name: Kp},
-            h=h,
-            sim_params=quasistatic_sim_params,
             is_visualizing=False,
-            real_time_rate=0.)
+            real_time_rate=0)
 
         # initial condition in the form of [qu, qa], used by QsimOld.
         q0 = np.array([0, 0, 0.1])

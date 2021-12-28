@@ -1,19 +1,21 @@
 import os
-from typing import List, Dict
+from typing import List
 
 import numpy as np
 
 from pydrake.math import RollPitchYaw
-from pydrake.all import (PiecewisePolynomial, PiecewiseQuaternionSlerp,
-                         ModelInstanceIndex, RigidTransform)
+from pydrake.all import (PiecewisePolynomial, RigidTransform)
 from qsim.simulator import (
     QuasistaticSimParameters)
 from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
-from examples.model_paths import (models_dir, box3d_8cm_sdf_path,
-    box3d_7cm_sdf_path, box3d_6cm_sdf_path)
+from qsim.model_paths import (models_dir, box3d_8cm_sdf_path,
+                              box3d_7cm_sdf_path, box3d_6cm_sdf_path)
 
 from .inverse_kinematics import calc_iwa_trajectory_for_point_tracking
+
+
+q_model_path = os.path.join(models_dir, 'q_sys', 'iiwa_and_boxes.yml')
 
 
 def concatenate_traj_list(traj_list: List[PiecewisePolynomial]):
@@ -88,26 +90,9 @@ q_schunk_traj = concatenate_traj_list(q_schunk_traj_list)
 # other constants for simulation.
 iiwa_name = "iiwa"
 schunk_name = "schunk"
-Kp_iiwa = np.array([800., 600, 600, 600, 400, 200, 200])
-Kp_schunk = np.array([1000., 1000])
 
 X_L7E = RigidTransform(
     RollPitchYaw(np.pi/2, 0, np.pi/2), np.array([0, 0, 0.114]))
-
-robot_stiffness_dict = {iiwa_name: Kp_iiwa, schunk_name: Kp_schunk}
-
-object_sdf_paths_list = [box3d_6cm_sdf_path,
-                         box3d_8cm_sdf_path,
-                         box3d_7cm_sdf_path,
-                         box3d_8cm_sdf_path,
-                         box3d_8cm_sdf_path,
-                         box3d_7cm_sdf_path,
-                         box3d_8cm_sdf_path,
-                         box3d_8cm_sdf_path,
-                         box3d_7cm_sdf_path,
-                         box3d_8cm_sdf_path]
-object_sdf_paths_dict = {'box{}'.format(i): path
-                         for i, path in enumerate(object_sdf_paths_list)}
 
 q_u0_list = np.zeros((10, 7))
 q_u0_list[0] = [1, 0, 0, 0, 0.55, 0, 0.03]
@@ -123,22 +108,9 @@ q_u0_list[7] = [1, 0, 0, 0, 0.45, 0.2, 0.04]
 q_u0_list[8] = [1, 0, 0, 0, 0.45, 0.2, 0.115]
 q_u0_list[9] = [1, 0, 0, 0, 0.48, 0.3, 0.04]
 
-gravity = np.array([0, 0, -10.])
-
-
 q0_dict_str = {"box%i" % i: q_u0_i for i, q_u0_i in enumerate(q_u0_list)}
 t_start = q_iiwa_traj.start_time()
 q0_dict_str[iiwa_name] = q_iiwa_traj.value(t_start).ravel()
 q0_dict_str[schunk_name] = q_schunk_traj.value(t_start).ravel()
 
 q_a_traj_dict_str = {iiwa_name: q_iiwa_traj, schunk_name: q_schunk_traj}
-
-model_directive_path = os.path.join(
-    models_dir, 'iiwa_and_schunk_and_ground.yml')
-
-quasistatic_sim_params = QuasistaticSimParameters(
-    gravity=gravity,
-    nd_per_contact=4,
-    contact_detection_tolerance=0.02,
-    is_quasi_dynamic=False,
-    mode='qp_mp')
