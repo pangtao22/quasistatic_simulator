@@ -324,10 +324,9 @@ def run_mbp_sim(
 
 
 def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
-                            q_parser: QuasistaticParser,
-                            h: float,
+                            q_parser: QuasistaticParser, h: float,
                             q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
-                            q0_dict_str: Dict[str, np.ndarray]):
+                            q0_dict_str: Dict[str, np.ndarray], atol: float):
     """
     This function calls run_quasistatic_sim using both the CPP and PYTHON
         backends and makes sure that the logs are close.
@@ -353,6 +352,5 @@ def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
         q_log = loggers_dict_quasistatic_str[name].data()
 
         test_case.assertEqual(q_log.shape, q_log_cpp.shape)
-        test_case.assertTrue(np.allclose(q_log, q_log_cpp))
-
+        test_case.assertTrue(np.allclose(q_log, q_log_cpp, atol=atol))
 

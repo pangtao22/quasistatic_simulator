@@ -4,15 +4,12 @@ from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class Test3linkArmBoxPushing3D(unittest.TestCase):
-    # def test_python_vs_cpp(self):
-    #     q_parser = QuasistaticParser(
-    #         os.path.join(models_dir, q_model_path_3d))
-    #     compare_q_sim_cpp_vs_py(
-    #         test_case=self,
-    #         q_parser=q_parser,
-    #         h=h_quasistatic,
-    #         q_a_traj_dict_str={robot_name: q_robot_traj},
-    #         q0_dict_str=q0_dict_str)
+    """
+    cpp_vs_python is not done for this system because forward pushing is
+     unstable/chaotic? A small numerical difference along the path can lead
+     to the object veering to the left or right, giving rise to large
+     differences between object trajectories.
+    """
 
     def test_3link_arm_box_pushing_3d(self):
         """

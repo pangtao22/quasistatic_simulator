@@ -1,9 +1,19 @@
 import unittest
 
 from examples.iiwa_block_stacking.run_mbp_vs_quasistatic import *
+from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class TestIiwaBlockStacking(unittest.TestCase):
+    def setUp(self) -> None:
+        self.q_parser = QuasistaticParser(q_model_path)
+
+    def test_cpp_vs_python(self):
+        compare_q_sim_cpp_vs_py(test_case=self, q_parser=self.q_parser,
+                                h=0.1,
+                                q_a_traj_dict_str=q_a_traj_dict_str,
+                                q0_dict_str=q0_dict_str, atol=1e-4)
+
     def test_mbp_vs_quasistatic(self):
         """
         This test compares MBP and quasistatic simulations. Some observations:
@@ -44,7 +54,7 @@ class TestIiwaBlockStacking(unittest.TestCase):
 
         for model_name, error in error_dict.items():
             if model_name == "box0":
-                self.assertLessEqual(error, 0.3)
+                self.assertLessEqual(error, 0.2)
             elif model_name == iiwa_name:
                 self.assertLessEqual(error, 0.5)
             else:

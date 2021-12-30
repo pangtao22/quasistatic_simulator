@@ -138,7 +138,7 @@ class QuasistaticSimulator:
         # Find planar model instances.
         # TODO: it is assumed that each unactuated model instance contains
         #  only one rigid body.
-        self.is_planar_dict = dict()
+        self.is_3d_floating = dict()
         for model in self.models_unactuated:
             n_v = self.n_v_dict[model]
             n_q = plant.num_positions(model)
@@ -147,9 +147,9 @@ class QuasistaticSimulator:
                 body_indices = self.plant.GetBodyIndices(model)
                 assert len(body_indices) == 1
                 assert self.plant.get_body(body_indices[0]).is_floating()
-                self.is_planar_dict[model] = False
+                self.is_3d_floating[model] = True
             else:
-                self.is_planar_dict[model] = True
+                self.is_3d_floating[model] = False
 
         # solver
         self.solver = GurobiSolver()
@@ -866,9 +866,7 @@ class QuasistaticSimulator:
 
         for model in self.models_unactuated:
             v_h_value = v_h_value_dict[model]
-            if self.is_planar_dict[model]:
-                dq_dict[model] = v_h_value
-            else:
+            if self.is_3d_floating[model]:
                 q_u = q_dict[model]
                 Q = q_u[:4]  # Quaternion Q_WB
                 E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
@@ -879,6 +877,8 @@ class QuasistaticSimulator:
                 dq_u[:4] = 0.5 * E.T.dot(v_h_value[:3])
                 dq_u[4:] = v_h_value[3:]
                 dq_dict[model] = dq_u
+            else:
+                dq_dict[model] = v_h_value
 
         self.step_configuration(q_dict, dq_dict)
         self.update_mbp_positions(q_dict)
@@ -1061,8 +1061,8 @@ class QuasistaticSimulator:
             q_u = q_dict[model]
             q_u += dq_dict[model]
 
-            if self.is_planar_dict[model]:
-                q_u[:4] / np.linalg.norm(q_u[:4])  # normalize quaternion
+            if self.is_3d_floating[model]:
+                q_u[:4] /= np.linalg.norm(q_u[:4])  # normalize quaternion
 
         for model in self.models_actuated:
             q_dict[model] += dq_dict[model]

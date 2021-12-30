@@ -1,9 +1,17 @@
 import unittest
 from .run_iiwa_traj_following import *
+from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class TestIiwaTrajectoryFollowing(unittest.TestCase):
-    def test_traj_following_accuracy(self):
+    def test_cpp_vs_python(self):
+        q_parser = QuasistaticParser(q_model_path)
+        compare_q_sim_cpp_vs_py(test_case=self, q_parser=q_parser,
+                                h=0.1,
+                                q_a_traj_dict_str={robot_name: q_iiwa_traj},
+                                q0_dict_str=q0_dict_str, atol=1e-8)
+
+    def test_quasistatic_vs_mbp(self):
         """
         The integral error between MBP-simulated trajectories and the
          commanded trajectories converge to a non-zero value, even with long

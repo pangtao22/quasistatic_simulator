@@ -9,12 +9,10 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
             os.path.join(models_dir, q_model_path_2d))
 
     def test_python_vs_cpp(self):
-        compare_q_sim_cpp_vs_py(
-            test_case=self,
-            q_parser=self.q_parser,
-            h=h_quasistatic,
-            q_a_traj_dict_str={robot_name: q_robot_traj},
-            q0_dict_str=q0_dict_str)
+        compare_q_sim_cpp_vs_py(test_case=self, q_parser=self.q_parser,
+                                h=h_quasistatic,
+                                q_a_traj_dict_str={robot_name: q_robot_traj},
+                                q0_dict_str=q0_dict_str, atol=1e-6)
 
     def test_mbp_vs_quasistatic(self):
         """
