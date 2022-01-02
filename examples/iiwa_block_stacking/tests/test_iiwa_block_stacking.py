@@ -38,7 +38,7 @@ class TestIiwaBlockStacking(unittest.TestCase):
             the beginning and end of the rotation, possibly due to
             acceleration and deceleration.
 
-        Accuracy thresholds are chosen based on a visually reasonable run of
+        Accuracy thresholds are chosen based on a "visually reasonable" runs of
         both simulations.
         """
 

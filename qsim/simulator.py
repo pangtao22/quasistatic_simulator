@@ -5,9 +5,10 @@ import cvxpy as cp
 import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, ExternallyAppliedSpatialForce, Context,
-                         JacobianWrtVariable, RigidBody,
+                         JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
-                         MeshcatContactVisualizer)
+                         MeshcatContactVisualizer, DrakeVisualizerParams,
+                         MeshcatVisualizer)
 from pydrake.multibody.parsing import Parser, ProcessModelDirectives, \
     LoadModelDirectives
 from pydrake.multibody.plant import (
@@ -57,6 +58,8 @@ class QuasistaticSimulator:
             array of the stiffness of each joint in the model.
         :param object_sdf_paths: key: object model instance name; value:
             object sdf path.
+        :param internal_vis: if true, a python-based MeshcatVisualizer is
+            added to self.diagram.
         """
         self.sim_params = sim_params
         # Construct diagram system for proximity queries, Jacobians.
@@ -73,7 +76,8 @@ class QuasistaticSimulator:
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
-            viz = ConnectMeshcatVisualizer(builder, scene_graph)
+            viz = ConnectMeshcatVisualizer(builder, scene_graph,
+                                           role=Role.kProximity)
             # ContactVisualizer
             contact_viz = MeshcatContactVisualizer(
                 meshcat_viz=viz, plant=plant)
