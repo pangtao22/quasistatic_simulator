@@ -56,7 +56,7 @@ class TestIiwaBlockStacking(unittest.TestCase):
             if model_name == "box0":
                 self.assertLessEqual(error, 0.2)
             elif model_name == iiwa_name:
-                self.assertLessEqual(error, 0.5)
+                self.assertLessEqual(error, 0.52)
             else:
                 self.assertLessEqual(error, 0.05)
 

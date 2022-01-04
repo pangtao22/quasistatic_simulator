@@ -62,7 +62,8 @@ class TestPlanarHandBall(unittest.TestCase):
             # python sim
             parser.set_sim_params(
                 is_quasi_dynamic=True, gradient_mode=GradientMode.kAB,
-                grad_from_active_constraints=grad_active_py)
+                grad_from_active_constraints=grad_active_py,
+                gravity=[0, 0, -10.])
 
             q_sim = parser.make_simulator_py(internal_vis=False)
 
