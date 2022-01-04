@@ -7,6 +7,7 @@ from examples.setup_simulations import (
     run_quasistatic_sim)
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.model_paths import models_dir
+from qsim.simulator import GradientMode
 
 
 #%% sim setup
@@ -46,6 +47,7 @@ q0_dict_str = {object_name: q_u0,
 #%% run sim.
 if __name__ == "__main__":
     q_parser = QuasistaticParser(q_model_path)
+    q_parser.set_sim_params(is_quasi_dynamic=True, gravity=np.array([0, 0, -10.]))
 
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
@@ -62,6 +64,28 @@ if __name__ == "__main__":
         print(model, plant.GetModelInstanceName(model),
               q_sys.q_sim.velocity_indices[model])
 
+#%% derivatives.
+    q_sim = q_sys.q_sim
+    name_to_model_dict = q_sim.get_robot_name_to_model_instance_dict()
+    idx_l = name_to_model_dict[robot_l_name]
+    idx_r = name_to_model_dict[robot_r_name]
+    idx_o = name_to_model_dict[object_name]
+    q_dict = {idx_o: [0, 0.316, 0],
+              idx_l: [-0.775, -0.785],
+              idx_r: [0.775, 0.785]}
+
+    # numerical gradient
+    dfdu_numerical = q_sim.calc_dfdu_numerical(
+        q_dict=q_dict, qa_cmd_dict=q_dict, du=1e-3, h=h)
+
+    # analytical gradient
+    q_sim.update_mbp_positions(q_dict)
+    tau_ext_dict = q_sim.calc_tau_ext([])
+    q_sim.step(q_a_cmd_dict=q_dict, tau_ext_dict=tau_ext_dict, h=h,
+               mode="qp_mp", gradient_mode=GradientMode.kBOnly,
+               grad_from_active_constraints=True)
+    dfdu_active = q_sim.get_Dq_nextDqa_cmd()
+
 
 #%% index for tau_a.
     indices = []
@@ -71,7 +95,6 @@ if __name__ == "__main__":
     indices_map = {j: i for i, j in enumerate(indices)}
 
 #%% construct q and v vectors of MBP from log.
-    name_to_model_dict = q_sys.q_sim.get_robot_name_to_model_instance_dict()
     logger_qu = loggers_dict_quasistatic_str[object_name]
     q_log = np.zeros((T, plant.num_positions()))
     v_log = np.zeros((T, plant.num_velocities()))

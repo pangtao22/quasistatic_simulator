@@ -7,7 +7,6 @@ robots:
     name: arm_right
     Kp: [50, 25]
 
-
 objects:
   -
     name: sphere

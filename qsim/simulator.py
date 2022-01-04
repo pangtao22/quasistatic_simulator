@@ -115,14 +115,20 @@ class QuasistaticSimulator:
         self.body_indices = dict()
         # velocity indices (into the generalized velocity vector of the MBP)
         self.velocity_indices = dict()
+        self.position_indices = dict()
         self.n_v_dict = dict()
+        self.n_q_dict = dict()
         self.n_v = plant.num_velocities()
+        self.n_q = plant.num_positions()
 
         n_v = 0
         for model in self.models_all:
             velocity_indices = self.get_velocity_indices_for_model(model)
+            position_indices = self.get_position_indices_for_model(model)
             self.velocity_indices[model] = velocity_indices
+            self.position_indices[model] = position_indices
             self.n_v_dict[model] = len(velocity_indices)
+            self.n_q_dict[model] = len(position_indices)
             self.body_indices[model] = plant.GetBodyIndices(model)
 
             n_v += len(velocity_indices)
@@ -1013,15 +1019,14 @@ class QuasistaticSimulator:
         tau_ext_dict = self.calc_tau_ext([])
 
         n_a = self.num_actuated_dofs()
-        dfdu = np.zeros((self.n_v, n_a))
+        dfdu = np.zeros((self.n_q, n_a))
 
         idx_a = 0  # index for actuated DOFs (into u).
         for model_a in self.models_actuated:
-            n_v_i = len(self.velocity_indices[model_a])
+            n_q_i = len(self.position_indices[model_a])
 
-            for i in range(n_v_i):
-                qa_cmd_dict_plus = self.copy_model_instance_index_dict(
-                    qa_cmd_dict)
+            for i in range(n_q_i):
+                qa_cmd_dict_plus = self.copy_model_instance_index_dict(qa_cmd_dict)
                 qa_cmd_dict_plus[model_a][i] += du
                 self.update_mbp_positions(q_dict)
                 q_dict_plus = self.step(q_a_cmd_dict=qa_cmd_dict_plus,
@@ -1039,11 +1044,9 @@ class QuasistaticSimulator:
                                          gradient_mode=GradientMode.kNone)
 
                 for model in self.models_all:
-                    idx_v_model = self.velocity_indices[model]
+                    idx_v_model = self.position_indices[model]
                     dfdu[idx_v_model, idx_a] = (
-                                                       q_dict_plus[model] -
-                                                       q_dict_minus[
-                                                           model]) / 2 / du
+                            (q_dict_plus[model] - q_dict_minus[model]) / 2 / du)
 
                 idx_a += 1
 

@@ -5,11 +5,10 @@ from pydrake.all import PiecewisePolynomial
 
 from examples.setup_simulations import (
     run_quasistatic_sim)
-from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend, GradientMode
 from qsim.model_paths import models_dir
 
-
-#%% sim setup
+# %% sim setup
 q_model_path = os.path.join(models_dir, 'q_sys', 'allegro_hand_and_sphere.yml')
 
 h = 0.1
@@ -41,11 +40,42 @@ q_parser.set_quasi_dynamic(True)
 loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
     q_parser=q_parser,
     h=h,
-    backend=QuasistaticSystemBackend.CPP,
+    backend=QuasistaticSystemBackend.PYTHON,
     q_a_traj_dict_str=q_a_traj_dict_str,
     q0_dict_str=q0_dict_str,
     is_visualizing=True,
     real_time_rate=1.0)
 
+# %% look into the plant.
+plant = q_sys.plant
+for model in q_sys.q_sim.models_all:
+    print(model, plant.GetModelInstanceName(model),
+          q_sys.q_sim.velocity_indices[model])
+
+# %%
+q_sim = q_sys.q_sim
+name_to_model_dict = q_sim.get_robot_name_to_model_instance_dict()
+idx_a = name_to_model_dict[hand_name]
+idx_u = name_to_model_dict[object_name]
+q_dict = {
+    idx_a: np.array([0.03501504, 0.75276565, 0.74146232, 0.83261002, 0.63256269,
+                     1.02378254, 0.64089555, 0.82444782, -0.1438725, 0.74696812,
+                     0.61908827, 0.70064279, -0.06922541, 0.78533142, 0.82942863,
+                     0.90415436]),
+    idx_u: np.array([0.96040786, 0.07943188, 0.26694634, 0.00685272, -0.08083068,
+                     0.00117524, 0.0711])}
+
+qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.01}
 
 
+# numerical gradient
+dfdu_numerical = q_sim.calc_dfdu_numerical(
+    q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=1e-3, h=h)
+
+# analytical gradient
+q_sim.update_mbp_positions(q_dict)
+tau_ext_dict = q_sim.calc_tau_ext([])
+q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
+           mode="qp_mp", gradient_mode=GradientMode.kBOnly,
+           grad_from_active_constraints=True)
+dfdu_active = q_sim.get_Dq_nextDqa_cmd()
