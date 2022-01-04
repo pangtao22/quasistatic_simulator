@@ -23,6 +23,7 @@ from robotics_utilities.qp_derivatives.qp_derivatives import (
 
 from .sim_parameters import QuasistaticSimParameters, GradientMode
 from .utils import calc_tangent_vectors
+from .normalization_derivatives import calc_normalization_derivatives
 
 
 class MyContactInfo:
@@ -146,7 +147,7 @@ class QuasistaticSimulator:
             self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
         # Find planar model instances.
-        # TODO: it is assumed that each unactuated model instance contains
+        # TODO: it is assumed that each un-actuated model instance contains
         #  only one rigid body.
         self.is_3d_floating = dict()
         for model in self.models_unactuated:
@@ -860,6 +861,7 @@ class QuasistaticSimulator:
          :return: system configuration at the next time step, stored in a
              dictionary keyed by ModelInstanceIndex.
          """
+        # Forward dynamics.
         q_dict = self.get_mbp_positions()
 
         phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
@@ -890,7 +892,8 @@ class QuasistaticSimulator:
             else:
                 dq_dict[model] = v_h_value
 
-        self.step_configuration(q_dict, dq_dict)
+        # Normalize quaternions and update simulator context.
+        self.step_configuration(q_dict, dq_dict)  # normalizes quaternions.
         self.update_mbp_positions(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
@@ -912,9 +915,6 @@ class QuasistaticSimulator:
         Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd,
             - where DbDqa_cmd != np.vstack([0, Kq]).        
         '''
-
-        # TODO: for now it is assumed that n_q == n_v.
-        #  Dphi_constraints_Dv is used for Dphi_constraints_Dq.
         self.Dv_nextDb = Dv_nextDb
         self.Dv_nextDe = Dv_nextDe
 
@@ -999,8 +999,10 @@ class QuasistaticSimulator:
                 if self.is_3d_floating[model]:
                     # rotation
                     Q_WB = q_dict[model][:4]
-                    Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = \
-                        self.get_E(Q_WB).dot(Dv_nextDqa_cmd[idx_v_model[:3], :])
+                    E = self.get_E(Q_WB)
+                    # D = calc_normalization_derivatives(Q_WB)
+                    Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = (
+                        E @ Dv_nextDqa_cmd[idx_v_model[:3], :])
                     # translation
                     Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
                         Dv_nextDqa_cmd[idx_v_model[3:], :]
@@ -1021,6 +1023,8 @@ class QuasistaticSimulator:
         Nevertheless, we believe that using this term in trajectory
             optimization leads to worse convergence and won't be using it.
         """
+        # TODO: for now it is assumed that n_q == n_v.
+        #  Dphi_constraints_Dv is used for Dphi_constraints_Dq.
         # ---------------------------------------------------------------------
         Dphi_constraints_Dq = np.zeros((n_f, self.n_v))
         j_start = 0
@@ -1101,9 +1105,6 @@ class QuasistaticSimulator:
             corresponding model configuration in q_list. If q_list[i]
             includes a quaternion, the quaternion (usually the first four
             numbers of a seven-number array) is normalized.
-        :param q_dict:
-        :param dq_u_dict:
-        :param dq_a_dict:
         :return: None.
         """
         for model in self.models_unactuated:
@@ -1111,6 +1112,7 @@ class QuasistaticSimulator:
             q_u += dq_dict[model]
 
             if self.is_3d_floating[model]:
+                # pass
                 q_u[:4] /= np.linalg.norm(q_u[:4])  # normalize quaternion
 
         for model in self.models_actuated:

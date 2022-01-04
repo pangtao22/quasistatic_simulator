@@ -3,8 +3,7 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulations import (
-    run_quasistatic_sim)
+from examples.setup_simulations import run_quasistatic_sim
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend, GradientMode
 from qsim.model_paths import models_dir
 
@@ -37,23 +36,24 @@ q0_dict_str = {hand_name: qa_knots[0],
 q_parser = QuasistaticParser(q_model_path)
 q_parser.set_quasi_dynamic(True)
 
-loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-    q_parser=q_parser,
-    h=h,
-    backend=QuasistaticSystemBackend.PYTHON,
-    q_a_traj_dict_str=q_a_traj_dict_str,
-    q0_dict_str=q0_dict_str,
-    is_visualizing=True,
-    real_time_rate=1.0)
+q_sim = q_parser.make_simulator_py(internal_vis=True)
+
+# loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+#     q_parser=q_parser,
+#     h=h,
+#     backend=QuasistaticSystemBackend.PYTHON,
+#     q_a_traj_dict_str=q_a_traj_dict_str,
+#     q0_dict_str=q0_dict_str,
+#     is_visualizing=True,
+#     real_time_rate=1.0)
 
 # %% look into the plant.
-plant = q_sys.plant
-for model in q_sys.q_sim.models_all:
+plant = q_sim.plant
+for model in q_sim.models_all:
     print(model, plant.GetModelInstanceName(model),
-          q_sys.q_sim.velocity_indices[model])
+          q_sim.velocity_indices[model])
 
-# %%
-q_sim = q_sys.q_sim
+# %% analytical vs numerical derivatives
 name_to_model_dict = q_sim.get_robot_name_to_model_instance_dict()
 idx_a = name_to_model_dict[hand_name]
 idx_u = name_to_model_dict[object_name]
@@ -67,11 +67,6 @@ q_dict = {
 
 qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.01}
 
-
-# numerical gradient
-dfdu_numerical = q_sim.calc_dfdu_numerical(
-    q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=1e-3, h=h)
-
 # analytical gradient
 q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
@@ -79,3 +74,24 @@ q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
            mode="qp_mp", gradient_mode=GradientMode.kBOnly,
            grad_from_active_constraints=True)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
+
+# numerical gradient
+dfdu_numerical = q_sim.calc_dfdu_numerical(
+    q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=5e-4, h=h)
+
+#%%
+# quaternion derivatives
+dqdu_numerical = dfdu_numerical[-7: -3]
+dqdu_analytic = dfdu_active[-7: -3]
+
+print("dqdu numerical norm", np.linalg.norm(dqdu_numerical))
+print("dqdu analytic norm", np.linalg.norm(dqdu_analytic))
+print("dqdu diff norm", np.linalg.norm(dqdu_numerical - dqdu_analytic))
+print("-------------------------------------------------------")
+
+# gradient norm
+diff = dfdu_numerical - dfdu_active
+print("dfdu numerical norm", np.linalg.norm(dfdu_numerical))
+print("dfdu analytic norm", np.linalg.norm(dfdu_active))
+print("max abs diff norm", np.max(abs(diff)))
+
