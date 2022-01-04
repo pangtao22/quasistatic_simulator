@@ -161,6 +161,9 @@ class QuasistaticSimulator:
             else:
                 self.is_3d_floating[model] = False
 
+        for model in self.models_actuated:
+            self.is_3d_floating[model] = False
+
         # solver
         self.solver = GurobiSolver()
         assert self.solver.available()
@@ -878,13 +881,10 @@ class QuasistaticSimulator:
             v_h_value = v_h_value_dict[model]
             if self.is_3d_floating[model]:
                 q_u = q_dict[model]
-                Q = q_u[:4]  # Quaternion Q_WB
-                E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
-                              [-Q[2], Q[3], Q[0], -Q[1]],
-                              [-Q[3], -Q[2], Q[1], Q[0]]])
+                Q_WB = q_u[:4]  # Quaternion Q_WB
 
                 dq_u = np.zeros(7)
-                dq_u[:4] = 0.5 * E.T.dot(v_h_value[:3])
+                dq_u[:4] = self.get_E(Q_WB).dot(v_h_value[:3])
                 dq_u[4:] = v_h_value[3:]
                 dq_dict[model] = dq_u
             else:
@@ -921,10 +921,10 @@ class QuasistaticSimulator:
         if gradient_mode == GradientMode.kNone:
             pass
         elif gradient_mode == GradientMode.kBOnly:
-            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h)
+            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
         elif gradient_mode == GradientMode.kAB:
-            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h)
+            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = self.calc_dfdx(
                 Dv_nextDb=Dv_nextDb, Dv_nextDe=Dv_nextDe, h=h, n_f=n_f, n_c=n_c,
                 n_d=n_d, Jn=Jn)
@@ -944,16 +944,39 @@ class QuasistaticSimulator:
                          grad_from_active_constraints=self.sim_params.grad_from_active_constraints)
 
     @staticmethod
+    def get_E(Q_AB: np.ndarray):
+        """
+        Let w_AB_A denote the angular velocity of frame B relative to frame A
+         expressed in A, and Q_AB the unit quaternion representing the
+         orientation of frame B relative to frame A. The time derivative of
+         Q_AB, D(Q_AB)Dt, can be written as a linear function of w_AB_A:
+            D(Q_AB)Dt = E @ w_AB_A.
+        This function computes E from Q_AB.
+
+        Reference: Appendix A.3 of Natale's book
+            "Interaction Control of Robot Manipulators".
+        """
+        E = np.zeros((4, 3))
+        E[0] = [-Q_AB[1], -Q_AB[2], -Q_AB[3]]
+        E[1] = [Q_AB[0], Q_AB[3], -Q_AB[2]]
+        E[2] = [-Q_AB[3], Q_AB[0], Q_AB[1]]
+        E[3] = [Q_AB[2], -Q_AB[1], Q_AB[0]]
+        E *= 0.5
+        return E
+
+    @staticmethod
     def copy_model_instance_index_dict(
             q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         return {key: np.array(value) for key, value in q_dict.items()}
 
-    def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float):
+    def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float,
+                  q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
         Computes dfdu, aka the B matrix in x_next = Ax + Bu, using the chain
         rule.
         """
-        DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dofs()))
+        n_a = self.num_actuated_dofs()
+        DbDqa_cmd = np.zeros((self.n_v, n_a))
 
         j_start = 0
         for model in self.models_actuated:
@@ -965,7 +988,26 @@ class QuasistaticSimulator:
 
             j_start += n_v_i
 
-        return h * Dv_nextDb @ DbDqa_cmd
+        Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd
+        if self.n_v == self.n_q:
+            return h * Dv_nextDqa_cmd
+        else:
+            Dq_dot_nextDqa_cmd = np.zeros((self.n_q, n_a))
+            for model in self.models_all:
+                idx_v_model = self.velocity_indices[model]
+                idx_q_model = self.position_indices[model]
+                if self.is_3d_floating[model]:
+                    # rotation
+                    Q_WB = q_dict[model][:4]
+                    Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = \
+                        self.get_E(Q_WB).dot(Dv_nextDqa_cmd[idx_v_model[:3], :])
+                    # translation
+                    Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
+                        Dv_nextDqa_cmd[idx_v_model[3:], :]
+                else:
+                    Dq_dot_nextDqa_cmd[idx_q_model, :] = \
+                        Dv_nextDqa_cmd[idx_v_model, :]
+            return h * Dq_dot_nextDqa_cmd
 
     def calc_dfdx(self, Dv_nextDb: np.ndarray, Dv_nextDe: np.ndarray,
                   h: float, n_f: int, n_c: int,
