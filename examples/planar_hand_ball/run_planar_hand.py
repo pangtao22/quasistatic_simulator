@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 #%% derivatives.
     q_sim = q_sys.q_sim
-    name_to_model_dict = q_sim.get_robot_name_to_model_instance_dict()
+    name_to_model_dict = q_sim.get_model_instance_name_to_index_map()
     idx_l = name_to_model_dict[robot_l_name]
     idx_r = name_to_model_dict[robot_r_name]
     idx_o = name_to_model_dict[object_name]

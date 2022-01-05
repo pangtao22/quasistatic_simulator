@@ -36,7 +36,8 @@ q0_dict_str = {hand_name: qa_knots[0],
 q_parser = QuasistaticParser(q_model_path)
 q_parser.set_quasi_dynamic(True)
 
-q_sim = q_parser.make_simulator_py(internal_vis=True)
+q_sim = q_parser.make_simulator_py(internal_vis=False)
+q_sim_cpp = q_parser.make_simulator_cpp()
 
 # loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
 #     q_parser=q_parser,
@@ -48,13 +49,13 @@ q_sim = q_parser.make_simulator_py(internal_vis=True)
 #     real_time_rate=1.0)
 
 # %% look into the plant.
-plant = q_sim.plant
-for model in q_sim.models_all:
+plant = q_sim.get_plant()
+for model in q_sim.get_all_models():
     print(model, plant.GetModelInstanceName(model),
-          q_sim.velocity_indices[model])
+          q_sim.get_velocity_indices()[model])
 
 # %% analytical vs numerical derivatives
-name_to_model_dict = q_sim.get_robot_name_to_model_instance_dict()
+name_to_model_dict = q_sim.get_model_instance_name_to_index_map()
 idx_a = name_to_model_dict[hand_name]
 idx_u = name_to_model_dict[object_name]
 q_dict = {
@@ -73,7 +74,18 @@ tau_ext_dict = q_sim.calc_tau_ext([])
 q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
            mode="qp_mp", gradient_mode=GradientMode.kBOnly,
            grad_from_active_constraints=True)
+
+q_sim_cpp.update_mbp_positions(q_dict)
+q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict,
+               tau_ext_dict=tau_ext_dict,
+               h=h,
+               contact_detection_tolerance=q_parser.get_param(
+                   'contact_detection_tolerance'),
+               gradient_mode=GradientMode.kBOnly,
+               grad_from_active_constraints=True)
+
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
+dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 # numerical gradient
 dfdu_numerical = q_sim.calc_dfdu_numerical(

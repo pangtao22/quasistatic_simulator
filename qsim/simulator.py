@@ -243,7 +243,7 @@ class QuasistaticSimulator:
         return (np.copy(self.Dv_nextDb), np.copy(self.Dv_nextDe),
                 np.copy(self.Dq_nextDq), np.copy(self.Dq_nextDqa_cmd))
 
-    def get_robot_name_to_model_instance_dict(self):
+    def get_model_instance_name_to_index_map(self):
         name_to_model = dict()
         for model in self.models_all:
             name_to_model[self.plant.GetModelInstanceName(model)] = model
@@ -893,6 +893,9 @@ class QuasistaticSimulator:
                 dq_dict[model] = v_h_value
 
         # Normalize quaternions and update simulator context.
+        # TODO: normalization should happen after computing the derivatives. But doing
+        #  it the other way around seems to lead to smaller difference between
+        #  numerical and analytic derivatives. Find out why.
         self.step_configuration(q_dict, dq_dict)  # normalizes quaternions.
         self.update_mbp_positions(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
