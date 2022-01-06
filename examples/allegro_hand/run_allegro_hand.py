@@ -66,7 +66,7 @@ q_dict = {
     idx_u: np.array([0.96040786, 0.07943188, 0.26694634, 0.00685272, -0.08083068,
                      0.00117524, 0.0711])}
 
-qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.01}
+qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.1}
 
 # analytical gradient
 q_sim.update_mbp_positions(q_dict)
