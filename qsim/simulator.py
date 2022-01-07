@@ -78,7 +78,7 @@ class QuasistaticSimulator:
         self.internal_vis = internal_vis
         if internal_vis:
             viz = ConnectMeshcatVisualizer(builder, scene_graph,
-                                           role=Role.kProximity)
+                                           role=Role.kIllustration)
             # ContactVisualizer
             contact_viz = MeshcatContactVisualizer(
                 meshcat_viz=viz, plant=plant)
