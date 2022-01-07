@@ -36,16 +36,15 @@ class QuasistaticParser:
         self.object_sdf_paths = object_sdf_paths
 
         # quasistatic_sim_params
-        q_sim_params = config['quasistatic_sim_params']
+        self.q_sim_params_dict = QuasistaticSimParameters()._asdict()
+
+        q_sim_params = copy.deepcopy(config['quasistatic_sim_params'])
         d = q_sim_params['contact_detection_tolerance']
         if type(d) is str:
             assert d == 'inf'
-            d = np.inf
+            q_sim_params['contact_detection_tolerance'] = np.inf
 
-        self.q_sim_params_dict = QuasistaticSimParameters(
-            gravity=np.array(q_sim_params['gravity'], dtype=float),
-            nd_per_contact=q_sim_params['nd_per_contact'],
-            contact_detection_tolerance=d)._asdict()
+        self.set_sim_params(**q_sim_params)
 
     def parse_path(self, model_path: str):
         """

@@ -5,9 +5,10 @@ import cvxpy as cp
 import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          AbstractValue, ExternallyAppliedSpatialForce, Context,
-                         JacobianWrtVariable, RigidBody,
+                         JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
-                         MeshcatContactVisualizer)
+                         MeshcatContactVisualizer, DrakeVisualizerParams,
+                         MeshcatVisualizer)
 from pydrake.multibody.parsing import Parser, ProcessModelDirectives, \
     LoadModelDirectives
 from pydrake.multibody.plant import (
@@ -22,6 +23,7 @@ from robotics_utilities.qp_derivatives.qp_derivatives import (
 
 from .sim_parameters import QuasistaticSimParameters, GradientMode
 from .utils import calc_tangent_vectors
+from .normalization_derivatives import calc_normalization_derivatives
 
 
 class MyContactInfo:
@@ -57,6 +59,8 @@ class QuasistaticSimulator:
             array of the stiffness of each joint in the model.
         :param object_sdf_paths: key: object model instance name; value:
             object sdf path.
+        :param internal_vis: if true, a python-based MeshcatVisualizer is
+            added to self.diagram.
         """
         self.sim_params = sim_params
         # Construct diagram system for proximity queries, Jacobians.
@@ -73,7 +77,8 @@ class QuasistaticSimulator:
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
-            viz = ConnectMeshcatVisualizer(builder, scene_graph)
+            viz = ConnectMeshcatVisualizer(builder, scene_graph,
+                                           role=Role.kIllustration)
             # ContactVisualizer
             contact_viz = MeshcatContactVisualizer(
                 meshcat_viz=viz, plant=plant)
@@ -111,14 +116,20 @@ class QuasistaticSimulator:
         self.body_indices = dict()
         # velocity indices (into the generalized velocity vector of the MBP)
         self.velocity_indices = dict()
+        self.position_indices = dict()
         self.n_v_dict = dict()
+        self.n_q_dict = dict()
         self.n_v = plant.num_velocities()
+        self.n_q = plant.num_positions()
 
         n_v = 0
         for model in self.models_all:
             velocity_indices = self.get_velocity_indices_for_model(model)
+            position_indices = self.get_position_indices_for_model(model)
             self.velocity_indices[model] = velocity_indices
+            self.position_indices[model] = position_indices
             self.n_v_dict[model] = len(velocity_indices)
+            self.n_q_dict[model] = len(position_indices)
             self.body_indices[model] = plant.GetBodyIndices(model)
 
             n_v += len(velocity_indices)
@@ -136,7 +147,7 @@ class QuasistaticSimulator:
             self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
 
         # Find planar model instances.
-        # TODO: it is assumed that each unactuated model instance contains
+        # TODO: it is assumed that each un-actuated model instance contains
         #  only one rigid body.
         self.is_3d_floating = dict()
         for model in self.models_unactuated:
@@ -150,6 +161,9 @@ class QuasistaticSimulator:
                 self.is_3d_floating[model] = True
             else:
                 self.is_3d_floating[model] = False
+
+        for model in self.models_actuated:
+            self.is_3d_floating[model] = False
 
         # solver
         self.solver = GurobiSolver()
@@ -229,7 +243,7 @@ class QuasistaticSimulator:
         return (np.copy(self.Dv_nextDb), np.copy(self.Dv_nextDe),
                 np.copy(self.Dq_nextDq), np.copy(self.Dq_nextDqa_cmd))
 
-    def get_robot_name_to_model_instance_dict(self):
+    def get_model_instance_name_to_index_map(self):
         name_to_model = dict()
         for model in self.models_all:
             name_to_model[self.plant.GetModelInstanceName(model)] = model
@@ -847,6 +861,7 @@ class QuasistaticSimulator:
          :return: system configuration at the next time step, stored in a
              dictionary keyed by ModelInstanceIndex.
          """
+        # Forward dynamics.
         q_dict = self.get_mbp_positions()
 
         phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
@@ -868,19 +883,20 @@ class QuasistaticSimulator:
             v_h_value = v_h_value_dict[model]
             if self.is_3d_floating[model]:
                 q_u = q_dict[model]
-                Q = q_u[:4]  # Quaternion Q_WB
-                E = np.array([[-Q[1], Q[0], -Q[3], Q[2]],
-                              [-Q[2], Q[3], Q[0], -Q[1]],
-                              [-Q[3], -Q[2], Q[1], Q[0]]])
+                Q_WB = q_u[:4]  # Quaternion Q_WB
 
                 dq_u = np.zeros(7)
-                dq_u[:4] = 0.5 * E.T.dot(v_h_value[:3])
+                dq_u[:4] = self.get_E(Q_WB).dot(v_h_value[:3])
                 dq_u[4:] = v_h_value[3:]
                 dq_dict[model] = dq_u
             else:
                 dq_dict[model] = v_h_value
 
-        self.step_configuration(q_dict, dq_dict)
+        # Normalize quaternions and update simulator context.
+        # TODO: normalization should happen after computing the derivatives. But doing
+        #  it the other way around seems to lead to smaller difference between
+        #  numerical and analytic derivatives. Find out why.
+        self.step_configuration(q_dict, dq_dict)  # normalizes quaternions.
         self.update_mbp_positions(q_dict)
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
@@ -902,19 +918,16 @@ class QuasistaticSimulator:
         Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd,
             - where DbDqa_cmd != np.vstack([0, Kq]).        
         '''
-
-        # TODO: for now it is assumed that n_q == n_v.
-        #  Dphi_constraints_Dv is used for Dphi_constraints_Dq.
         self.Dv_nextDb = Dv_nextDb
         self.Dv_nextDe = Dv_nextDe
 
         if gradient_mode == GradientMode.kNone:
             pass
         elif gradient_mode == GradientMode.kBOnly:
-            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h)
+            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
         elif gradient_mode == GradientMode.kAB:
-            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h)
+            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = self.calc_dfdx(
                 Dv_nextDb=Dv_nextDb, Dv_nextDe=Dv_nextDe, h=h, n_f=n_f, n_c=n_c,
                 n_d=n_d, Jn=Jn)
@@ -934,16 +947,39 @@ class QuasistaticSimulator:
                          grad_from_active_constraints=self.sim_params.grad_from_active_constraints)
 
     @staticmethod
+    def get_E(Q_AB: np.ndarray):
+        """
+        Let w_AB_A denote the angular velocity of frame B relative to frame A
+         expressed in A, and Q_AB the unit quaternion representing the
+         orientation of frame B relative to frame A. The time derivative of
+         Q_AB, D(Q_AB)Dt, can be written as a linear function of w_AB_A:
+            D(Q_AB)Dt = E @ w_AB_A.
+        This function computes E from Q_AB.
+
+        Reference: Appendix A.3 of Natale's book
+            "Interaction Control of Robot Manipulators".
+        """
+        E = np.zeros((4, 3))
+        E[0] = [-Q_AB[1], -Q_AB[2], -Q_AB[3]]
+        E[1] = [Q_AB[0], Q_AB[3], -Q_AB[2]]
+        E[2] = [-Q_AB[3], Q_AB[0], Q_AB[1]]
+        E[3] = [Q_AB[2], -Q_AB[1], Q_AB[0]]
+        E *= 0.5
+        return E
+
+    @staticmethod
     def copy_model_instance_index_dict(
             q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         return {key: np.array(value) for key, value in q_dict.items()}
 
-    def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float):
+    def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float,
+                  q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
         Computes dfdu, aka the B matrix in x_next = Ax + Bu, using the chain
         rule.
         """
-        DbDqa_cmd = np.zeros((self.n_v, self.num_actuated_dofs()))
+        n_a = self.num_actuated_dofs()
+        DbDqa_cmd = np.zeros((self.n_v, n_a))
 
         j_start = 0
         for model in self.models_actuated:
@@ -955,7 +991,28 @@ class QuasistaticSimulator:
 
             j_start += n_v_i
 
-        return h * Dv_nextDb @ DbDqa_cmd
+        Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd
+        if self.n_v == self.n_q:
+            return h * Dv_nextDqa_cmd
+        else:
+            Dq_dot_nextDqa_cmd = np.zeros((self.n_q, n_a))
+            for model in self.models_all:
+                idx_v_model = self.velocity_indices[model]
+                idx_q_model = self.position_indices[model]
+                if self.is_3d_floating[model]:
+                    # rotation
+                    Q_WB = q_dict[model][:4]
+                    E = self.get_E(Q_WB)
+                    # D = calc_normalization_derivatives(Q_WB)
+                    Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = (
+                        E @ Dv_nextDqa_cmd[idx_v_model[:3], :])
+                    # translation
+                    Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
+                        Dv_nextDqa_cmd[idx_v_model[3:], :]
+                else:
+                    Dq_dot_nextDqa_cmd[idx_q_model, :] = \
+                        Dv_nextDqa_cmd[idx_v_model, :]
+            return h * Dq_dot_nextDqa_cmd
 
     def calc_dfdx(self, Dv_nextDb: np.ndarray, Dv_nextDe: np.ndarray,
                   h: float, n_f: int, n_c: int,
@@ -969,6 +1026,8 @@ class QuasistaticSimulator:
         Nevertheless, we believe that using this term in trajectory
             optimization leads to worse convergence and won't be using it.
         """
+        # TODO: for now it is assumed that n_q == n_v.
+        #  Dphi_constraints_Dv is used for Dphi_constraints_Dq.
         # ---------------------------------------------------------------------
         Dphi_constraints_Dq = np.zeros((n_f, self.n_v))
         j_start = 0
@@ -1009,15 +1068,14 @@ class QuasistaticSimulator:
         tau_ext_dict = self.calc_tau_ext([])
 
         n_a = self.num_actuated_dofs()
-        dfdu = np.zeros((self.n_v, n_a))
+        dfdu = np.zeros((self.n_q, n_a))
 
         idx_a = 0  # index for actuated DOFs (into u).
         for model_a in self.models_actuated:
-            n_v_i = len(self.velocity_indices[model_a])
+            n_q_i = len(self.position_indices[model_a])
 
-            for i in range(n_v_i):
-                qa_cmd_dict_plus = self.copy_model_instance_index_dict(
-                    qa_cmd_dict)
+            for i in range(n_q_i):
+                qa_cmd_dict_plus = self.copy_model_instance_index_dict(qa_cmd_dict)
                 qa_cmd_dict_plus[model_a][i] += du
                 self.update_mbp_positions(q_dict)
                 q_dict_plus = self.step(q_a_cmd_dict=qa_cmd_dict_plus,
@@ -1035,11 +1093,9 @@ class QuasistaticSimulator:
                                          gradient_mode=GradientMode.kNone)
 
                 for model in self.models_all:
-                    idx_v_model = self.velocity_indices[model]
+                    idx_v_model = self.position_indices[model]
                     dfdu[idx_v_model, idx_a] = (
-                                                       q_dict_plus[model] -
-                                                       q_dict_minus[
-                                                           model]) / 2 / du
+                            (q_dict_plus[model] - q_dict_minus[model]) / 2 / du)
 
                 idx_a += 1
 
@@ -1052,9 +1108,6 @@ class QuasistaticSimulator:
             corresponding model configuration in q_list. If q_list[i]
             includes a quaternion, the quaternion (usually the first four
             numbers of a seven-number array) is normalized.
-        :param q_dict:
-        :param dq_u_dict:
-        :param dq_a_dict:
         :return: None.
         """
         for model in self.models_unactuated:
@@ -1062,6 +1115,7 @@ class QuasistaticSimulator:
             q_u += dq_dict[model]
 
             if self.is_3d_floating[model]:
+                # pass
                 q_u[:4] /= np.linalg.norm(q_u[:4])  # normalize quaternion
 
         for model in self.models_actuated:

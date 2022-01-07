@@ -52,7 +52,7 @@ class TestPlanarHandBall(unittest.TestCase):
 
         grad_active_py_list = [False, True, False]
         grad_active_cpp_list = [False, True, True]
-        atol_list = [1e-7, 1e-7, 1e-4]
+        atol_list = [1e-5, 1e-7, 1e-4]
 
         for grad_active_py, grad_active_cpp, atol in zip(grad_active_py_list,
                                                          grad_active_cpp_list,
@@ -62,7 +62,8 @@ class TestPlanarHandBall(unittest.TestCase):
             # python sim
             parser.set_sim_params(
                 is_quasi_dynamic=True, gradient_mode=GradientMode.kAB,
-                grad_from_active_constraints=grad_active_py)
+                grad_from_active_constraints=grad_active_py,
+                gravity=[0, 0, -10.])
 
             q_sim = parser.make_simulator_py(internal_vis=False)
 

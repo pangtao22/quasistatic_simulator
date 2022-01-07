@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 
 #%% construct q and v vectors of MBP from log.
-    name_to_model_dict = q_sys.q_sim.get_robot_name_to_model_instance_dict()
+    name_to_model_dict = q_sys.q_sim.get_model_instance_name_to_index_map()
     logger_qa = loggers_dict_quasistatic_str[robot_name]
     logger_qu = loggers_dict_quasistatic_str[object_name]
     q_log = np.zeros((T, plant.num_positions()))

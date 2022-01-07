@@ -84,7 +84,7 @@ class TrajectoryOptimizer:
                 inspector.GetFrameId(g_id)).index()
             for g_id in inspector.GetAllGeometryIds()}
 
-        self.name_to_model_idx_map = q_sim.get_robot_name_to_model_instance_dict()
+        self.name_to_model_idx_map = q_sim.get_model_instance_name_to_index_map()
 
     def update_configuration(
             self, q_ad_dict: Dict[ModelInstanceIndex, np.ndarray]):
@@ -340,7 +340,7 @@ class TrajectoryOptimizer:
 traj_opt = TrajectoryOptimizer()
 
 #%% collision detection tests.
-name_to_model_map = traj_opt.q_sim.get_robot_name_to_model_instance_dict()
+name_to_model_map = traj_opt.q_sim.get_model_instance_name_to_index_map()
 q0_dict = {name_to_model_map[name]: q0 for name, q0 in q0_dict_str.items()}
 q0_ad = initializeAutoDiff(traj_opt.q_dict_to_vec(q0_dict))
 q0_ad_dict = traj_opt.vec_to_q_dict(q0_ad)
