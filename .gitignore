@@ -1,6 +1,8 @@
 .idea
 __pycache__
 .ipynb_checkpoints
+.pytest_cache
+build
 .DS_Store
 *.pdf
 *.gz
