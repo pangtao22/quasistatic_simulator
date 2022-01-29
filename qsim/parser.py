@@ -6,7 +6,7 @@ import parse
 import yaml
 
 from qsim_cpp import (QuasistaticSimParametersCpp, QuasistaticSimulatorCpp,
-                      GradientMode)
+                      BatchQuasistaticSimulator, GradientMode)
 
 from .model_paths import package_paths_dict
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
@@ -100,6 +100,15 @@ class QuasistaticParser:
         q_sim_params = QuasistaticSimParameters(**self.q_sim_params_dict)
         self.check_params_validity(q_sim_params)
         return QuasistaticSimulatorCpp(
+            model_directive_path=self.model_directive_path,
+            robot_stiffness_str=self.robot_stiffness_dict,
+            object_sdf_paths=self.object_sdf_paths,
+            sim_params=cpp_params_from_py_params(q_sim_params))
+
+    def make_batch_simulator(self):
+        q_sim_params = QuasistaticSimParameters(**self.q_sim_params_dict)
+        self.check_params_validity(q_sim_params)
+        return BatchQuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
