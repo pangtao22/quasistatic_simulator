@@ -323,7 +323,7 @@ class TrajectoryOptimizer:
             tau[idx_v_model] = tau_a[i * 2: (i+1) * 2]
 
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.q_sim.Kq_a[model].diagonal() * h**2
+                self.q_sim.K_a[model].diagonal() * h ** 2
 
         phi_J_ad_next_by_h = phi_J_ad / h + J_ad.dot(v_next)
         # dynamic: Q.dot(v_next - v)
@@ -438,13 +438,13 @@ for i in range(1, T):
     indices_l = traj_opt.q_sim.velocity_indices[model_l]
     q_a_l_cmd = q_a_traj_dict_str[robot_l_name].value(i * h).squeeze()
     q_a_l = q_traj_initial[i][indices_l]
-    tau_a_cmd_l = traj_opt.q_sim.Kq_a[model_l].dot(q_a_l_cmd - q_a_l)
+    tau_a_cmd_l = traj_opt.q_sim.K_a[model_l].dot(q_a_l_cmd - q_a_l)
 
     model_r = name_to_model_map[robot_r_name]
     indices_r = traj_opt.q_sim.velocity_indices[model_r]
     q_a_r_cmd = q_a_traj_dict_str[robot_r_name].value(i * h).squeeze()
     q_a_r = q_traj_initial[i][indices_r]
-    tau_a_cmd_r = traj_opt.q_sim.Kq_a[model_r].dot(q_a_r_cmd - q_a_r)
+    tau_a_cmd_r = traj_opt.q_sim.K_a[model_r].dot(q_a_r_cmd - q_a_r)
 
     tau_a_traj_initial[i, :2] = tau_a_cmd_l
     tau_a_traj_initial[i, 2:] = tau_a_cmd_r

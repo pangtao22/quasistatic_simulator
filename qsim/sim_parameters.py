@@ -25,6 +25,7 @@ import numpy as np
         moving inequality constraints into the objective with 
         log barrier functions. 
 :param log_barrier_weight: float, used only when is_unconstrained == True.
+
 /*----------------------------------------------------------------------*/
 :param requires_grad: whether the gradient of v_next w.r.t the parameters of 
     the QP are computed. 
@@ -36,14 +37,20 @@ import numpy as np
     invoked and a separate GradientMode value is passed to it explicitly. 
 :param gradient_from_active_constraints: bool. Whether the dynamics gradient is 
     computed from all constraints or only the active constraints.
+    
+/*----------------------------------------------------------------------*/
+unactuated_mass_scale: 
+scales the mass matrix of un-actuated objects by epsilon, so that 
+(max_M_u_eigen_value * epsilon) * unactuated_mass_scale = min_h_squared_K.
+If 0, the mass matrix is not scaled.
 """
 field_names = [
     "gravity", "nd_per_contact", "contact_detection_tolerance",
     "is_quasi_dynamic", "mode", "log_barrier_weight", "gradient_mode",
-    "grad_from_active_constraints"
+    "grad_from_active_constraints", "unactuated_mass_scale"
 ]
 defaults = [np.array([0, 0, -9.81]), 4, 0.01,
-            False, "qp_mp", 1e4, GradientMode.kNone, True]
+            False, "qp_mp", 1e4, GradientMode.kNone, True, 0]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(
@@ -69,4 +76,5 @@ def cpp_params_from_py_params(
     sim_params_cpp.gradient_mode = sim_params.gradient_mode
     sim_params_cpp.gradient_from_active_constraints = (
         sim_params.grad_from_active_constraints)
+    sim_params_cpp.unactuated_mass_scale = sim_params.unactuated_mass_scale
     return sim_params_cpp

@@ -14,7 +14,7 @@ from qsim.model_paths import models_dir
 from qsim.sim_parameters import GradientMode
 
 q_model_path = os.path.join(
-    models_dir, 'q_sys', 'planar_hand_ball_vertical.yml')
+    models_dir, 'q_sys', 'planar_hand_ball.yml')
 
 
 def simulate(sim: Union[QuasistaticSimulator, QuasistaticSimulatorCpp],
@@ -52,7 +52,7 @@ class TestPlanarHandBall(unittest.TestCase):
 
         grad_active_py_list = [False, True, False]
         grad_active_cpp_list = [False, True, True]
-        atol_list = [1e-5, 1e-7, 1e-4]
+        atol_list = [1e-5, 1e-7, 1e-3]
 
         for grad_active_py, grad_active_cpp, atol in zip(grad_active_py_list,
                                                          grad_active_cpp_list,
@@ -101,30 +101,33 @@ class TestPlanarHandBall(unittest.TestCase):
             #
             # # -----------------------------------------------------------------
 
-            q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
-                q_sim, q0_dict, h, T)
-
             q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = \
                 simulate(q_sim_cpp, q0_dict_cpp, h, T)
 
+            q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
+                q_sim, q0_dict, h, T)
+
             models_all = q_sim.models_all
             # match trajectories.
+            t = 0
             for q_dict, q_dict_cpp in zip(q_dict_log, q_dict_log_cpp):
                 for model in models_all:
-                    self.assertTrue(np.allclose(q_dict[model],
-                                                q_dict_cpp[model]))
+                    err = np.linalg.norm(q_dict[model] - q_dict_cpp[model])
+                    self.assertLess(err, 1e-7,  f"Large error at t = {t}, "
+                                    f"{q_dict[model]} vs {q_dict_cpp[model]}")
+                t += 1
 
             # match gradients along trajectories.
-            print('------------------------------------------------------')
-            for i in range(len(Dq_nextDq_log)):
-                Dq_next_Dq = Dq_nextDq_log[i]
-                Dq_next_Dq_cpp = Dq_nextDq_log_cpp[i]
-                Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[i]
-                Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[i]
-                print(i, abs(Dq_next_Dq - Dq_next_Dq_cpp).max(),
-                      abs(Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max())
+            print('-------------------------------------------------------')
+            for t in range(len(Dq_nextDq_log)):
+                Dq_next_Dq = Dq_nextDq_log[t]
+                Dq_next_Dq_cpp = Dq_nextDq_log_cpp[t]
+                Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[t]
+                Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[t]
+                err_Dq_next_Dq = abs(Dq_next_Dq - Dq_next_Dq_cpp).max()
+                err_Dq_nextDqa_cmd = abs(
+                    Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max()
 
-                self.assertTrue(np.allclose(Dq_next_Dq, Dq_next_Dq_cpp,
-                                            atol=atol))
-                self.assertTrue(np.allclose(Dq_nextDqa_cmd, Dq_nextDqa_cmd_cpp,
-                                            atol=atol))
+                self.assertLess(err_Dq_next_Dq, atol, f"Large error at t = {t}")
+                self.assertLess(err_Dq_nextDqa_cmd, atol,
+                                f"Large error at t = {t}")

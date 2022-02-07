@@ -139,12 +139,16 @@ class QuasistaticSimulator:
         assert plant.num_velocities() == n_v
 
         # stiffness matrices.
-        self.Kq_a = dict()
+        self.K_a = dict()
+        min_K_a_list = []
         for i, model in enumerate(self.models_actuated):
             model_name = plant.GetModelInstanceName(model)
             joint_stiffness = robot_stiffness_dict[model_name]
             assert self.n_v_dict[model] == joint_stiffness.size
-            self.Kq_a[model] = np.diag(joint_stiffness).astype(float)
+            self.K_a[model] = np.diag(joint_stiffness).astype(float)
+            min_K_a_list.append(np.min(joint_stiffness))
+        self.min_K_a = np.min(min_K_a_list)
+
 
         # Find planar model instances.
         # TODO: it is assumed that each un-actuated model instance contains
@@ -629,32 +633,85 @@ class QuasistaticSimulator:
                 raise RuntimeError(
                     "CVX solver status is {}".format(status))
 
+    def calc_scaled_mass_matrix(self, h: float, unactuated_mass_scale: float):
+        """
+        "Mass" in quasi-dynamic dynamics should not be interpreted as
+        inertia that affects acceleration from a given force, as velocity
+        does not exist in the quasi-dynamic world.
+
+        Instead, it makes more sense to interpret mass as a regularization
+        which keep un-actuated objects still when there is no force acting on
+        them, which is consistent with Newton's 1st Law.
+
+        However, having a mass matrix slows down the motion of un-actuated
+        objects when it interacts with actuated objects. Therefore, the mass
+        matrix should be as small as possible without causing numerical issues.
+
+        The strategy used here is to scale the true mass matrix of
+        un-actuated objects by epsilon, so that the largest eigen value of the
+        mass matrix is a constant times (say 20) smaller than the smallest eigen
+        value of (h^2 * K), where h is the simulation time step and K the
+        stiffness matrix of the robots.
+
+        With this formulation, the Q matrix in the QP is given by
+        [[epsilon * M_u, 0    ],
+         [0            , h^2 K]].
+        """
+        M = self.plant.CalcMassMatrix(self.context_plant)
+        M_u_dict = {}
+        for model in self.models_unactuated:
+            idx_v_model = self.velocity_indices[model]
+            M_u_dict[model] = M[idx_v_model[:, None], idx_v_model]
+
+        if unactuated_mass_scale == 0:
+            return M_u_dict
+
+        max_eigen_value_M_u = {
+            model: np.max(M_u.diagonal())
+            for model, M_u in M_u_dict.items()}
+
+        min_K_a_h2 = self.min_K_a * h**2
+
+        for model, M_u in M_u_dict.items():
+            # max_M_u_eigen_value * epsilon * 20 = min_h_squared_K
+            # TODO: make 20 a parameter which can be set in a yaml file.
+            epsilon = (min_K_a_h2 / max_eigen_value_M_u[model]
+                       / unactuated_mass_scale)
+            M_u *= epsilon
+
+        return M_u_dict
+
     def form_Q_and_tau_h(
             self,
             q_dict: Dict[ModelInstanceIndex, np.ndarray],
             q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
             h: float):
-        M = self.plant.CalcMassMatrixViaInverseDynamics(self.context_plant)
         Q = np.zeros((self.n_v, self.n_v))
         tau_h = np.zeros(self.n_v)
+
+        # TODO: make this an input to the function, so that there exists a
+        #  version of self.step which is independent of self.sim_params.
+        if self.sim_params.is_quasi_dynamic:
+            M_u_dict = self.calc_scaled_mass_matrix(
+                h, self.sim_params.unactuated_mass_scale)
+
         for model in self.models_unactuated:
             idx_v_model = self.velocity_indices[model]
             tau_h[idx_v_model] = tau_ext_dict[model] * h
 
             if self.sim_params.is_quasi_dynamic:
-                ixgrid = np.ix_(idx_v_model, idx_v_model)
-                Q[ixgrid] = M[ixgrid]
+                Q[idx_v_model[:, None], idx_v_model] = M_u_dict[model]
 
         idx_i, idx_j = np.diag_indices(self.n_v)
         for model in self.models_actuated:
             idx_v_model = self.velocity_indices[model]
             dq_a_cmd = q_a_cmd_dict[model] - q_dict[model]
-            tau_a = self.Kq_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
+            tau_a = self.K_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
             tau_h[idx_v_model] = tau_a * h
 
             Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.Kq_a[model].diagonal() * h ** 2
+                self.K_a[model].diagonal() * h ** 2
         return Q, tau_h
 
     def step_qp_mp(self,
@@ -987,7 +1044,7 @@ class QuasistaticSimulator:
             n_v_i = len(idx_v_model)
             idx_rows = idx_v_model[:, None]
             idx_cols = np.arange(j_start, j_start + n_v_i)[None, :]
-            DbDqa_cmd[idx_rows, idx_cols] = -h * self.Kq_a[model]
+            DbDqa_cmd[idx_rows, idx_cols] = -h * self.K_a[model]
 
             j_start += n_v_i
 
@@ -1043,7 +1100,7 @@ class QuasistaticSimulator:
             n_v_i = len(idx_v_model)
             idx_rows = idx_v_model[:, None]
             idx_cols = idx_v_model[None, :]
-            DbDq[idx_rows, idx_cols] = h * self.Kq_a[model]
+            DbDq[idx_rows, idx_cols] = h * self.K_a[model]
 
             j_start += n_v_i
 
