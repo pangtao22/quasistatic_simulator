@@ -273,7 +273,7 @@ class TrajectoryOptimizer:
 
             phi[i_c] = sdp.distance.value()
             U[i_c] = \
-                self.q_sim.get_friction_coefficient_for_signed_distance_pair(
+                self.q_sim.get_friction_coefficient(
                     sdp)
             i_f_start += n_d
 

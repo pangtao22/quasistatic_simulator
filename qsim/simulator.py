@@ -8,7 +8,7 @@ from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
                          MeshcatContactVisualizer, DrakeVisualizerParams,
-                         MeshcatVisualizer)
+                         MeshcatVisualizer, GeometryId, BodyIndex)
 from pydrake.multibody.parsing import Parser, ProcessModelDirectives, \
     LoadModelDirectives
 from pydrake.multibody.plant import (
@@ -35,15 +35,34 @@ class MyContactInfo:
     contact point.
     """
 
-    def __init__(self, bodyA_index, bodyB_index, geometry_id_A, geometry_id_B,
-                 p_WC_W, n_W, dC_W):
-        self.bodyA_index = bodyA_index
-        self.bodyB_index = bodyB_index
+    def __init__(self,
+                 bodyA_index: Union[BodyIndex, int],
+                 bodyB_index: Union[BodyIndex, int],
+                 geometry_id_A: Union[GeometryId, int],
+                 geometry_id_B: Union[GeometryId, int],
+                 p_WCa: np.ndarray, p_WCb: np.ndarray,
+                 n_W: np.ndarray, dC_W: np.ndarray, mu: float,
+                 f_W: np.ndarray =None):
+        # For PenetrationAsPointPair
         self.geometry_id_A = geometry_id_A
         self.geometry_id_B = geometry_id_B
-        self.p_WC_W = p_WC_W
+        self.p_WCa = p_WCa
+        self.p_WCb = p_WCb
         self.n_W = n_W
+
+        # For PointPairContactInfo
+        self.bodyA_index = bodyA_index
+        self.bodyB_index = bodyB_index
+        self.p_WC_W = (p_WCa + p_WCb) / 2
+
+        # tangents
         self.dC_W = dC_W
+
+        # friction coefficient
+        self.mu = mu
+
+        # force
+        self.f_W = f_W
 
 
 class QuasistaticSimulator:
@@ -149,7 +168,6 @@ class QuasistaticSimulator:
             min_K_a_list.append(np.min(joint_stiffness))
         self.min_K_a = np.min(min_K_a_list)
 
-
         # Find planar model instances.
         # TODO: it is assumed that each un-actuated model instance contains
         #  only one rigid body.
@@ -186,6 +204,7 @@ class QuasistaticSimulator:
         # For contact force visualization. It is updated when
         #   self.calc_contact_results is called.
         self.contact_results = ContactResults()
+        self.my_contact_results = []
 
         # For system state visualization. It is updated when
         #   self.update_configuration is called.
@@ -453,8 +472,7 @@ class QuasistaticSimulator:
             '''
 
             phi[i_c] = sdp.distance
-            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(
-                sdp)
+            U[i_c] = self.get_friction_coefficient(sdp.id_A, sdp.id_B)
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AGa = self.inspector.GetPoseInFrame(sdp.id_A)
@@ -462,8 +480,6 @@ class QuasistaticSimulator:
             p_ACa_A = X_AGa.multiply(sdp.p_ACa)
             p_BCb_B = X_BGb.multiply(sdp.p_BCb)
 
-            # TODO: it is assumed contact exists only between model
-            #  instances, not between bodies within the same model instance.
             model_A = self.find_model_instance_index_for_body(bodyA)
             model_B = self.find_model_instance_index_for_body(bodyB)
             is_A_in = model_A is not None
@@ -531,64 +547,110 @@ class QuasistaticSimulator:
 
             # Store contact positions in order to draw contact forces later.
             # TODO: contact forces at step (l+1) is drawn with the
-            # configuration at step l.
-            if is_A_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyA)
-                contact_info_list.append(
-                    MyContactInfo(
-                        bodyA_index=bodyB.index(),
-                        bodyB_index=bodyA.index(),
-                        geometry_id_A=sdp.id_B,
-                        geometry_id_B=sdp.id_A,
-                        p_WC_W=X_WD.multiply(p_ACa_A),
-                        n_W=n_A_W,
-                        dC_W=d_A_W))
-            elif is_B_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyB)
+            #  configuration at step l.
+            X_WA = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyA)
+            X_WB = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyB)
+            p_WCa = X_WA.multiply(p_ACa_A)
+            p_WCb = X_WB.multiply(p_BCb_B)
+
+            if is_B_in:
                 contact_info_list.append(
                     MyContactInfo(
                         bodyA_index=bodyA.index(),
                         bodyB_index=bodyB.index(),
                         geometry_id_A=sdp.id_A,
                         geometry_id_B=sdp.id_B,
-                        p_WC_W=X_WD.multiply(p_BCb_B),
+                        p_WCa=p_WCa,
+                        p_WCb=p_WCb,
                         n_W=n_B_W,
-                        dC_W=d_B_W))
+                        dC_W=d_B_W,
+                        mu=U[i_c]))
+            elif is_A_in:
+                contact_info_list.append(
+                    MyContactInfo(
+                        bodyA_index=bodyB.index(),
+                        bodyB_index=bodyA.index(),
+                        geometry_id_A=sdp.id_B,
+                        geometry_id_B=sdp.id_A,
+                        p_WCa=p_WCb,
+                        p_WCb=p_WCa,
+                        n_W=n_A_W,
+                        dC_W=d_A_W,
+                        mu=U[i_c]))
             else:
                 raise RuntimeError("At least one body in a contact pair "
                                    "should be unactuated.")
 
-        return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
+            self.my_contact_results = contact_info_list
 
-    def update_contact_results(self, my_contact_info_list: List[MyContactInfo],
+        return n_c, n_d, n_f, Jn, Jf, phi, U
+
+    def update_contact_results(self,
                                beta: np.ndarray, h: float, n_c: int,
                                n_d: np.ndarray,
                                mu_list: np.ndarray):
-        assert len(my_contact_info_list) == n_c
+        assert len(self.my_contact_results) == n_c
         contact_results = ContactResults()
         i_f_start = 0
-        for i_c, my_contact_info in enumerate(my_contact_info_list):
+        for i_c, my_contact_info in enumerate(self.my_contact_results):
             i_f_end = i_f_start + n_d[i_c]
             beta_i = beta[i_f_start: i_f_end]
             f_normal_W = my_contact_info.n_W * beta_i.sum() / h
-            f_tangential_W = \
-                my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h
-            point_pair = PenetrationAsPointPair()
-            point_pair.id_A = my_contact_info.geometry_id_A
-            point_pair.id_B = my_contact_info.geometry_id_B
-            contact_results.AddContactInfo(
-                PointPairContactInfo(
-                    my_contact_info.bodyA_index,
-                    my_contact_info.bodyB_index,
-                    f_normal_W + f_tangential_W,
-                    my_contact_info.p_WC_W,
-                    0, 0, point_pair))
+            f_tangential_W = (
+                my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h)
+
+            # update contact force in my contact info.
+            my_contact_info.f_W = f_normal_W + f_tangential_W
+
+            self.add_contact_info_to_contact_results(
+                contact_results=contact_results,
+                my_contact_info=my_contact_info)
 
             i_f_start += n_d[i_c]
 
         self.contact_results = contact_results
+
+    def add_contact_info_to_contact_results(self,
+                                            contact_results: ContactResults,
+                                            my_contact_info: MyContactInfo):
+        point_pair = PenetrationAsPointPair()
+        point_pair.id_A = my_contact_info.geometry_id_A
+        point_pair.id_B = my_contact_info.geometry_id_B
+        point_pair.p_WCa = my_contact_info.p_WCa
+        point_pair.p_WCb = my_contact_info.p_WCb
+        point_pair.nhat_BA_W = -my_contact_info.n_W
+
+        contact_results.AddContactInfo(
+            PointPairContactInfo(
+                my_contact_info.bodyA_index,
+                my_contact_info.bodyB_index,
+                my_contact_info.f_W,
+                my_contact_info.p_WC_W,
+                0, 0, point_pair))
+
+    def serialize_my_contact_info(self, my_contact_info: MyContactInfo):
+        return MyContactInfo(
+            bodyA_index=int(my_contact_info.bodyA_index),
+            bodyB_index=int(my_contact_info.bodyB_index),
+            # BTW, integer values of geometry IDs are useless, as it's not
+            # possible to create a GeometryId from an integer.
+            geometry_id_A=my_contact_info.geometry_id_A.get_value(),
+            geometry_id_B=my_contact_info.geometry_id_B.get_value(),
+            p_WCa=np.copy(my_contact_info.p_WCa),
+            p_WCb=np.copy(my_contact_info.p_WCb),
+            n_W=np.copy(my_contact_info.n_W),
+            dC_W=np.copy(my_contact_info.dC_W),
+            mu=my_contact_info.mu,
+            f_W=np.copy(my_contact_info.f_W))
+
+    def serialize_my_contact_results(self, f_threshold: float,
+            my_contact_results: List[MyContactInfo] = None):
+        if my_contact_results is None:
+            my_contact_results = self.my_contact_results
+
+        return [self.serialize_my_contact_info(my_contact_info)
+                for my_contact_info in my_contact_results
+                if np.linalg.norm(my_contact_info.f_W) > f_threshold]
 
     def get_mbp_body_from_scene_graph_geometry(self, g_id):
         f_id = self.inspector.GetFrameId(g_id)
@@ -604,17 +666,16 @@ class QuasistaticSimulator:
         return self.plant.GetVelocitiesFromArray(
             model_instance_index, selector).astype(int)
 
-    def get_friction_coefficient_for_signed_distance_pair(self, sdp):
-        props_A = self.inspector.GetProximityProperties(sdp.id_A)
-        props_B = self.inspector.GetProximityProperties(sdp.id_B)
+    def get_friction_coefficient(self, id_A: GeometryId, id_B: GeometryId):
+        props_A = self.inspector.GetProximityProperties(id_A)
+        props_B = self.inspector.GetProximityProperties(id_B)
         cf_A = props_A.GetProperty("material", "coulomb_friction")
         cf_B = props_B.GetProperty("material", "coulomb_friction")
         cf = CalcContactFrictionFromSurfaceProperties(cf_A, cf_B)
         return cf.static_friction()
 
     def calc_jacobian_and_phi(self, contact_detection_tolerance):
-        (n_c, n_d, n_f, Jn, Jf, phi_l, U,
-         contact_info_list) = self.calc_contact_jacobians(
+        (n_c, n_d, n_f, Jn, Jf, phi_l, U) = self.calc_contact_jacobians(
             contact_detection_tolerance)
 
         phi_constraints = np.zeros(n_f)
@@ -627,8 +688,7 @@ class QuasistaticSimulator:
                 phi_constraints[idx] = phi_l[i_c]
             j_start += n_d[i_c]
 
-        return (phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d,
-                n_f, U)
+        return phi_constraints, J, phi_l, Jn, n_c, n_d, n_f, U
 
     @staticmethod
     def check_cvx_status(status: str):
@@ -927,7 +987,7 @@ class QuasistaticSimulator:
         # Forward dynamics.
         q_dict = self.get_mbp_positions()
 
-        phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
+        phi_constraints, J, phi_l, Jn, n_c, n_d, n_f, U = \
             self.calc_jacobian_and_phi(
                 self.sim_params.contact_detection_tolerance)
 
@@ -961,7 +1021,7 @@ class QuasistaticSimulator:
         #  numerical and analytic derivatives. Find out why.
         self.step_configuration(q_dict, dq_dict)  # normalizes quaternions.
         self.update_mbp_positions(q_dict)
-        self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
+        self.update_contact_results(beta, h, n_c, n_d, U)
 
         # Gradients.
         '''
