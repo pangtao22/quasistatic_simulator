@@ -253,6 +253,12 @@ class QuasistaticSimulator:
             name_to_model[self.plant.GetModelInstanceName(model)] = model
         return name_to_model
 
+    def update_mbp_positions_from_vector(self, q: np.ndarray):
+        self.plant.SetPositions(self.context_plant, q)
+        # Update query object.
+        self.query_object = self.scene_graph.get_query_output_port().Eval(
+            self.context_sg)
+
     def update_mbp_positions(
             self, q_dict: Dict[ModelInstanceIndex, np.ndarray]):
         """
