@@ -1,0 +1,16 @@
+model_directive: package://quasistatic_simulator/box_pushing.yml
+robots:
+  -
+    name: hand
+    Kp: [100, 100]
+
+objects:
+  -
+    name: box
+    file: package://quasistatic_simulator/box_1m_rotation_damped.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, 0.]
+  nd_per_contact: 2
+  contact_detection_tolerance: inf
+  unactuated_mass_scale: 0
