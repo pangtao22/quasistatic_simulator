@@ -1173,13 +1173,16 @@ class QuasistaticSimulator:
             numbers of a seven-number array) is normalized.
         :return: None.
         """
-        for model in self.models_unactuated:
-            q_u = q_dict[model]
-            q_u += dq_dict[model]
+        if (self.sim_params.unactuated_mass_scale == np.inf):
+            pass
+        else:
+            for model in self.models_unactuated:
+                q_u = q_dict[model]
+                q_u += dq_dict[model]
 
-            if self.is_3d_floating[model]:
-                # pass
-                q_u[:4] /= np.linalg.norm(q_u[:4])  # normalize quaternion
+                if self.is_3d_floating[model]:
+                    # pass
+                    q_u[:4] /= np.linalg.norm(q_u[:4])  # normalize quaternion
 
         for model in self.models_actuated:
             q_dict[model] += dq_dict[model]
