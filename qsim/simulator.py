@@ -1173,9 +1173,7 @@ class QuasistaticSimulator:
             numbers of a seven-number array) is normalized.
         :return: None.
         """
-        if (self.sim_params.unactuated_mass_scale == np.inf):
-            pass
-        else:
+        if (self.sim_params.unactuated_mass_scale != np.inf):
             for model in self.models_unactuated:
                 q_u = q_dict[model]
                 q_u += dq_dict[model]
