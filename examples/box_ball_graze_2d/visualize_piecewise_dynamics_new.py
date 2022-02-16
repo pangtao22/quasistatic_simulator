@@ -4,7 +4,8 @@ import tqdm
 import meshcat
 import numpy as np
 
-from qsim.simulator import QuasistaticSimParameters, QuasistaticSimulator
+from qsim.simulator import (QuasistaticSimParameters, QuasistaticSimulator,
+                            GradientMode)
 from qsim_old.problem_definition_graze import problem_definition
 from qsim.model_paths import models_dir
 
@@ -60,7 +61,9 @@ for i in tqdm.tqdm(range(n)):
     tau_ext_dict = q_sim.calc_tau_ext([])
     q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
                              tau_ext_dict=tau_ext_dict, h=h,
-                             mode='unconstrained', gradient_mode=False)
+                             mode='unconstrained',
+                             gradient_mode=GradientMode.kNone,
+                             unactuated_mass_scale=0)
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
 

@@ -39,11 +39,6 @@ class QuasistaticParser:
         self.q_sim_params_dict = QuasistaticSimParameters()._asdict()
 
         q_sim_params = copy.deepcopy(config['quasistatic_sim_params'])
-        d = q_sim_params['contact_detection_tolerance']
-        if type(d) is str:
-            assert d == 'inf'
-            q_sim_params['contact_detection_tolerance'] = np.inf
-
         self.set_sim_params(**q_sim_params)
 
     def parse_path(self, model_path: str):
@@ -116,7 +111,14 @@ class QuasistaticParser:
 
     @staticmethod
     def check_params_validity(q_params: QuasistaticSimParameters):
-        if (q_params.nd_per_contact > 2 and q_params.gradient_mode ==
-                GradientMode.kAB):
+        gm = q_params.gradient_mode
+        if q_params.nd_per_contact > 2 and gm == GradientMode.kAB:
             raise RuntimeError("Computing A matrix for 3D systems is not yet "
                                "supported.")
+
+        if q_params.unactuated_mass_scale == np.inf:
+            if gm == GradientMode.kAB or gm == GradientMode.kBOnly:
+                raise RuntimeError("Dynamics gradient cannot be computed when "
+                                   "the object has infinite mass.")
+
+

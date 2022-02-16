@@ -77,7 +77,7 @@ q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
 q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
            mode="qp_mp", gradient_mode=GradientMode.kAB,
-           grad_from_active_constraints=True)
+           unactuated_mass_scale=0)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
 
 print("dfdu_numerical\n", dfdu_numerical)
@@ -88,7 +88,7 @@ print("dfdx_active\n", q_sim.get_Dq_nextDq())
 q_sim.update_mbp_positions(q_dict)
 q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
            mode="qp_mp", gradient_mode=GradientMode.kAB,
-           grad_from_active_constraints=False)
+           unactuated_mass_scale=0)
 
 print("dfdu_kkt\n", q_sim.get_Dq_nextDqa_cmd())
 print("dfdx_kkt\n", q_sim.get_Dq_nextDq())
