@@ -83,7 +83,7 @@ if __name__ == "__main__":
     tau_ext_dict = q_sim.calc_tau_ext([])
     q_sim.step(q_a_cmd_dict=q_dict, tau_ext_dict=tau_ext_dict, h=h,
                mode="qp_mp", gradient_mode=GradientMode.kBOnly,
-               grad_from_active_constraints=True)
+               unactuated_mass_scale=0)
     dfdu_active = q_sim.get_Dq_nextDqa_cmd()
 
 

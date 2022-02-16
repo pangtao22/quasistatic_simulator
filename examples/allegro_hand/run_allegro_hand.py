@@ -73,16 +73,12 @@ q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
 q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
            mode="qp_mp", gradient_mode=GradientMode.kBOnly,
-           grad_from_active_constraints=True)
+           unactuated_mass_scale=0)
 
 q_sim_cpp.update_mbp_positions(q_dict)
-q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict,
-               tau_ext_dict=tau_ext_dict,
-               h=h,
-               contact_detection_tolerance=q_parser.get_param(
-                   'contact_detection_tolerance'),
-               gradient_mode=GradientMode.kBOnly,
-               grad_from_active_constraints=True)
+q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
+               mode="qp_mp",
+               gradient_mode=GradientMode.kBOnly, unactuated_mass_scale=0)
 
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
 dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
