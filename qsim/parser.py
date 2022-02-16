@@ -116,9 +116,11 @@ class QuasistaticParser:
             raise RuntimeError("Computing A matrix for 3D systems is not yet "
                                "supported.")
 
-        if q_params.unactuated_mass_scale == np.inf:
+        if q_params.unactuated_mass_scale == 0:
             if gm == GradientMode.kAB or gm == GradientMode.kBOnly:
                 raise RuntimeError("Dynamics gradient cannot be computed when "
                                    "the object has infinite mass.")
 
-
+        if q_params.unactuated_mass_scale == np.inf:
+            raise RuntimeError("Setting mass matrix to 0 should be achieved "
+                               "using the is_quasi_dynamic flag.")

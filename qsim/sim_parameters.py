@@ -50,7 +50,7 @@ field_names = [
     "grad_from_active_constraints", "unactuated_mass_scale"
 ]
 defaults = [np.array([0, 0, -9.81]), 4, 0.01,
-            False, "qp_mp", 1e4, GradientMode.kNone, True, 0]
+            False, "qp_mp", 1e4, GradientMode.kNone, True, np.nan]
 
 if sys.version_info >= (3, 7):
     QuasistaticSimParameters = namedtuple(

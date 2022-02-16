@@ -653,23 +653,32 @@ class QuasistaticSimulator:
         matrix should be as small as possible without causing numerical issues.
 
         The strategy used here is to scale the true mass matrix of
-        un-actuated objects by epsilon, so that the largest eigen value of the
-        mass matrix is a constant times (say 20) smaller than the smallest eigen
-        value of (h^2 * K), where h is the simulation time step and K the
-        stiffness matrix of the robots.
+         un-actuated objects by epsilon, so that the largest eigen value of the
+         mass matrix is a constant (unactuated_mass_scale) times smaller than
+         the smallest eigen value of (h^2 * K), where h is the simulation time
+         step and K the stiffness matrix of the robots.
 
         With this formulation, the Q matrix in the QP is given by
         [[epsilon * M_u, 0    ],
-         [0            , h^2 K]].
+         [0            , h^2 K]],
+        where
+        max_M_u_eigen_value * epsilon * unactuated_mass_scale == min_h_squared_K
 
-        On the other hand, unactuated_mass_scale == 0 means that the object
+        Special case I, unactuated_mass_scale == 0 means that the object
          position remains fixed, as if it has infinite inertia. This is
          useful for grasp sampling, when we want the object pose to
-         remain fixed while moving the fingers to make contact.
+         remain fixed while moving the fingers to make contact. But having
+         infs in the QP is bad. Instead, the original M_u is used,
+         and the infinite inertia effect is achieved by not updating q_u in
+         self.step_configuration(...).
 
-        However, unactuated_mass_scale == INFINITY would make M_u == 0 and
-         remove the regularizing effect of the mass matrix, which is
-         undesirable. Therefore, the original mass matrix is used in this case.
+        Special case II, unactuated_mass_scale == INFINITY, if interpreted
+         literally, would set M_u to 0, thus having the same effect as
+         setting is_quasi_dynamic to false. We don't want to inadvertently
+         disable mass, so an exception is thrown in this case.
+
+        Special case III, unactuated_mass_scale == NAN. The original mass
+         matrix is used, without any scaling.
         """
         M = self.plant.CalcMassMatrix(self.context_plant)
         M_u_dict = {}
@@ -677,7 +686,7 @@ class QuasistaticSimulator:
             idx_v_model = self.velocity_indices[model]
             M_u_dict[model] = M[idx_v_model[:, None], idx_v_model]
 
-        if unactuated_mass_scale == 0 or unactuated_mass_scale == np.inf:
+        if unactuated_mass_scale == 0 or np.isnan(unactuated_mass_scale):
             return M_u_dict
 
         max_eigen_value_M_u = {
@@ -687,8 +696,6 @@ class QuasistaticSimulator:
         min_K_a_h2 = self.min_K_a * h ** 2
 
         for model, M_u in M_u_dict.items():
-            # max_M_u_eigen_value * epsilon * 20 = min_h_squared_K
-            # TODO: make 20 a parameter which can be set in a yaml file.
             epsilon = (min_K_a_h2 / max_eigen_value_M_u[model]
                        / unactuated_mass_scale)
             M_u *= epsilon
@@ -911,7 +918,7 @@ class QuasistaticSimulator:
     def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
              tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray], h: float,
              mode: str, gradient_mode: GradientMode,
-             unactuated_mass_scale: float):
+             unactuated_mass_scale: Union[float, None]):
         """
          This function does the following:
          1. Extracts q_dict, a dictionary containing current system
@@ -933,6 +940,9 @@ class QuasistaticSimulator:
          :return: system configuration at the next time step, stored in a
              dictionary keyed by ModelInstanceIndex.
          """
+        if unactuated_mass_scale is None:
+            unactuated_mass_scale = self.sim_params.unactuated_mass_scale
+
         # Forward dynamics.
         q_dict = self.get_mbp_positions()
 
@@ -1189,7 +1199,7 @@ class QuasistaticSimulator:
             numbers of a seven-number array) is normalized.
         :return: None.
         """
-        if unactuated_mass_scale < np.inf:
+        if unactuated_mass_scale > 0 or np.isnan(unactuated_mass_scale):
             for model in self.models_unactuated:
                 q_u = q_dict[model]
                 q_u += dq_dict[model]
