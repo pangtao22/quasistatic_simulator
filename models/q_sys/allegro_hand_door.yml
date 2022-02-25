@@ -1,0 +1,17 @@
+model_directive: package://quasistatic_simulator/allegro_hand_floating_door.yml
+robots:
+  -
+    name: allegro_hand_right
+    Kp: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+
+objects:
+  -
+    name: door
+    file: package://quasistatic_simulator/door_rotation.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, 0.]
+  nd_per_contact: 4
+  contact_detection_tolerance: 0.025
+  is_quasi_dynamic: True
+  unactuated_mass_scale: .NAN
