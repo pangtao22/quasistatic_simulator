@@ -27,6 +27,90 @@
 -->
 <sdf version="1.7">
   <model name="allegro_hand_right">
+
+    <link name="ghost_body_x">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>  
+
+    <link name="ghost_body_y">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>
+
+    <link name="ghost_body_z">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>
+
+    <joint name="x_slider" type="prismatic">
+      <parent>ghost_body_x</parent>
+      <child>ghost_body_y</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <!-- Drake attaches an actuator to all joints with a non-zero effort
+             limit. We do not want an actuator for this joint. -->
+        <limit>
+          <effort>0</effort>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="y_slider" type="prismatic">
+      <parent>ghost_body_y</parent>
+      <child>ghost_body_z</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <!-- Drake attaches an actuator to all joints with a non-zero effort
+             limit. We do not want an actuator for this joint. -->
+        <limit>
+          <effort>0</effort>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="z_slider" type="prismatic">
+      <parent>ghost_body_z</parent>
+      <child>hand_root</child>
+      <!-- pose> 0 0 0 0 -1.57079632 0 </pose -->
+      <axis>
+        <xyz>1 0 0</xyz>
+        <!-- Drake attaches an actuator to all joints with a non-zero effort
+             limit. We do not want an actuator for this joint and therefore we
+             set a zero effort limit. -->
+        <limit>
+          <effort>0</effort>
+        </limit>
+      </axis>
+    </joint>
+
     <link name="hand_root">
       <inertial>
         <mass>0.4154</mass>

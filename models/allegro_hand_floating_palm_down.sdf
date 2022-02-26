@@ -28,6 +28,20 @@
 <sdf version="1.7">
   <model name="allegro_hand_right">
 
+    <link name="ghost_body_x">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>  
+
     <link name="ghost_body_y">
       <inertial>
         <mass>1.0e-6</mass>
@@ -57,10 +71,10 @@
     </link>
 
     <joint name="x_slider" type="prismatic">
-      <parent>world</parent>
+      <parent>ghost_body_x</parent>
       <child>ghost_body_y</child>
       <axis>
-        <xyz>1 0 0</xyz>
+        <xyz>0 -1 0</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
              limit. We do not want an actuator for this joint. -->
         <limit>
@@ -73,7 +87,7 @@
       <parent>ghost_body_y</parent>
       <child>ghost_body_z</child>
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz>0 0 1</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
              limit. We do not want an actuator for this joint. -->
         <limit>
@@ -85,8 +99,9 @@
     <joint name="z_slider" type="prismatic">
       <parent>ghost_body_z</parent>
       <child>hand_root</child>
+      <!-- pose> 0 0 0 0 -1.57079632 0 </pose -->
       <axis>
-        <xyz>0 0 1</xyz>
+        <xyz>-1 0 0</xyz>
         <!-- Drake attaches an actuator to all joints with a non-zero effort
              limit. We do not want an actuator for this joint and therefore we
              set a zero effort limit. -->
@@ -124,6 +139,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/base_link.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
     </link>
     <link name="link_0">
@@ -154,6 +172,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>                
       </visual>
     </link>
     <joint name="joint_0" type="revolute">
@@ -215,6 +236,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>
       </visual>
     </link>
     <joint name="joint_1" type="revolute">
@@ -276,6 +300,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>
       </visual>
     </link>
     <joint name="joint_2" type="revolute">
@@ -329,6 +356,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>
       </visual>
       <visual name="link_3_tip_visual_1">
         <pose>0 0 0.0267 0 0 0</pose>
@@ -383,6 +413,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_12.0_right.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
     </link>
     <joint name="joint_12" type="revolute">
@@ -430,6 +463,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_13.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
     </link>
     <joint name="joint_13" type="revolute">
@@ -483,6 +519,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_14.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
     </link>
     <joint name="joint_14" type="revolute">
@@ -545,6 +584,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
       <visual name="link_15_tip_visual_1">
         <pose>0 0 0.0423 0 0 0</pose>
@@ -599,6 +641,9 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
       </visual>
     </link>
     <joint name="joint_4" type="revolute">
@@ -660,6 +705,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
     </link>
     <joint name="joint_5" type="revolute">
@@ -721,6 +770,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
     </link>
     <joint name="joint_6" type="revolute">
@@ -774,6 +827,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
       <visual name="link_7_tip_visual_1">
         <pose>0 0 0.0267 0 0 0</pose>
@@ -828,6 +885,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
     </link>
     <joint name="joint_8" type="revolute">
@@ -889,6 +950,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
     </link>
     <joint name="joint_9" type="revolute">
@@ -950,6 +1015,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
     </link>
     <joint name="joint_10" type="revolute">
@@ -1003,6 +1072,10 @@
             <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+        </material>        
+
       </visual>
       <visual name="link_11_tip_visual_1">
         <pose>0 0 0.0267 0 0 0</pose>

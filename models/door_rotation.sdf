@@ -10,7 +10,7 @@
        these two DOFs. The ghost body has negligible mass.
   -->
   <!-- world->ghost_body_y->ghost_body_z_sphere-->
-  <model name="simple_cuboid_1m">
+  <model name="door">
     <!-- The model for a solid box of uniform density. -->
 
     <joint name="z_rotation" type="revolute">

@@ -1,4 +1,4 @@
-model_directive: package://quasistatic_simulator/allegro_hand_door.yml
+model_directive: package://quasistatic_simulator/allegro_hand_pen.yml
 robots:
   -
     name: allegro_hand_right
@@ -6,8 +6,8 @@ robots:
 
 objects:
   -
-    name: door
-    file: package://quasistatic_simulator/door_rotation.sdf
+    name: pen
+    file: package://quasistatic_simulator/pen.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, 0.]
