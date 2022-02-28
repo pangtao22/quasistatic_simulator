@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="sphere_r0.1m">
+    <link name="sphere">
+      <inertial>
+        <mass>1.0</mass>
+        <inertia>
+          <ixx>0.001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001</iyy>
+          <iyz>0</iyz>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
+
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.04</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.7 0.2 0.2 0.8</diffuse>
+        </material>
+      </visual>
+
+      <visual name="visual_2">
+        <pose> 0 0 0.04 0 0 0 </pose>
+        <geometry>
+          <box>
+           <size>0.01 0.01 0.002 </size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.2 0.9</diffuse>
+        </material>
+      </visual>
+
+      <collision name="collision">
+        <geometry>
+          <sphere>
+            <radius>0.04</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+    </link>
+  </model>
+</sdf>
