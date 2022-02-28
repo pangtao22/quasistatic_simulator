@@ -1,5 +1,6 @@
 import os
 import copy
+from collections import OrderedDict
 
 import numpy as np
 import parse
@@ -30,10 +31,15 @@ class QuasistaticParser:
 
         # objects
         object_sdf_paths = {}
+        object_sdf_paths_ordered = OrderedDict()
         if config['objects'] is not None:
             for obj in config['objects']:
-                object_sdf_paths[obj['name']] = self.parse_path(obj['file'])
+                name = obj['name']
+                path = self.parse_path(obj['file'])
+                object_sdf_paths[name] = path
+                object_sdf_paths_ordered[name] = path
         self.object_sdf_paths = object_sdf_paths
+        self.object_sdf_paths_ordered = object_sdf_paths_ordered
 
         # quasistatic_sim_params
         self.q_sim_params_dict = QuasistaticSimParameters()._asdict()
@@ -87,7 +93,7 @@ class QuasistaticParser:
         return QuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_dict=self.robot_stiffness_dict,
-            object_sdf_paths=self.object_sdf_paths,
+            object_sdf_paths=self.object_sdf_paths_ordered,
             sim_params=q_sim_params,
             internal_vis=internal_vis)
 
