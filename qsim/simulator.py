@@ -888,9 +888,9 @@ class QuasistaticSimulator:
                            phi_constraints: np.ndarray,
                            J: np.ndarray,
                            gradient_mode: GradientMode,
-                           **kwargs):
+                           unactuated_mass_scale: float):
         Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+            q_dict, q_a_cmd_dict, tau_ext_dict, h, unactuated_mass_scale)
 
         v = cp.Variable(self.n_v)
 
@@ -910,9 +910,39 @@ class QuasistaticSimulator:
         for model in self.models_all:
             indices = self.velocity_indices[model]
             v_h_value_dict[model] = v.value[indices] * h
+        
+        # Check solution for stationarity condition.
+        vstar = v.value
+        grad_log = np.zeros(J.shape[1])
+        for j in range(J.shape[1]):
+            for i in range(J.shape[0]):
+                grad_log[j] += J[i,j] / (
+                    phi_constraints[i] / h + J[i,:] @ vstar)
+
+        stationarity = Q @ vstar - tau_h - (1 / t) * grad_log
+
+        # Use implicit function theorem to get DvDu.
+        dydu = np.zeros(Q.shape)
+        for j in range(J.shape[1]):
+            for i in range(J.shape[0]):
+                dydu[j] += J[i] * J[i,j] / (
+                    phi_constraints[i] / h + J[i,:] @ vstar) ** 2.0
+
+        coeff = Q + dydu/t
+        bias = np.zeros((self.n_v, self.n_v))
+        idx_i, idx_j = np.diag_indices(self.n_v)
+        idx_u = []
+        for model in self.models_actuated:
+            idx_v_model = self.velocity_indices[model]
+            idx_u += list(idx_v_model)
+            bias[idx_i[idx_v_model], idx_j[idx_v_model]] = \
+                self.K_a[model].diagonal() * h
+
+
+        DvDu = h * np.linalg.solve(coeff, bias)[:,idx_u]
 
         # TODO: gradient not supported yet.
-        DvDb, DvDe = None, None
+        DvDb, DvDe = DvDu, None
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
     def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -1006,7 +1036,8 @@ class QuasistaticSimulator:
         if gradient_mode == GradientMode.kNone:
             pass
         elif gradient_mode == GradientMode.kBOnly:
-            self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
+            #self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
+            self.Dq_nextDqa_cmd = Dv_nextDb
             self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
         elif gradient_mode == GradientMode.kAB:
             self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
