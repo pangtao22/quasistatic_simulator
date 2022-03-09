@@ -47,7 +47,10 @@ q0_dict_str = {object_name: q_u0,
 #%% run sim.
 if __name__ == "__main__":
     q_parser = QuasistaticParser(q_model_path)
-    q_parser.set_sim_params(is_quasi_dynamic=True, gravity=np.array([0, 0, -10.]))
+    q_parser.set_sim_params(is_quasi_dynamic=True,
+                            mode='log_cvx',
+                            log_barrier_weight=100,
+                            gravity=np.array([0, 0, -10.]))
 
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,

@@ -846,7 +846,7 @@ class QuasistaticSimulator:
             A[0, :n_v] = J[i]
             A[2, -1] = 1
 
-            b = np.array([phi_constraints[i], 1, 0])
+            b = np.array([phi_constraints[i] / h, 1, 0])
             prog.AddExponentialConeConstraint(
                 A=A, b=b, vars=np.hstack([v, [s[i]]]))
 

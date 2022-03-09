@@ -65,10 +65,10 @@ def run_100_times():
                                  gradient_mode=GradientMode.kNone,
                                  unactuated_mass_scale=None)
 
-
-cProfile.runctx('run_100_times()',
-                globals=globals(), locals=locals(),
-                filename='exponential_cone_qp')
+#
+# cProfile.runctx('run_100_times()',
+#                 globals=globals(), locals=locals(),
+#                 filename='exponential_cone_qp')
 
 
 #%% sample dynamics
