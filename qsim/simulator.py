@@ -4,6 +4,7 @@ from typing import List, Union, Dict
 import cvxpy as cp
 import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
+                         MosekSolver,
                          AbstractValue, ExternallyAppliedSpatialForce, Context,
                          JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
@@ -169,14 +170,16 @@ class QuasistaticSimulator:
             self.is_3d_floating[model] = False
 
         # solver
-        self.solver = GurobiSolver()
-        assert self.solver.available()
+        self.solver_grb = GurobiSolver()
+        self.solver_msk = MosekSolver()
+        assert self.solver_grb.available()
 
         # step function dictionary
         self.step_function_dict = {
             'qp_mp': self.step_qp_mp,
             'qp_cvx': self.step_qp_cvx,
-            'unconstrained': self.step_unconstrained}
+            'log_cvx': self.step_log_cvx,
+            'log_mp': self.step_log_mp}
 
         '''
         Both self.contact_results and self.query_object are updated by calling
@@ -760,7 +763,7 @@ class QuasistaticSimulator:
             ub=e,
             vars=v)
 
-        result = self.solver.Solve(prog, None, None)
+        result = self.solver_grb.Solve(prog, None, None)
         # self.optimizer_time_log.append(
         #     result.get_solver_details().optimizer_time)
         assert result.is_success()
@@ -801,6 +804,70 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, beta, DvDb, DvDe
 
+    def step_log_mp(self,
+                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    h: float,
+                    phi_constraints: np.ndarray,
+                    J: np.ndarray,
+                    gradient_mode: GradientMode,
+                    unactuated_mass_scale: float):
+        Q, tau_h = self.form_Q_and_tau_h(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h,
+            unactuated_mass_scale)
+        L = np.linalg.cholesky(Q)
+        F = L.T
+        m = len(phi_constraints)
+        n_v = self.n_v
+
+        prog = mp.MathematicalProgram()
+        t0 = prog.NewContinuousVariables(1, 't0')[0]
+        v = prog.NewContinuousVariables(n_v, "v")
+        s = prog.NewContinuousVariables(m, "s")
+
+        prog.AddLinearCost(
+            t0 - tau_h.dot(v) - np.sum(s) / self.sim_params.log_barrier_weight)
+
+        # rotated 2nd order cone constraint for the cost.
+        A = np.zeros([n_v + 2, n_v + 1])
+        A[0, -1] = 1
+        A[2:, :n_v] = F
+
+        b = np.zeros(n_v + 2)
+        b[1] = 2
+
+        prog.AddRotatedLorentzConeConstraint(
+            A=A, b=b, vars=np.hstack([v, [t0]]))
+
+        # exponential cone constraints for contacts.
+        for i in range(m):
+            A = np.zeros([3, n_v + 1])
+            A[0, :n_v] = J[i]
+            A[2, -1] = 1
+
+            b = np.array([phi_constraints[i], 1, 0])
+            prog.AddExponentialConeConstraint(
+                A=A, b=b, vars=np.hstack([v, [s[i]]]))
+
+        result = self.solver_msk.Solve(prog, None, None)
+        assert result.is_success()
+
+        # extract v_h from vector into a dictionary.
+        v_values = result.GetSolution(v)
+        v_h_value_dict = dict()
+        for model in self.models_all:
+            indices = self.velocity_indices[model]
+            v_h_value_dict[model] = v_values[indices] * h
+
+        # no dual variables yet.
+        beta = np.zeros(m)
+
+        # no gradients yet
+        DvDb, DvDe = None, None
+
+        return v_h_value_dict, beta, DvDb, DvDe
+
     def step_qp_cvx(self,
                     q_dict: Dict[ModelInstanceIndex, np.ndarray],
                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
@@ -808,9 +875,11 @@ class QuasistaticSimulator:
                     h: float,
                     phi_constraints: np.ndarray,
                     J: np.ndarray,
-                    gradient_mode: GradientMode):
+                    gradient_mode: GradientMode,
+                    unactuated_mass_scale: float):
         Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+            q_dict, q_a_cmd_dict, tau_ext_dict, h,
+            unactuated_mass_scale)
 
         # Make a CVX problem.
         # The cholesky decomposition is needed because cp.sum_squares() is the
@@ -847,7 +916,8 @@ class QuasistaticSimulator:
             cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) + b_cp @ v),
             constraints)
 
-        prob.solve(requires_grad=gradient_mode != GradientMode.kNone)
+        prob.solve(requires_grad=gradient_mode != GradientMode.kNone,
+                   solver="GUROBI")
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.
@@ -880,17 +950,18 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
-    def step_unconstrained(self,
-                           q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           h: float,
-                           phi_constraints: np.ndarray,
-                           J: np.ndarray,
-                           gradient_mode: GradientMode,
-                           **kwargs):
+    def step_log_cvx(self,
+                     q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     h: float,
+                     phi_constraints: np.ndarray,
+                     J: np.ndarray,
+                     gradient_mode: GradientMode,
+                     unactuated_mass_scale: float):
         Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h)
+            q_dict, q_a_cmd_dict, tau_ext_dict, h,
+            unactuated_mass_scale=unactuated_mass_scale)
 
         v = cp.Variable(self.n_v)
 
@@ -902,7 +973,7 @@ class QuasistaticSimulator:
             cp.Minimize(0.5 * cp.quad_form(v, Q) - tau_h @ v -
                         log_barriers_sum / t))
 
-        prob.solve()
+        prob.solve(solver="MOSEK")
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.

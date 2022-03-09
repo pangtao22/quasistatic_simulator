@@ -21,9 +21,11 @@ import numpy as np
     - 'qp_mp': solves the standard QP for system states at the next time 
         step, using MathematicalProgram. 
     - 'qp_mp': solves the standard QP using cvxpy.
-    - 'unconstrained': solves an unconstrained version of the QP, obtained by 
+    - 'log_cvx': solves an unconstrained version of the QP, obtained by 
         moving inequality constraints into the objective with 
-        log barrier functions. 
+        log barrier functions.
+    - 'log_mp': same problem formulation as log_cvx, but uses 
+        MathematicalProgram.
 :param log_barrier_weight: float, used only when is_unconstrained == True.
 
 /*----------------------------------------------------------------------*/

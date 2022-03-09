@@ -1,4 +1,5 @@
 import os
+import cProfile
 
 import tqdm
 import meshcat
@@ -24,7 +25,7 @@ quasistatic_sim_params = QuasistaticSimParameters(
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
     mode='unconstrained',
-    log_barrier_weight=1000)
+    log_barrier_weight=10)
 
 # robot
 Kp = problem_definition['Kq_a'].diagonal()
@@ -48,30 +49,62 @@ model_a = q_sim.plant.GetModelInstanceByName(robot_name)
 q0_dict = {model_u: np.array([0.]),
            model_a: np.array([0, 0.])}
 
+n = 1000
+q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
+
+
+#%% profile iterate
+def run_100_times():
+    for i in range(100):
+        q_sim.update_mbp_positions(q0_dict)
+        q_a_cmd_dict = {model_a: q_a_cmd[i]}
+        tau_ext_dict = q_sim.calc_tau_ext([])
+        q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+                                 tau_ext_dict=tau_ext_dict, h=h,
+                                 mode='log_mp',
+                                 gradient_mode=GradientMode.kNone,
+                                 unactuated_mass_scale=None)
+
+
+cProfile.runctx('run_100_times()',
+                globals=globals(), locals=locals(),
+                filename='exponential_cone_qp')
+
 
 #%% sample dynamics
 # Sample actions between the box x \in [-0.05, 0.05] and y \in [-0.05, 0.05].
-n = 4000
-q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
 q_next = np.zeros((n, 3))
-
 for i in tqdm.tqdm(range(n)):
     q_sim.update_mbp_positions(q0_dict)
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
     tau_ext_dict = q_sim.calc_tau_ext([])
     q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
                              tau_ext_dict=tau_ext_dict, h=h,
-                             mode='unconstrained',
+                             mode='log_mp',
                              gradient_mode=GradientMode.kNone,
-                             unactuated_mass_scale=0)
+                             unactuated_mass_scale=None)
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
+
+
+q_next2 = np.zeros((n, 3))
+for i in tqdm.tqdm(range(n)):
+    q_sim.update_mbp_positions(q0_dict)
+    q_a_cmd_dict = {model_a: q_a_cmd[i]}
+    tau_ext_dict = q_sim.calc_tau_ext([])
+    q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+                             tau_ext_dict=tau_ext_dict, h=h,
+                             mode='log_cvx',
+                             gradient_mode=GradientMode.kNone,
+                             unactuated_mass_scale=None)
+    q_next2[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
+
 
 
 #%% plot the points
 # viz.delete()
 n_u = problem_definition['n_u']
 h = problem_definition['h']
-dynamics_lcp = np.hstack([q_a_cmd, q_next[:, :n_u]])  # [x_cmd, y_cmd, x_u_next]
+dynamics_lcp = np.hstack([q_a_cmd, q_next[:, :1]])  # [x_cmd, y_cmd, x_u_next]
 discontinuity_lcp = np.hstack([q_a_cmd[:, 0][:, None],
                                q_next[:, 2][:, None],
                                q_next[:, 0][:, None]])
