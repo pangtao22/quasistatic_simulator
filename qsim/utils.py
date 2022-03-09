@@ -35,5 +35,3 @@ def calc_tangent_vectors(normal, nd):
 
         dC = (R.dot(dC.T)).T
     return dC
-
-
