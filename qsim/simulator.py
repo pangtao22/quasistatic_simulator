@@ -220,10 +220,10 @@ class QuasistaticSimulator:
         return self.models_actuated
 
     def get_Dq_nextDq(self):
-        return self.Dq_nextDq
+        return np.array(self.Dq_nextDq)
 
     def get_Dq_nextDqa_cmd(self):
-        return self.Dq_nextDqa_cmd
+        return np.array(self.Dq_nextDqa_cmd)
 
     def get_positions(self, model: ModelInstanceIndex):
         return self.plant.GetPositions(self.context_plant, model)
@@ -740,17 +740,12 @@ class QuasistaticSimulator:
         return Q, tau_h
 
     def step_qp_mp(self,
-                   q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                   q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                   tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                    h: float,
                    phi_constraints: np.ndarray,
                    J: np.ndarray,
-                   gradient_mode: GradientMode,
-                   unactuated_mass_scale: float):
-        Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h, unactuated_mass_scale)
-
+                   Q: np.ndarray,
+                   tau_h: np.ndarray,
+                   gradient_mode: GradientMode):
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
         v = prog.NewContinuousVariables(self.n_v, "v")
@@ -805,17 +800,16 @@ class QuasistaticSimulator:
         return v_h_value_dict, beta, DvDb, DvDe
 
     def step_log_mp(self,
-                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                    q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                    tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                     h: float,
                     phi_constraints: np.ndarray,
                     J: np.ndarray,
+                    Q: np.ndarray,
+                    tau_h: np.ndarray,
                     gradient_mode: GradientMode,
-                    unactuated_mass_scale: float):
-        Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h,
-            unactuated_mass_scale)
+                    log_barrier_weight: float = None):
+        if log_barrier_weight is None:
+            log_barrier_weight = self.sim_params.log_barrier_weight
+
         L = np.linalg.cholesky(Q)
         F = L.T
         m = len(phi_constraints)
@@ -827,7 +821,7 @@ class QuasistaticSimulator:
         s = prog.NewContinuousVariables(m, "s")
 
         prog.AddLinearCost(
-            t0 - tau_h.dot(v) - np.sum(s) / self.sim_params.log_barrier_weight)
+            t0 - tau_h.dot(v) - np.sum(s) / log_barrier_weight)
 
         # rotated 2nd order cone constraint for the cost.
         A = np.zeros([n_v + 2, n_v + 1])
@@ -869,18 +863,12 @@ class QuasistaticSimulator:
         return v_h_value_dict, beta, DvDb, DvDe
 
     def step_qp_cvx(self,
-                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                    q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                    tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                     h: float,
                     phi_constraints: np.ndarray,
                     J: np.ndarray,
-                    gradient_mode: GradientMode,
-                    unactuated_mass_scale: float):
-        Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h,
-            unactuated_mass_scale)
-
+                    Q: np.ndarray,
+                    tau_h: np.ndarray,
+                    gradient_mode: GradientMode):
         # Make a CVX problem.
         # The cholesky decomposition is needed because cp.sum_squares() is the
         # only way I've found so far to ensure the problem is DCP (
@@ -951,27 +939,24 @@ class QuasistaticSimulator:
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
     def step_log_cvx(self,
-                     q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
                      h: float,
                      phi_constraints: np.ndarray,
                      J: np.ndarray,
+                     Q: np.ndarray,
+                     tau_h: np.ndarray,
                      gradient_mode: GradientMode,
-                     unactuated_mass_scale: float):
-        Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h,
-            unactuated_mass_scale=unactuated_mass_scale)
+                     log_barrier_weight: float = None):
+        if log_barrier_weight is None:
+            log_barrier_weight = self.sim_params.log_barrier_weight
 
         v = cp.Variable(self.n_v)
 
-        t = self.sim_params.log_barrier_weight
         log_barriers_sum = 0.
         if len(phi_constraints) > 0:
             log_barriers_sum = cp.sum(cp.log(phi_constraints / h + J @ v))
         prob = cp.Problem(
             cp.Minimize(0.5 * cp.quad_form(v, Q) - tau_h @ v -
-                        log_barriers_sum / t))
+                        log_barriers_sum / log_barrier_weight))
 
         prob.solve(solver="MOSEK")
         self.check_cvx_status(prob.status)
@@ -1017,15 +1002,17 @@ class QuasistaticSimulator:
         # Forward dynamics.
         q_dict = self.get_mbp_positions()
 
+        Q, tau_h = self.form_Q_and_tau_h(
+            q_dict, q_a_cmd_dict, tau_ext_dict, h,
+            unactuated_mass_scale=unactuated_mass_scale)
+
         phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
             self.calc_jacobian_and_phi(
                 self.sim_params.contact_detection_tolerance)
 
         v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = \
             self.step_function_dict[mode](
-                q_dict, q_a_cmd_dict, tau_ext_dict, h, phi_constraints, J,
-                gradient_mode=gradient_mode,
-                unactuated_mass_scale=unactuated_mass_scale)
+                h, phi_constraints, J, Q, tau_h, gradient_mode)
 
         dq_dict = dict()
         for model in self.models_actuated:
@@ -1074,18 +1061,78 @@ class QuasistaticSimulator:
         self.Dv_nextDb = Dv_nextDb
         self.Dv_nextDe = Dv_nextDe
 
+        if mode == "qp_mp" or mode == "qp_cvx":
+            self.backward_qp(
+                gradient_mode=gradient_mode,
+                h=h, q_dict=q_dict, n_f=n_f, n_c=n_c, n_d=n_d, Jn=Jn)
+
+        elif mode == "log_mp" or mode == "log_cvx":
+            self.backward_log(
+                gradient_mode=gradient_mode, h=h, v_h_dict=v_h_value_dict,
+                Q=Q, J=J, phi_constraints=phi_constraints,
+                log_barrier_weight=self.sim_params.log_barrier_weight)
+
+        else:
+            raise NotImplementedError(
+                f"{self.sim_params.mode} is not supported.")
+
+        return q_dict
+
+    def backward_qp(self, gradient_mode: GradientMode, h: float,
+                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
+                    n_f: int, n_c: int, n_d: int, Jn: np.ndarray):
         if gradient_mode == GradientMode.kNone:
-            pass
-        elif gradient_mode == GradientMode.kBOnly:
+            return
+
+        Dv_nextDb = self.Dv_nextDb
+        Dv_nextDe = self.Dv_nextDe
+        if gradient_mode == GradientMode.kBOnly:
             self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
         elif gradient_mode == GradientMode.kAB:
             self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = self.calc_dfdx(
-                Dv_nextDb=Dv_nextDb, Dv_nextDe=Dv_nextDe, h=h, n_f=n_f, n_c=n_c,
-                n_d=n_d, Jn=Jn)
+            Dv_nextDb=Dv_nextDb, Dv_nextDe=Dv_nextDe, h=h, n_f=n_f, n_c=n_c,
+            n_d=n_d, Jn=Jn)
 
-        return q_dict
+    def backward_log(self, gradient_mode: GradientMode, h: float,
+                     v_h_dict: Dict[ModelInstanceIndex, np.ndarray],
+                     Q: np.ndarray, J: np.ndarray, phi_constraints: np.ndarray,
+                     log_barrier_weight: float
+                     ):
+        if gradient_mode == GradientMode.kNone:
+            return
+
+        if gradient_mode == GradientMode.kBOnly:
+            # recover vstar from vstar_dict...
+            vstar = np.zeros(self.n_v)
+            for model, v_h_model in v_h_dict.items():
+                vstar[self.velocity_indices[model]] = v_h_model / h
+
+            # Use implicit function theorem to get DvDu.
+            dydu = np.zeros_like(Q)
+            for j in range(J.shape[1]):
+                for i in range(J.shape[0]):
+                    dydu[j] += J[i] * J[i, j] / (
+                            phi_constraints[i] / h + J[i, :] @ vstar) ** 2.0
+
+            coeff = Q + dydu / log_barrier_weight
+            bias = np.zeros((self.n_v, self.n_v))
+            idx_i, idx_j = np.diag_indices(self.n_v)
+            idx_u = []
+            for model in self.models_actuated:
+                idx_v_model = self.velocity_indices[model]
+                idx_u += list(idx_v_model)
+                bias[idx_i[idx_v_model], idx_j[idx_v_model]] = \
+                    self.K_a[model].diagonal() * h
+
+            DvDu = h * np.linalg.solve(coeff, bias)[:, idx_u]
+
+            self.Dq_nextDqa_cmd = DvDu
+            self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
+        elif gradient_mode == GradientMode.kAB:
+            raise NotImplementedError(
+                "GradientMode.kAB is not implemented for log barrier dynamics.")
 
     def step_default(self,
                      q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
