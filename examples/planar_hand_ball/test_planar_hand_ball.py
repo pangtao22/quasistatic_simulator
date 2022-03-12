@@ -9,15 +9,15 @@ from pydrake.all import ModelInstanceIndex
 from qsim.parser import (QuasistaticParser, QuasistaticSimulator,
                          QuasistaticSimulatorCpp)
 from qsim.model_paths import models_dir
-from qsim.sim_parameters import GradientMode
+from qsim.simulator import (GradientMode, QuasistaticSimParameters,
+                            ForwardDynamicsMode)
 
 q_model_path = os.path.join(
     models_dir, 'q_sys', 'planar_hand_ball.yml')
 
 
 def simulate(sim: Union[QuasistaticSimulator, QuasistaticSimulatorCpp],
-             q0_dict: Dict[ModelInstanceIndex, np.ndarray], h: float,
-             T: int):
+             q0_dict: Dict[ModelInstanceIndex, np.ndarray], T: int):
     q_dict = {model: np.array(q_model)
               for model, q_model in q0_dict.items()}
     q_dict_log = [{model: np.array(q_model)
@@ -28,7 +28,7 @@ def simulate(sim: Union[QuasistaticSimulator, QuasistaticSimulatorCpp],
 
     for _ in range(T):
         tau_ext_dict = sim.calc_tau_ext([])
-        sim.step_default(q0_dict, tau_ext_dict, h)
+        sim.step_default(q0_dict, tau_ext_dict)
         q_dict_log.append(sim.get_mbp_positions())
         Dq_nextDq_log.append(sim.get_Dq_nextDq())
         Dq_nextDqa_cmd_log.append(sim.get_Dq_nextDqa_cmd())
@@ -75,101 +75,93 @@ class TestPlanarHandBall(unittest.TestCase):
         2. from active constraints, cpp vs. python.
         3. cpp from active constraints, python from all constraints.
         """
-        grad_active_py_list = [False, True, False]
-        grad_active_cpp_list = [False, True, True]
-        atol_list = [1e-5, 1e-7, 1e-3]
+        atol = 1e-7
 
-        for grad_active_py, grad_active_cpp, atol in zip(grad_active_py_list,
-                                                         grad_active_cpp_list,
-                                                         atol_list):
-            # python sim
-            self.parser.set_sim_params(
-                is_quasi_dynamic=True, gradient_mode=GradientMode.kAB,
-                grad_from_active_constraints=grad_active_py,
-                gravity=[0, 0, -10.])
-
-            q_sim = self.parser.make_simulator_py(internal_vis=False)
-
-            # cpp sim
-            self.parser.set_sim_params(
-                grad_from_active_constraints=grad_active_cpp)
-            q_sim_cpp = self.parser.make_simulator_cpp()
-
-            q0_dict = create_dict_keyed_by_model_instance_index(
-                q_sim.get_plant(), self.q0_dict_str)
-
-            q0_dict_cpp = create_dict_keyed_by_model_instance_index(
-                q_sim_cpp.get_plant(), self.q0_dict_str)
-
-            # # ----------------------------------------------------------------
-            # q_dict_log_list = []
-            # Dq_nextDq_log_list = []
-            # Dq_nextDqa_cmd_log_list = []
-            # for _ in range(10):
-            #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
-            #         q_sim, q0_dict, h, T)
-            #     q_dict_log_list.append(q_dict_log)
-            #     Dq_nextDq_log_list.append(Dq_nextDq_log)
-            #     Dq_nextDqa_cmd_log_list.append(Dq_nextDqa_cmd_log)
-            #
-            # # ----------------------------------------------------------------
-            # q_dict_log_cpp_list = []
-            # Dq_nextDq_log_cpp_list = []
-            # Dq_nextDqa_cmd_log_cpp_list = []
-            # for _ in range(10):
-            #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
-            #         q_sim_cpp, q0_dict, h, T)
-            #     q_dict_log_cpp_list.append(q_dict_log)
-            #     Dq_nextDq_log_cpp_list.append(Dq_nextDq_log)
-            #     Dq_nextDqa_cmd_log_cpp_list.append(Dq_nextDqa_cmd_log)
-            #
-            # # ----------------------------------------------------------------
-
-            q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = \
-                simulate(q_sim_cpp, q0_dict_cpp, self.h, self.T)
-
-            q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
-                q_sim, q0_dict, self.h, self.T)
-
-            # compare trajectories.
-            compare_q_dict_logs(
-                test_case=self,
-                q_sim=q_sim,
-                q_dict_log1=q_dict_log,
-                q_dict_log2=q_dict_log_cpp)
-
-            # compare gradients along trajectories.
-            print('-------------------------------------------------------')
-            for t in range(len(Dq_nextDq_log)):
-                Dq_next_Dq = Dq_nextDq_log[t]
-                Dq_next_Dq_cpp = Dq_nextDq_log_cpp[t]
-                Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[t]
-                Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[t]
-                err_Dq_next_Dq = abs(Dq_next_Dq - Dq_next_Dq_cpp).max()
-                err_Dq_nextDqa_cmd = abs(
-                    Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max()
-
-                self.assertLess(err_Dq_next_Dq, atol,
-                                f"Large error at t = {t}")
-                self.assertLess(err_Dq_nextDqa_cmd, atol,
-                                f"Large error at t = {t}")
-
-    def test_cvx_vs_mp(self):
+        # python sim
         self.parser.set_sim_params(
-            is_quasi_dynamic=True, gradient_mode=GradientMode.kNone,
-            mode='log_cvx',
+            h=self.h,
+            is_quasi_dynamic=True, gradient_mode=GradientMode.kAB,
             gravity=[0, 0, -10.])
-        q_sim = self.parser.make_simulator_py(False)
-        self.assertEqual('log_cvx', q_sim.sim_params.mode)
+
+        q_sim = self.parser.make_simulator_py(internal_vis=False)
+        q_sim_cpp = self.parser.make_simulator_cpp()
+
         q0_dict = create_dict_keyed_by_model_instance_index(
             q_sim.get_plant(), self.q0_dict_str)
 
-        q_dict_log_cvx, _, _ = simulate(q_sim, q0_dict, self.h, self.T)
+        q0_dict_cpp = create_dict_keyed_by_model_instance_index(
+            q_sim_cpp.get_plant(), self.q0_dict_str)
 
-        self.parser.set_sim_params(mode='log_mp')
+        # # ----------------------------------------------------------------
+        # q_dict_log_list = []
+        # Dq_nextDq_log_list = []
+        # Dq_nextDqa_cmd_log_list = []
+        # for _ in range(10):
+        #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
+        #         q_sim, q0_dict, h, T)
+        #     q_dict_log_list.append(q_dict_log)
+        #     Dq_nextDq_log_list.append(Dq_nextDq_log)
+        #     Dq_nextDqa_cmd_log_list.append(Dq_nextDqa_cmd_log)
+        #
+        # # ----------------------------------------------------------------
+        # q_dict_log_cpp_list = []
+        # Dq_nextDq_log_cpp_list = []
+        # Dq_nextDqa_cmd_log_cpp_list = []
+        # for _ in range(10):
+        #     q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(
+        #         q_sim_cpp, q0_dict, h, T)
+        #     q_dict_log_cpp_list.append(q_dict_log)
+        #     Dq_nextDq_log_cpp_list.append(Dq_nextDq_log)
+        #     Dq_nextDqa_cmd_log_cpp_list.append(Dq_nextDqa_cmd_log)
+        #
+        # # ----------------------------------------------------------------
+
+        q_dict_log_cpp, Dq_nextDq_log_cpp, Dq_nextDqa_cmd_log_cpp = \
+            simulate(q_sim_cpp, q0_dict_cpp, self.T)
+
+        q_dict_log, Dq_nextDq_log, Dq_nextDqa_cmd_log = simulate(q_sim, q0_dict,
+                                                                 self.T)
+
+        # compare trajectories.
+        compare_q_dict_logs(
+            test_case=self,
+            q_sim=q_sim,
+            q_dict_log1=q_dict_log,
+            q_dict_log2=q_dict_log_cpp)
+
+        # compare gradients along trajectories.
+        print('-------------------------------------------------------')
+        for t in range(len(Dq_nextDq_log)):
+            Dq_next_Dq = Dq_nextDq_log[t]
+            Dq_next_Dq_cpp = Dq_nextDq_log_cpp[t]
+            Dq_nextDqa_cmd = Dq_nextDqa_cmd_log[t]
+            Dq_nextDqa_cmd_cpp = Dq_nextDqa_cmd_log_cpp[t]
+            err_Dq_next_Dq = abs(Dq_next_Dq - Dq_next_Dq_cpp).max()
+            err_Dq_nextDqa_cmd = abs(
+                Dq_nextDqa_cmd - Dq_nextDqa_cmd_cpp).max()
+
+            self.assertLess(err_Dq_next_Dq, atol,
+                            f"Large error at t = {t}")
+            self.assertLess(err_Dq_nextDqa_cmd, atol,
+                            f"Large error at t = {t}")
+
+    def test_cvx_vs_mp(self):
+        self.parser.set_sim_params(
+            h=self.h,
+            is_quasi_dynamic=True, gradient_mode=GradientMode.kNone,
+            forward_mode=ForwardDynamicsMode.kLogPyramidCvx,
+            log_barrier_weight=100,
+            gravity=[0, 0, -10.])
         q_sim = self.parser.make_simulator_py(False)
-        self.assertEqual('log_mp', q_sim.sim_params.mode)
-        q_dict_log_mp, _, _ = simulate(q_sim, q0_dict, self.h, self.T)
+        q0_dict = create_dict_keyed_by_model_instance_index(
+            q_sim.get_plant(), self.q0_dict_str)
+
+        q_dict_log_cvx, _, _ = simulate(q_sim, q0_dict, self.T)
+
+        self.parser.set_sim_params(
+            forward_mode=ForwardDynamicsMode.kLogPyramidMp)
+        q_sim = self.parser.make_simulator_py(False)
+        q_dict_log_mp, _, _ = simulate(q_sim, q0_dict, self.T)
 
         compare_q_dict_logs(
             test_case=self,

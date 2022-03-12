@@ -55,14 +55,12 @@ class TestQuasistaticSystem(unittest.TestCase):
         q_parser = QuasistaticParser(q_model_path)
 
         # Simulate using Simulator.
-        loggers_dict_systems_str, q_sys = run_quasistatic_sim(
-            q_parser=q_parser,
-            h=h,
-            backend=QuasistaticSystemBackend.PYTHON,
-            q_a_traj_dict_str=q_a_traj_dict_str,
-            q0_dict_str=q0_dict_str,
-            is_visualizing=False,
-            real_time_rate=0.0)
+        loggers_dict_systems_str, q_sys = run_quasistatic_sim(q_parser=q_parser,
+                                                              backend=QuasistaticSystemBackend.PYTHON,
+                                                              q_a_traj_dict_str=q_a_traj_dict_str,
+                                                              q0_dict_str=q0_dict_str,
+                                                              is_visualizing=False,
+                                                              real_time_rate=0.0)
 
         # Simulate manually.
         q_logs_dict_str, t_quasistatic = \

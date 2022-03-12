@@ -18,14 +18,12 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     q_parser = QuasistaticParser(q_model_path)
 
     # Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_parser=q_parser,
-        h=h_quasistatic,
-        backend=QuasistaticSystemBackend.PYTHON,
-        q_a_traj_dict_str=q_a_traj_dict_str,
-        q0_dict_str=q0_dict_str,
-        is_visualizing=is_visualizing,
-        real_time_rate=0.0)
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(q_parser=q_parser,
+                                                              backend=QuasistaticSystemBackend.PYTHON,
+                                                              q_a_traj_dict_str=q_a_traj_dict_str,
+                                                              q0_dict_str=q0_dict_str,
+                                                              is_visualizing=is_visualizing,
+                                                              real_time_rate=0.0)
 
     gravity = q_parser.get_gravity()
 

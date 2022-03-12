@@ -47,14 +47,12 @@ class TestBoxBallGrazeOldVsNew(unittest.TestCase):
                        robot_name: qa_knots[0]}
 
         # Run sim with new simulator.
-        loggers_dict_quasistatic_str, __ = run_quasistatic_sim(
-            q_parser=parser,
-            h=h,
-            backend=QuasistaticSystemBackend.PYTHON,
-            q_a_traj_dict_str=q_a_traj_dict_str,
-            q0_dict_str=q0_dict_str,
-            is_visualizing=False,
-            real_time_rate=0)
+        loggers_dict_quasistatic_str, __ = run_quasistatic_sim(q_parser=parser,
+                                                               backend=QuasistaticSystemBackend.PYTHON,
+                                                               q_a_traj_dict_str=q_a_traj_dict_str,
+                                                               q0_dict_str=q0_dict_str,
+                                                               is_visualizing=False,
+                                                               real_time_rate=0)
 
         # initial condition in the form of [qu, qa], used by QsimOld.
         q0 = np.array([0, 0, 0.1])
