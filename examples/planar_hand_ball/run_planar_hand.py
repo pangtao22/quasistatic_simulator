@@ -76,12 +76,9 @@ if __name__ == "__main__":
               idx_l: [-0.775, -0.785],
               idx_r: [0.775, 0.785]}
 
-    # numerical gradient
-    dfdu_numerical = q_sim.calc_dfdu_numerical(
-        q_dict=q_dict, qa_cmd_dict=q_dict, du=1e-3, h=h)
-
     # analytical gradient
     sim_params = q_sim.get_sim_parmas_copy()
+    sim_params.h = 0.05
     sim_params.forward_mode = ForwardDynamicsMode.kQpMp
     sim_params.gradient_mode = GradientMode.kBOnly
 
@@ -90,3 +87,9 @@ if __name__ == "__main__":
     q_sim.step(q_a_cmd_dict=q_dict, tau_ext_dict=tau_ext_dict,
                sim_params=sim_params)
     dfdu_active = q_sim.get_Dq_nextDqa_cmd()
+
+    # numerical gradient
+    dfdu_numerical = q_sim.calc_dfdu_numerical(
+        q_dict=q_dict, qa_cmd_dict=q_dict, du=1e-4, sim_params=sim_params)
+
+    print("dfdu_error", np.linalg.norm(dfdu_numerical - dfdu_active))

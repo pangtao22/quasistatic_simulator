@@ -11,8 +11,7 @@ q_parser.set_quasi_dynamic(True)
 loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
     q_parser=q_parser,
     backend=QuasistaticSystemBackend.PYTHON,
-    q_a_traj_dict_str={
-        robot_name: qa_traj},
+    q_a_traj_dict_str={robot_name: qa_traj},
     q0_dict_str=q0_dict_str,
     is_visualizing=True,
     real_time_rate=0.)
@@ -81,13 +80,4 @@ print("dfdu_numerical\n", dfdu_numerical)
 print("dfdu_active\n", dfdu_active)
 print("dfdx_active\n", q_sim.get_Dq_nextDq())
 
-# kkt gradients
-q_sim.update_mbp_positions(q_dict)
-q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
-           mode="qp_mp", gradient_mode=GradientMode.kAB,
-           unactuated_mass_scale=0)
 
-print("dfdu_kkt\n", q_sim.get_Dq_nextDqa_cmd())
-print("dfdx_kkt\n", q_sim.get_Dq_nextDq())
-
-# kkt active gradients.

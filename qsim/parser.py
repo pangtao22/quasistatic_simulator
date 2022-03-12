@@ -86,7 +86,7 @@ class QuasistaticParser:
 
     def make_system(self, backend: QuasistaticSystemBackend):
         q_sim_params = self.make_params_struct()
-        self.check_params_validity(q_sim_params)
+        QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSystem(model_directive_path=self.model_directive_path,
                                  robot_stiffness_dict=self.robot_stiffness_dict,
                                  object_sdf_paths=self.object_sdf_paths,
@@ -94,7 +94,7 @@ class QuasistaticParser:
 
     def make_simulator_py(self, internal_vis: bool):
         q_sim_params = self.make_params_struct()
-        self.check_params_validity(q_sim_params)
+        QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_dict=self.robot_stiffness_dict,
@@ -104,7 +104,7 @@ class QuasistaticParser:
 
     def make_simulator_cpp(self):
         q_sim_params = self.make_params_struct()
-        self.check_params_validity(q_sim_params)
+        QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulatorCpp(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
@@ -113,25 +113,9 @@ class QuasistaticParser:
 
     def make_batch_simulator(self):
         q_sim_params = self.make_params_struct()
-        self.check_params_validity(q_sim_params)
+        QuasistaticSimulator.check_params_validity(q_sim_params)
         return BatchQuasistaticSimulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
             sim_params=q_sim_params)
-
-    @staticmethod
-    def check_params_validity(q_params: QuasistaticSimParameters):
-        gm = q_params.gradient_mode
-        if q_params.nd_per_contact > 2 and gm == GradientMode.kAB:
-            raise RuntimeError("Computing A matrix for 3D systems is not yet "
-                               "supported.")
-
-        if q_params.unactuated_mass_scale == 0:
-            if gm == GradientMode.kAB or gm == GradientMode.kBOnly:
-                raise RuntimeError("Dynamics gradient cannot be computed when "
-                                   "the object has infinite mass.")
-
-        if q_params.unactuated_mass_scale == np.inf:
-            raise RuntimeError("Setting mass matrix to 0 should be achieved "
-                               "using the is_quasi_dynamic flag.")

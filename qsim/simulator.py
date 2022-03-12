@@ -210,12 +210,40 @@ class QuasistaticSimulator:
 
     @staticmethod
     def copy_sim_params(params_from: QuasistaticSimParameters):
+        """
+        Annoying isn't it? Why can't we call copy.deepcopy() on C++ structs?
+        """
         params_to = QuasistaticSimParameters()
         for name in params_from.__dir__():
             if name.startswith("_"):
                 continue
             params_to.__setattr__(name, params_from.__getattribute__(name))
         return params_to
+
+    @staticmethod
+    def check_params_validity(q_params: QuasistaticSimParameters):
+        gm = q_params.gradient_mode
+        if q_params.nd_per_contact > 2 and gm == GradientMode.kAB:
+            raise RuntimeError("Computing A matrix for 3D systems is not yet "
+                               "supported.")
+
+        if q_params.unactuated_mass_scale == 0:
+            if gm == GradientMode.kAB or gm == GradientMode.kBOnly:
+                raise RuntimeError("Dynamics gradient cannot be computed when "
+                                   "the object has infinite mass.")
+
+        if q_params.unactuated_mass_scale == np.inf:
+            raise RuntimeError("Setting mass matrix to 0 should be achieved "
+                               "using the is_quasi_dynamic flag.")
+
+        if q_params.forward_mode in {ForwardDynamicsMode.kLogPyramidCvx,
+            ForwardDynamicsMode.kLogPyramidMp,
+            ForwardDynamicsMode.kLogIcecreamMp,
+            ForwardDynamicsMode.kLogIcecreamCvx}:
+            if np.isnan(q_params.log_barrier_weight):
+                raise RuntimeError(
+                    f"Log barrier weight is nan when running in"
+                    f" {q_params.forward_mode}.")
 
     def get_sim_parmas_copy(self):
         return self.copy_sim_params(self.sim_params)
@@ -758,7 +786,8 @@ class QuasistaticSimulator:
                    J: np.ndarray,
                    Q: np.ndarray,
                    tau_h: np.ndarray,
-                   gradient_mode: GradientMode):
+                   gradient_mode: GradientMode,
+                   **kwargs):
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
         v = prog.NewContinuousVariables(self.n_v, "v")
@@ -814,10 +843,7 @@ class QuasistaticSimulator:
                     Q: np.ndarray,
                     tau_h: np.ndarray,
                     gradient_mode: GradientMode,
-                    log_barrier_weight: float = None):
-        if log_barrier_weight is None:
-            log_barrier_weight = self.sim_params.log_barrier_weight
-
+                    log_barrier_weight: float):
         L = np.linalg.cholesky(Q)
         F = L.T
         m = len(phi_constraints)
@@ -876,7 +902,8 @@ class QuasistaticSimulator:
                     J: np.ndarray,
                     Q: np.ndarray,
                     tau_h: np.ndarray,
-                    gradient_mode: GradientMode):
+                    gradient_mode: GradientMode,
+                    **kwargs):
         # Make a CVX problem.
         # The cholesky decomposition is needed because cp.sum_squares() is the
         # only way I've found so far to ensure the problem is DCP (
@@ -953,10 +980,7 @@ class QuasistaticSimulator:
                      Q: np.ndarray,
                      tau_h: np.ndarray,
                      gradient_mode: GradientMode,
-                     log_barrier_weight: float = None):
-        if log_barrier_weight is None:
-            log_barrier_weight = self.sim_params.log_barrier_weight
-
+                     log_barrier_weight):
         v = cp.Variable(self.n_v)
 
         log_barriers_sum = 0.
@@ -1022,7 +1046,8 @@ class QuasistaticSimulator:
 
         v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = \
             self.step_function_dict[forward_mode](
-                h, phi_constraints, J, Q, tau_h, gradient_mode)
+                h, phi_constraints, J, Q, tau_h, gradient_mode,
+                log_barrier_weight=sim_params.log_barrier_weight)
 
         dq_dict = dict()
         for model in self.models_actuated:
@@ -1266,7 +1291,8 @@ class QuasistaticSimulator:
     def calc_dfdu_numerical(self,
                             q_dict: Dict[ModelInstanceIndex, np.ndarray],
                             qa_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                            du: float, h: float):
+                            du: float,
+                            sim_params: QuasistaticSimParameters):
         """
         Not an efficient way to compute gradients. For debugging only.
         :param q_dict: nominal state (x) of the quasistatic system.
@@ -1278,9 +1304,7 @@ class QuasistaticSimulator:
 
         n_a = self.num_actuated_dofs()
         dfdu = np.zeros((self.n_q, n_a))
-        sim_params = self.get_sim_parmas_copy()
-        sim_params.h = h
-        sim_params.forward_mode = ForwardDynamicsMode.kQpMp
+        sim_params = self.copy_sim_params(sim_params)
         sim_params.gradient_mode = GradientMode.kNone
 
         idx_a = 0  # index for actuated DOFs (into u).
