@@ -859,23 +859,12 @@ class QuasistaticSimulator:
         n_v = self.n_v
 
         prog = mp.MathematicalProgram()
-        t0 = prog.NewContinuousVariables(1, 't0')[0]
         v = prog.NewContinuousVariables(n_v, "v")
         s = prog.NewContinuousVariables(m, "s")
 
-        prog.AddLinearCost(
-            t0 - tau_h.dot(v) - np.sum(s) / log_barrier_weight)
-
-        # rotated 2nd order cone constraint for the cost.
-        A = np.zeros([n_v + 2, n_v + 1])
-        A[0, -1] = 1
-        A[2:, :n_v] = F
-
-        b = np.zeros(n_v + 2)
-        b[1] = 2
-
-        prog.AddRotatedLorentzConeConstraint(
-            A=A, b=b, vars=np.hstack([v, [t0]]))
+        # Costs.
+        prog.AddQuadraticCost(Q=Q, b=-tau_h, vars=v, is_convex=True)
+        prog.AddLinearCost(a=-np.full(m, 1 / log_barrier_weight), b=0, vars=s)
 
         # exponential cone constraints for contacts.
         for i in range(m):

@@ -119,7 +119,7 @@ class TestPlanarHandBall(unittest.TestCase):
             self.assertLess(err_Dq_nextDqa_cmd, atol,
                             f"Large error at t = {t}")
 
-    def test_cvx_vs_mp(self):
+    def test_log_barrier(self):
         sim_params = self.q_sim_py.get_sim_parmas_copy()
         sim_params.h = self.h
         sim_params.is_quasi_dynamic = True
