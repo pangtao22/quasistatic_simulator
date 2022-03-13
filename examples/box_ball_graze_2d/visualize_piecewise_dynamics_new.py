@@ -6,19 +6,18 @@ import tqdm
 from qsim.model_paths import models_dir
 from qsim.simulator import (QuasistaticSimParameters, QuasistaticSimulator,
                             GradientMode, ForwardDynamicsMode)
+from qsim.parser import QuasistaticParser
 from qsim_old.problem_definition_graze import problem_definition
 
-object_sdf_path = os.path.join(models_dir, "box_y.sdf")
-model_directive_path = os.path.join(models_dir, "box_ball_graze_2d.yml")
+q_model_path = os.path.join(models_dir, 'q_sys', 'ball_grazing_2d.yml')
 
 # %%
 # visualizer
 viz = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
 
 # sim params
-q_sim_params = QuasistaticSimParameters()
-QuasistaticSimulator.set_sim_params(
-    q_sim_params,
+parser = QuasistaticParser(q_model_path)
+parser.set_sim_params(
     h=problem_definition['h'],
     gravity=np.array([0, 0, 0.]),
     nd_per_contact=2,
@@ -26,24 +25,13 @@ QuasistaticSimulator.set_sim_params(
     is_quasi_dynamic=True,
     forward_mode=ForwardDynamicsMode.kLogPyramidMp,
     log_barrier_weight=100)
+q_sim_params = QuasistaticSimulator.copy_sim_params(parser.q_sim_params)
 
-# robot
-Kp = problem_definition['Kq_a'].diagonal()
-robot_name = 'ball'
-robot_stiffness_dict = {robot_name: Kp}
+q_sim = parser.make_simulator_py(internal_vis=False)
+q_sim_cpp = parser.make_simulator_cpp()
 
-# object
-object_name = "box"
-object_sdf_dict = {object_name: object_sdf_path}
-
-q_sim = QuasistaticSimulator(
-    model_directive_path=model_directive_path,
-    robot_stiffness_dict=robot_stiffness_dict,
-    object_sdf_paths=object_sdf_dict,
-    sim_params=q_sim_params)
-
-model_u = q_sim.plant.GetModelInstanceByName(object_name)
-model_a = q_sim.plant.GetModelInstanceByName(robot_name)
+model_u = q_sim.plant.GetModelInstanceByName("box")
+model_a = q_sim.plant.GetModelInstanceByName("ball")
 
 q0_dict = {model_u: np.array([0.]),
            model_a: np.array([0, 0.])}
@@ -72,24 +60,26 @@ def run_100_times():
 # Sample actions between the box x \in [-0.05, 0.05] and y \in [-0.05, 0.05].
 q_next = np.zeros((n, 3))
 for i in tqdm.tqdm(range(n)):
-    q_sim.update_mbp_positions(q0_dict)
+    q_sim_cpp.update_mbp_positions(q0_dict)
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
-    tau_ext_dict = q_sim.calc_tau_ext([])
-    q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-                             tau_ext_dict=tau_ext_dict,
-                             sim_params=q_sim_params)
+    tau_ext_dict = q_sim_cpp.calc_tau_ext([])
+    q_sim_cpp.step(q_a_cmd_dict=q_a_cmd_dict,
+                   tau_ext_dict=tau_ext_dict,
+                   sim_params=q_sim_params)
+    q_next_dict = q_sim_cpp.get_mbp_positions()
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
+assert False
 q_next2 = np.zeros((n, 3))
 q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
 for i in tqdm.tqdm(range(n)):
     q_sim.update_mbp_positions(q0_dict)
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
     tau_ext_dict = q_sim.calc_tau_ext([])
-    q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-                             tau_ext_dict=tau_ext_dict,
-                             sim_params=q_sim_params)
-
+    q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+               tau_ext_dict=tau_ext_dict,
+               sim_params=q_sim_params)
+    q_next = q_sim.get_mbp_positions()
     q_next2[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
 # %% plot the points

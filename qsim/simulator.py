@@ -853,8 +853,6 @@ class QuasistaticSimulator:
                     tau_h: np.ndarray,
                     gradient_mode: GradientMode,
                     log_barrier_weight: float):
-        L = np.linalg.cholesky(Q)
-        F = L.T
         m = len(phi_constraints)
         n_v = self.n_v
 
