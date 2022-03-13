@@ -49,7 +49,7 @@ def run_comparison(is_visualizing=False, real_time_rate=0.):
 
     # MBP
     # create controller system for robot.
-    gravity = q_parser.get_param('gravity')
+    gravity = q_parser.get_param_attribute('gravity')
     plant_robot, _ = create_iiwa_controller_plant(gravity)
     controller_robot = RobotInternalController(
         plant_robot=plant_robot,

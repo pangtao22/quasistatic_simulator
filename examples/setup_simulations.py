@@ -102,7 +102,7 @@ def run_quasistatic_sim(q_parser: QuasistaticParser,
                         q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
                         q0_dict_str: Dict[str, np.ndarray],
                         is_visualizing: bool, real_time_rate: float, **kwargs):
-    h = q_parser.q_sim_params_dict['h']
+    h = q_parser.get_param_attribute('h')
     builder = DiagramBuilder()
     q_sys = q_parser.make_system(backend=backend)
     builder.AddSystem(q_sys)

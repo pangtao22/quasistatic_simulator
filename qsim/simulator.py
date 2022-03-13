@@ -202,12 +202,6 @@ class QuasistaticSimulator:
         # gradient from active constraints.
         self.dqp_active = QpDerivativesKktActive()
 
-        # TODO: these are not used right now.
-        # Logging num of contacts and solver time.
-        self.nc_log = []
-        self.nd_log = []
-        self.optimizer_time_log = []
-
     @staticmethod
     def copy_sim_params(params_from: QuasistaticSimParameters):
         """
@@ -236,14 +230,20 @@ class QuasistaticSimulator:
             raise RuntimeError("Setting mass matrix to 0 should be achieved "
                                "using the is_quasi_dynamic flag.")
 
-        if q_params.forward_mode in {ForwardDynamicsMode.kLogPyramidCvx,
-            ForwardDynamicsMode.kLogPyramidMp,
-            ForwardDynamicsMode.kLogIcecreamMp,
-            ForwardDynamicsMode.kLogIcecreamCvx}:
+        log_forward_modes = {ForwardDynamicsMode.kLogPyramidCvx,
+                             ForwardDynamicsMode.kLogPyramidMp,
+                             ForwardDynamicsMode.kLogIcecreamMp,
+                             ForwardDynamicsMode.kLogIcecreamCvx}
+
+        if q_params.forward_mode in log_forward_modes:
             if np.isnan(q_params.log_barrier_weight):
                 raise RuntimeError(
                     f"Log barrier weight is nan when running in"
                     f" {q_params.forward_mode}.")
+
+            if gm == GradientMode.kAB:
+                raise RuntimeError(
+                    f"Computing A for mode {gm} is not supported ")
 
     def get_sim_parmas_copy(self):
         return self.copy_sim_params(self.sim_params)
@@ -475,9 +475,6 @@ class QuasistaticSimulator:
         n_f = n_d.sum()
         U = np.zeros(n_c)
 
-        self.nc_log.append(n_c)
-        self.nd_log.append(n_d.sum())
-
         phi = np.zeros(n_c)
         Jn = np.zeros((n_c, self.n_v))
         Jf = np.zeros((n_f, self.n_v))
@@ -681,6 +678,18 @@ class QuasistaticSimulator:
             else:
                 raise RuntimeError(
                     "CVX solver status is {}".format(status))
+
+    @staticmethod
+    def set_sim_params(params: QuasistaticSimParameters, **kwargs):
+        for name, value in kwargs.items():
+                params.__setattr__(name, value)
+
+    @staticmethod
+    def convert_sim_params_into_dict(params: QuasistaticSimParameters):
+        q_sim_params_dict = {
+            name: params.__getattribute__(name)
+            for name in params.__dir__() if not name.startswith("_")}
+        return q_sim_params_dict
 
     def calc_scaled_mass_matrix(self, h: float, unactuated_mass_scale: float):
         """
@@ -1358,16 +1367,6 @@ class QuasistaticSimulator:
 
         for model in self.models_actuated:
             q_dict[model] += dq_dict[model]
-
-    def print_sim_statcs(self):
-        solver_time = np.array(self.optimizer_time_log)
-        n_c_s = np.array(self.nc_log)
-        n_d_s = np.array(self.nd_log)
-
-        print("Average solver time: ", solver_time.mean())
-        print("Solver time std: ", solver_time.std())
-        print("Average num. contacts: ", n_c_s.mean())
-        print("Average num. constraints: ", n_d_s.mean())
 
     @staticmethod
     def create_plant_with_robots_and_objects(builder: DiagramBuilder,

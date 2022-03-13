@@ -19,7 +19,7 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
          look similar, they are not identical (but are not too different
          either).
 
-        The accuracy thershold are chosen based on a simulation run that
+        The accuracy threshold are chosen based on a simulation run that
             looks reasonable.
         """
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
