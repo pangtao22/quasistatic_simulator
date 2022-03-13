@@ -1,29 +1,28 @@
 import matplotlib.pyplot as plt
-
-from pydrake.all import PidController
-from examples.setup_simulations import (
-    run_quasistatic_sim, run_mbp_sim, shift_q_traj_to_start_at_minus_h)
+from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (calc_error_integral,
                                      calc_pose_error_integral,
                                      get_angle_from_quaternion)
+from examples.setup_simulations import (
+    run_quasistatic_sim, run_mbp_sim, shift_q_traj_to_start_at_minus_h)
+from pydrake.all import PidController
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-
-from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
-
-from examples.iiwa_block_stacking.simulation_parameters import *
 
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     q_parser = QuasistaticParser(q_model_path)
+    q_parser.set_sim_params(h=h_quasistatic)
 
     # Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(q_parser=q_parser,
-                                                              backend=QuasistaticSystemBackend.PYTHON,
-                                                              q_a_traj_dict_str=q_a_traj_dict_str,
-                                                              q0_dict_str=q0_dict_str,
-                                                              is_visualizing=is_visualizing,
-                                                              real_time_rate=0.0)
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_parser=q_parser,
+        backend=QuasistaticSystemBackend.PYTHON,
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        is_visualizing=is_visualizing,
+        real_time_rate=0.0)
 
     gravity = q_parser.get_gravity()
 
@@ -94,7 +93,7 @@ if __name__ == "__main__":
         plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str)
     print(error_dict)
 
-    #%% IIWA joint angles plot.
+    # %% IIWA joint angles plot.
     q_iiwa_log_mbp = loggers_dict_mbp_str[iiwa_name].data()[:7].T
     t_mbp = loggers_dict_mbp_str[iiwa_name].sample_times()
     q_iiwa_mbp_traj = PiecewisePolynomial.FirstOrderHold(
@@ -113,7 +112,7 @@ if __name__ == "__main__":
     plt.xlabel("t [s]")
     plt.show()
 
-    #%% IIWA, mbp / quasistatic vs. quasistatic.
+    # %% IIWA, mbp / quasistatic vs. quasistatic.
     e, e_vec, t_e = calc_error_integral(
         q_knots=q_iiwa_log_qs,
         t=t_qs,
@@ -132,7 +131,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
-    #%% box0, pose error.
+    # %% box0, pose error.
     box_name = "box0"
     q_box_log_quasistatic = loggers_dict_quasistatic_str[box_name].data().T
     q_box_log_mbp = loggers_dict_mbp_str[box_name].data()[:7].T
@@ -151,7 +150,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
-    #%% box angle, quasistatic vs mbp.
+    # %% box angle, quasistatic vs mbp.
     box_angle_quasistatic = [
         get_angle_from_quaternion(q_i) for q_i in q_box_log_quasistatic[:, :4]]
     box_angle_mbp = [
@@ -162,4 +161,3 @@ if __name__ == "__main__":
     plt.title("box0 angle [rad]")
     plt.xlabel("t [s]")
     plt.show()
-

@@ -319,7 +319,7 @@ def run_mbp_sim(
 
 
 def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
-                            q_parser: QuasistaticParser, h: float,
+                            q_parser: QuasistaticParser,
                             q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
                             q0_dict_str: Dict[str, np.ndarray], atol: float):
     """

@@ -50,13 +50,13 @@ def run_mbp_quasistatic_comparison(
         is_visualizing=False, real_time_rate=0.0):
     q_parser = QuasistaticParser(
         os.path.join(models_dir, quasistatic_model_path))
+    q_parser.set_sim_params(h=h_quasistatic)
 
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
         backend=QuasistaticSystemBackend.PYTHON,
-        q_a_traj_dict_str={
-            robot_name: q_robot_traj},
+        q_a_traj_dict_str={robot_name: q_robot_traj},
         q0_dict_str=q0_dict_str,
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate)

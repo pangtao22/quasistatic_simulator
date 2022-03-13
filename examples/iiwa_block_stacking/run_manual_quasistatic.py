@@ -30,6 +30,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     :return:
     """
     q_parser = QuasistaticParser(q_model_path)
+    q_parser.set_sim_params(h=h)
     q_sim = q_parser.make_simulator_py(internal_vis=False)
 
     q0_dict = create_dict_keyed_by_model_instance_index(
@@ -56,7 +57,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(t).squeeze(),
                         idx_schunk: q_schunk_traj.value(t).squeeze()}
         tau_ext_dict = q_sim.calc_tau_ext([])
-        q_dict = q_sim.step_default(q_a_cmd_dict, tau_ext_dict, h)
+        q_dict = q_sim.step_default(q_a_cmd_dict, tau_ext_dict)
         if is_visualizing:
             q_sim.draw_current_configuration()
 
