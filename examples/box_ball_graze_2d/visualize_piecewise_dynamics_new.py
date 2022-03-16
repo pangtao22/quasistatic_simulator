@@ -1,5 +1,5 @@
 import os
-
+import cProfile
 import meshcat
 import numpy as np
 import tqdm
@@ -40,9 +40,11 @@ n = 1000
 q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
 
 
-# %% profile iterate
+#%%
 def run_100_times():
-    for i in range(100):
+    q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
+    q_sim_params.gradient_mode = GradientMode.kNone
+    for i in tqdm.tqdm(range(200)):
         q_sim.update_mbp_positions(q0_dict)
         q_a_cmd_dict = {model_a: q_a_cmd[i]}
         tau_ext_dict = q_sim.calc_tau_ext([])
@@ -50,26 +52,27 @@ def run_100_times():
                                  tau_ext_dict=tau_ext_dict,
                                  sim_params=q_sim_params)
 
-#
 # cProfile.runctx('run_100_times()',
 #                 globals=globals(), locals=locals(),
-#                 filename='exponential_cone_qp')
-
+#                 filename='cvxpy_no_gradients.stat')
 
 # %% sample dynamics
 # Sample actions between the box x \in [-0.05, 0.05] and y \in [-0.05, 0.05].
+q_sim_params.gradient_mode = GradientMode.kNone
+
 q_next = np.zeros((n, 3))
+q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMp
 for i in tqdm.tqdm(range(n)):
-    q_sim_cpp.update_mbp_positions(q0_dict)
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
     tau_ext_dict = q_sim_cpp.calc_tau_ext([])
+    q_sim_cpp.update_mbp_positions(q0_dict)
     q_sim_cpp.step(q_a_cmd_dict=q_a_cmd_dict,
                    tau_ext_dict=tau_ext_dict,
                    sim_params=q_sim_params)
     q_next_dict = q_sim_cpp.get_mbp_positions()
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
-assert False
+
 q_next2 = np.zeros((n, 3))
 q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
 for i in tqdm.tqdm(range(n)):

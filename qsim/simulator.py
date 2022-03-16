@@ -1104,7 +1104,6 @@ class QuasistaticSimulator:
                 gradient_mode=gradient_mode, h=h, v_h_dict=v_h_value_dict,
                 Q=Q, J=J, phi_constraints=phi_constraints,
                 log_barrier_weight=self.sim_params.log_barrier_weight)
-
         else:
             raise NotImplementedError(
                 f"{self.sim_params.mode} is not supported.")
@@ -1131,8 +1130,7 @@ class QuasistaticSimulator:
     def backward_log(self, gradient_mode: GradientMode, h: float,
                      v_h_dict: Dict[ModelInstanceIndex, np.ndarray],
                      Q: np.ndarray, J: np.ndarray, phi_constraints: np.ndarray,
-                     log_barrier_weight: float
-                     ):
+                     log_barrier_weight: float):
         if gradient_mode == GradientMode.kNone:
             return
 
@@ -1163,9 +1161,12 @@ class QuasistaticSimulator:
 
             self.Dq_nextDqa_cmd = DvDu
             self.Dq_nextDq = np.zeros([self.n_v, self.n_v])
-        elif gradient_mode == GradientMode.kAB:
-            raise NotImplementedError(
-                "GradientMode.kAB is not implemented for log barrier dynamics.")
+
+            return
+
+        # gradient_mode == GradientMode.kAB:
+        raise NotImplementedError(
+            "GradientMode.kAB is not implemented for log barrier dynamics.")
 
     def step_default(self,
                      q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
