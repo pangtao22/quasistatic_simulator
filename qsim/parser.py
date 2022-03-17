@@ -8,7 +8,6 @@ import yaml
 
 from qsim_cpp import (QuasistaticSimulatorCpp,
                       BatchQuasistaticSimulator, GradientMode)
-
 from .model_paths import package_paths_dict
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 from .system import (QuasistaticSystem, QuasistaticSystemBackend)
@@ -79,7 +78,7 @@ class QuasistaticParser:
                                  object_sdf_paths=self.object_sdf_paths,
                                  sim_params=q_sim_params, backend=backend)
 
-    def make_simulator_py(self, internal_vis: bool):
+    def make_simulator_py(self, internal_vis: bool) -> QuasistaticSimulator:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulator(
@@ -89,7 +88,7 @@ class QuasistaticParser:
             sim_params=q_sim_params,
             internal_vis=internal_vis)
 
-    def make_simulator_cpp(self):
+    def make_simulator_cpp(self) -> QuasistaticSimulatorCpp:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulatorCpp(
@@ -98,7 +97,7 @@ class QuasistaticParser:
             object_sdf_paths=self.object_sdf_paths,
             sim_params=q_sim_params)
 
-    def make_batch_simulator(self):
+    def make_batch_simulator(self) -> BatchQuasistaticSimulator:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return BatchQuasistaticSimulator(
