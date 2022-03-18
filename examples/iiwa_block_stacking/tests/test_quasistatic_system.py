@@ -1,8 +1,7 @@
 import unittest
 
-from examples.setup_simulations import run_quasistatic_sim
 from examples.iiwa_block_stacking.run_manual_quasistatic import *
-
+from examples.setup_simulations import run_quasistatic_sim
 from qsim.parser import QuasistaticSystemBackend
 
 
@@ -53,11 +52,11 @@ class TestQuasistaticSystem(unittest.TestCase):
         # Simulation time step.
         h = 0.2
         q_parser = QuasistaticParser(q_model_path)
+        q_parser.set_sim_params(h=h)
 
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
             q_parser=q_parser,
-            h=h,
             backend=QuasistaticSystemBackend.PYTHON,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
@@ -66,7 +65,7 @@ class TestQuasistaticSystem(unittest.TestCase):
 
         # Simulate manually.
         q_logs_dict_str, t_quasistatic = \
-            run_quasistatic_sim_manually(h=0.2, is_visualizing=False)
+            run_quasistatic_sim_manually(h=h, is_visualizing=False)
 
         tolerance = 1e-6
         duraiton = t_quasistatic[-1]

@@ -6,8 +6,8 @@ from examples.setup_simulations import compare_q_sim_cpp_vs_py
 class TestIiwaTrajectoryFollowing(unittest.TestCase):
     def test_cpp_vs_python(self):
         q_parser = QuasistaticParser(q_model_path)
+        q_parser.set_sim_params(h=0.1)
         compare_q_sim_cpp_vs_py(test_case=self, q_parser=q_parser,
-                                h=0.1,
                                 q_a_traj_dict_str={robot_name: q_iiwa_traj},
                                 q0_dict_str=q0_dict_str, atol=1e-8)
 

@@ -2,15 +2,14 @@ import os.path
 from typing import Dict
 
 import numpy as np
+from examples.setup_simulations import run_quasistatic_sim, run_mbp_sim
 from pydrake.all import (Parser, ProcessModelDirectives, LoadModelDirectives,
                          PiecewisePolynomial, MultibodyPlant)
+from qsim.model_paths import add_package_paths_local, models_dir
+from qsim.parser import QuasistaticParser
+from qsim.system import QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
-
-from qsim.model_paths import add_package_paths_local, models_dir
-from qsim.system import QuasistaticSystemBackend
-from qsim.parser import QuasistaticParser
-from examples.setup_simulations import run_quasistatic_sim, run_mbp_sim
 
 # Simulation parameters.
 q_model_path_2d = 'q_sys/3_link_arm_2d_box.yml'
@@ -51,15 +50,16 @@ def run_mbp_quasistatic_comparison(
         is_visualizing=False, real_time_rate=0.0):
     q_parser = QuasistaticParser(
         os.path.join(models_dir, quasistatic_model_path))
+    q_parser.set_sim_params(h=h_quasistatic)
 
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
-        h=h_quasistatic,
         backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str={robot_name: q_robot_traj},
         q0_dict_str=q0_dict_str,
-        is_visualizing=is_visualizing, real_time_rate=real_time_rate)
+        is_visualizing=is_visualizing,
+        real_time_rate=real_time_rate)
 
     # MBP
     # create controller system for robot.

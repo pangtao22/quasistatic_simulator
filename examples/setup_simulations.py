@@ -1,18 +1,14 @@
-from typing import Union
 import unittest
+from typing import Union
 
 from pydrake.all import (PiecewisePolynomial, TrajectorySource, Simulator,
                          VectorLogSink, LogVectorOutput, SpatialForce,
-                         BodyIndex, InputPort, Role,
-                         Multiplexer, DiagramBuilder, PidController,
+                         BodyIndex, InputPort, Multiplexer, DiagramBuilder,
+                         PidController,
                          MultibodyPlant, MeshcatContactVisualizer,
                          ConnectMeshcatVisualizer)
-
-
-from qsim.system import *
 from qsim.parser import QuasistaticParser
-from qsim.simulator import QuasistaticSimulator
-
+from qsim.system import *
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController)
 
@@ -84,7 +80,6 @@ def add_externally_applied_generalized_force(
         spatial_force_input_port: InputPort,
         F_WB_traj: PiecewisePolynomial,
         body_idx: BodyIndex):
-
     load_applier = LoadApplier(F_WB_traj, body_idx)
     builder.AddSystem(load_applier)
     builder.Connect(
@@ -97,21 +92,19 @@ def get_logs_from_sim(log_sinks_dict: Dict[ModelInstanceIndex, VectorLogSink],
 
     context = sim.get_context()
     for model, log_sink in log_sinks_dict.items():
-        loggers_dict[model] = log_sink.GetLog(log_sink.GetMyContextFromRoot(context))
+        loggers_dict[model] = log_sink.GetLog(
+            log_sink.GetMyContextFromRoot(context))
     return loggers_dict
 
 
-def run_quasistatic_sim(
-        q_parser: QuasistaticParser,
-        h: float,
-        backend: QuasistaticSystemBackend,
-        q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
-        q0_dict_str: Dict[str, np.ndarray],
-        is_visualizing: bool,
-        real_time_rate: float, **kwargs):
-
+def run_quasistatic_sim(q_parser: QuasistaticParser,
+                        backend: QuasistaticSystemBackend,
+                        q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
+                        q0_dict_str: Dict[str, np.ndarray],
+                        is_visualizing: bool, real_time_rate: float, **kwargs):
+    h = q_parser.get_param_attribute('h')
     builder = DiagramBuilder()
-    q_sys = q_parser.make_system(time_step=h, backend=backend)
+    q_sys = q_parser.make_system(backend=backend)
     builder.AddSystem(q_sys)
 
     # update dictionaries with ModelInstanceIndex keys.
@@ -155,8 +148,8 @@ def run_quasistatic_sim(
             builder=builder,
             scene_graph=q_sys.q_sim.get_scene_graph(),
             output_port=q_sys.query_object_output_port,
-            draw_period=max(h, 1 / 30.),)
-            # role=Role.kProximity)
+            draw_period=max(h, 1 / 30.), )
+        # role=Role.kProximity)
 
         contact_viz = MeshcatContactVisualizer(meshcat_vis, plant=q_sys.plant)
         builder.AddSystem(contact_viz)
@@ -278,7 +271,8 @@ def run_mbp_sim(
     # logs.
     log_sinks_dict = dict()
     for model in robot_models.union(object_models):
-        logger = LogVectorOutput(plant.get_state_output_port(model), builder, 0.01)
+        logger = LogVectorOutput(plant.get_state_output_port(model), builder,
+                                 0.01)
         log_sinks_dict[model] = logger
 
     diagram = builder.Build()
@@ -325,7 +319,7 @@ def run_mbp_sim(
 
 
 def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
-                            q_parser: QuasistaticParser, h: float,
+                            q_parser: QuasistaticParser,
                             q_a_traj_dict_str: Dict[str, PiecewisePolynomial],
                             q0_dict_str: Dict[str, np.ndarray], atol: float):
     """
@@ -333,20 +327,17 @@ def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
         backends and makes sure that the logs are close.
     """
     loggers_dict_quasistatic_str_cpp, q_sys_cpp = run_quasistatic_sim(
-        q_parser=q_parser,
-        h=h,
-        backend=QuasistaticSystemBackend.CPP,
-        q_a_traj_dict_str=q_a_traj_dict_str,
-        q0_dict_str=q0_dict_str,
+        q_parser=q_parser, backend=QuasistaticSystemBackend.CPP,
+        q_a_traj_dict_str=q_a_traj_dict_str, q0_dict_str=q0_dict_str,
         is_visualizing=False, real_time_rate=0.)
 
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
-        h=h,
         backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str=q_a_traj_dict_str,
         q0_dict_str=q0_dict_str,
-        is_visualizing=False, real_time_rate=0.)
+        is_visualizing=False,
+        real_time_rate=0.)
 
     for name in loggers_dict_quasistatic_str_cpp.keys():
         q_log_cpp = loggers_dict_quasistatic_str_cpp[name].data()
@@ -354,4 +345,3 @@ def compare_q_sim_cpp_vs_py(test_case: unittest.TestCase,
 
         test_case.assertEqual(q_log.shape, q_log_cpp.shape)
         test_case.assertTrue(np.allclose(q_log, q_log_cpp, atol=atol))
-

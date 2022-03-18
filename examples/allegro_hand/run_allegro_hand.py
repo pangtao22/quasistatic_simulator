@@ -34,7 +34,7 @@ q0_dict_str = {hand_name: qa_knots[0],
                object_name: qu0}
 
 q_parser = QuasistaticParser(q_model_path)
-q_parser.set_quasi_dynamic(True)
+q_parser.set_sim_params(is_quasi_dynamic=True, h=h)
 
 q_sim = q_parser.make_simulator_py(internal_vis=False)
 q_sim_cpp = q_parser.make_simulator_cpp()

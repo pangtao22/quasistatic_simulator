@@ -7,10 +7,11 @@ from examples.setup_simulations import compare_q_sim_cpp_vs_py
 class TestIiwaBlockStacking(unittest.TestCase):
     def setUp(self) -> None:
         self.q_parser = QuasistaticParser(q_model_path)
+        self.h_quasistatic = 0.1
 
     def test_cpp_vs_python(self):
+        self.q_parser.set_sim_params(h=self.h_quasistatic)
         compare_q_sim_cpp_vs_py(test_case=self, q_parser=self.q_parser,
-                                h=0.1,
                                 q_a_traj_dict_str=q_a_traj_dict_str,
                                 q0_dict_str=q0_dict_str, atol=1e-4)
 
@@ -41,12 +42,8 @@ class TestIiwaBlockStacking(unittest.TestCase):
         Accuracy thresholds are chosen based on a "visually reasonable" runs of
         both simulations.
         """
-
-        h_mbp = 1e-3
-        h_quasistatic = 0.1
-
         loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = \
-            run_comparison(h_mbp=h_mbp, h_quasistatic=h_quasistatic,
+            run_comparison(h_mbp=1e-3, h_quasistatic=self.h_quasistatic,
                            is_visualizing=False)
 
         error_dict = compare_all_models(

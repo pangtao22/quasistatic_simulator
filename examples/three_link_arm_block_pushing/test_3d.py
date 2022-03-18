@@ -1,6 +1,5 @@
 import unittest
 from examples.three_link_arm_block_pushing.run_3link_arm_pushing_3d import *
-from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 
 class Test3linkArmBoxPushing3D(unittest.TestCase):
@@ -20,15 +19,15 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
          look similar, they are not identical (but are not too different
          either).
 
-        The accuracy thershold are chosen based on a simulation run that
+        The accuracy threshold are chosen based on a simulation run that
             looks reasonable.
         """
         (q_robot_log_mbp, q_box_log_mbp, t_mbp,
-         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _) = \
-            run_mbp_quasistatic_comparison(
-                q_model_path_3d, q0_dict_str,
-                is_visualizing=False,
-                real_time_rate=0.0)
+         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _
+         ) = run_mbp_quasistatic_comparison(
+            q_model_path_3d, q0_dict_str,
+            is_visualizing=False,
+            real_time_rate=0.0)
 
         (e_robot, e_vec_robot, t_e_robot,
          e_angle_box, e_vec_angle_box, t_angle_box,

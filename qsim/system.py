@@ -9,7 +9,6 @@ from pydrake.all import (LeafSystem, BasicVector, PortDataType, AbstractValue,
 from qsim_cpp import QuasistaticSimulatorCpp
 
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-from qsim.sim_parameters import cpp_params_from_py_params
 
 
 class QuasistaticSystemBackend(enum.Enum):
@@ -18,9 +17,7 @@ class QuasistaticSystemBackend(enum.Enum):
 
 
 class QuasistaticSystem(LeafSystem):
-    def __init__(self,
-                 time_step: float,
-                 model_directive_path: str,
+    def __init__(self, model_directive_path: str,
                  robot_stiffness_dict: Dict[str, np.ndarray],
                  object_sdf_paths: Dict[str, str],
                  sim_params: QuasistaticSimParameters,
@@ -37,8 +34,7 @@ class QuasistaticSystem(LeafSystem):
         self.set_name("quasistatic_system")
 
         # State updates are triggered by publish events.
-        self.h = time_step
-        self.DeclarePeriodicDiscreteUpdate(self.h)
+        self.DeclarePeriodicDiscreteUpdate(sim_params.h)
         # need at least one state to call self.DoCalcDiscreteVariableUpdates.
         self.DeclareDiscreteState(1)
 
@@ -48,7 +44,7 @@ class QuasistaticSystem(LeafSystem):
                 model_directive_path=model_directive_path,
                 robot_stiffness_str=robot_stiffness_dict,
                 object_sdf_paths=object_sdf_paths,
-                sim_params=cpp_params_from_py_params(sim_params))
+                sim_params=sim_params)
         elif backend == QuasistaticSystemBackend.PYTHON:
             self.q_sim = QuasistaticSimulator(
                 model_directive_path=model_directive_path,
@@ -135,4 +131,4 @@ class QuasistaticSystem(LeafSystem):
 
         tau_ext_dict = self.q_sim.calc_tau_ext(easf_list)
 
-        self.q_sim.step_default(q_a_cmd_dict, tau_ext_dict, self.h)
+        self.q_sim.step_default(q_a_cmd_dict, tau_ext_dict)
