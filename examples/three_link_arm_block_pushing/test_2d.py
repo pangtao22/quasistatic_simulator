@@ -7,10 +7,10 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
         self.q_parser = QuasistaticParser(
             os.path.join(models_dir, q_model_path_2d))
+        self.q_parser.set_sim_params(h=h_quasistatic)
 
     def test_python_vs_cpp(self):
         compare_q_sim_cpp_vs_py(test_case=self, q_parser=self.q_parser,
-                                h=h_quasistatic,
                                 q_a_traj_dict_str={robot_name: q_robot_traj},
                                 q0_dict_str=q0_dict_str, atol=1e-6)
 

@@ -1,16 +1,13 @@
 import os
-from matplotlib import pyplot as plt
 
 from examples.setup_simulations import *
+from matplotlib import pyplot as plt
+from qsim.model_paths import models_dir
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.utils import (
     create_iiwa_controller_plant)
 
-
-from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
-from qsim.model_paths import models_dir
-
 q_model_path = os.path.join(models_dir, 'q_sys', 'iiwa.yml')
-
 
 # Simulation parameters.
 iiwa_name = "iiwa"
@@ -35,11 +32,11 @@ F_WB_traj = PiecewisePolynomial.FirstOrderHold(
 
 def run_comparison(is_visualizing: bool, real_time_rate: float):
     q_parser = QuasistaticParser(q_model_path)
+    q_parser.set_sim_params(h=h_quasistatic)
 
     # Quasistatic.
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
-        h=h_quasistatic,
         backend=QuasistaticSystemBackend.PYTHON,
         q_a_traj_dict_str={iiwa_name: q_iiwa_traj},
         q0_dict_str=q0_dict_str,
@@ -78,7 +75,7 @@ if __name__ == "__main__":
     loggers_dict_quasistatic_str, loggers_dict_mbp_str = run_comparison(
         is_visualizing=True, real_time_rate=1.0)
 
-    #%%
+    # %%
     nq = 7
     iiwa_log_mbp = loggers_dict_mbp_str[iiwa_name]
     q_iiwa_mbp = iiwa_log_mbp.data().T[:, :nq]
@@ -88,7 +85,7 @@ if __name__ == "__main__":
     q_iiwa_qs = iiwa_log_qs.data().T[:, :nq]
     t_qs = iiwa_log_qs.sample_times()
 
-    #%% plot iiwa joint angles.
+    # %% plot iiwa joint angles.
     fig, axes = plt.subplots(nq, 1, figsize=(4, 10), dpi=150)
     for i in range(nq):
         axes[i].plot(t_mbp, q_iiwa_mbp[:, i], label="mbp")

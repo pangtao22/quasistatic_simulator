@@ -16,7 +16,7 @@ objects:
 # whether the simulation is quasi-dynamic or whether gradient is needed, is
 # not and should not be set here.
 # If such parameters are not set otherwise, the default values defined in
-#  /qsim/sim_parameters.py will be used.
+#  quasistatic_simulator.cpp will be used.
 quasistatic_sim_params:
   gravity: [0, 0, -10]
   nd_per_contact: 2
