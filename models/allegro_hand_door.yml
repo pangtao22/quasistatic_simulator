@@ -1,0 +1,30 @@
+directives:
+
+- add_model:
+    name: allegro_hand_right
+    file: package://quasistatic_simulator/allegro_hand_floating.sdf
+
+- add_model:
+    name: door_fixed
+    file: package://quasistatic_simulator/door_fixed.sdf 
+
+- add_frame:
+    name: ground_world_offset
+    X_PF:
+        base_frame: world
+        translation: [ 0, 0.25, 0.0]
+
+- add_frame:
+    name: world_hand_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0, 0]
+
+- add_weld:
+    parent: ground_world_offset
+    child: door_fixed::door
+
+- add_weld:
+    parent: world
+    child: allegro_hand_right::ghost_body_x
+

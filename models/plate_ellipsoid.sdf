@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="sphere_r0.1m">
-    <link name="sphere">
+  <model name="plate">
+    <link name="plate">
       <inertial>
-        <mass>1.0</mass>
+        <mass>0.1</mass>
         <inertia>
           <ixx>0.001</ixx>
           <ixy>0</ixy>
@@ -16,32 +16,20 @@
 
       <visual name="visual">
         <geometry>
-          <sphere>
-            <radius>0.06</radius>
-          </sphere>
+          <ellipsoid>
+            <radii>0.2 0.2 0.04</radii>
+          </ellipsoid>
         </geometry>
         <material>
-          <diffuse>0.1 0.5 0.5 0.8</diffuse>
-        </material>
-      </visual>
-
-      <visual name="visual_2">
-        <pose> 0 0 0.06 0 0 0 </pose>
-        <geometry>
-          <box>
-           <size>0.02 0.02 0.002 </size>
-          </box>
-        </geometry>
-        <material>
-          <diffuse>0.6 0.2 0.2 0.9</diffuse>
+          <diffuse>0.7 0.2 0.3 0.9</diffuse>
         </material>
       </visual>
 
       <collision name="collision">
         <geometry>
-          <sphere>
-            <radius>0.06</radius>
-          </sphere>
+          <ellipsoid>
+            <radii>0.2 0.2 0.04</radii>
+          </ellipsoid>
         </geometry>
         <surface>
           <friction>

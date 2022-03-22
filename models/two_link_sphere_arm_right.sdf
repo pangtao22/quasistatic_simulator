@@ -77,7 +77,7 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>1.0 0 0 1.0</diffuse>
+      <diffuse>0.2 0.2 0.2 1.0</diffuse>
     </material>
   </visual>
 
@@ -89,7 +89,7 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>1.0 0 0 1.0</diffuse>
+      <diffuse>0.2 0.2 0.2 1.0</diffuse>
     </material>
   </visual>
 
@@ -101,7 +101,20 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>1.0 0 0 1.0</diffuse>
+      <diffuse>0.8 0.8 0.8 1.0</diffuse>
+    </material>
+  </visual>
+
+  <visual name='cylinder'>
+    <pose>0 0.15 0 1.57079632 0 0</pose>
+    <geometry>
+      <cylinder>
+       <radius>0.05</radius>
+       <length>0.1</length>
+      </cylinder>
+    </geometry>
+    <material>
+      <diffuse>0.2 0.2 0.2 1.0</diffuse>
     </material>
   </visual>
 
@@ -191,7 +204,7 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>1.0 1.0 0 1.0</diffuse>
+      <diffuse>0.2 0.2 0.2 0.8</diffuse>
     </material>
   </visual>
 
@@ -203,7 +216,20 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>1.0 1.0 0 1.0</diffuse>
+      <diffuse>0.2 0.2 0.2 0.8</diffuse>
+    </material>
+  </visual>
+
+  <visual name='cylinder'>
+    <pose>0 0.15 0 1.57079632 0 0</pose>
+    <geometry>
+      <cylinder>
+       <radius>0.05</radius>
+       <length>0.1</length>
+      </cylinder>
+    </geometry>
+    <material>
+      <diffuse>0.2 0.2 0.2 1.0</diffuse>
     </material>
   </visual>
 

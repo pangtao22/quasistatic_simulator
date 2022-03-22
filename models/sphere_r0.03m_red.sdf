@@ -5,42 +5,42 @@
       <inertial>
         <mass>1.0</mass>
         <inertia>
-          <ixx>0.001</ixx>
+          <ixx>0.00036</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.001</iyy>
+          <iyy>0.00036</iyy>
           <iyz>0</iyz>
-          <izz>0.001</izz>
+          <izz>0.00036</izz>
         </inertia>
       </inertial>
 
       <visual name="visual">
         <geometry>
           <sphere>
-            <radius>0.06</radius>
+            <radius>0.03</radius>
           </sphere>
         </geometry>
         <material>
-          <diffuse>0.1 0.5 0.5 0.8</diffuse>
+          <diffuse>0.7 0.2 0.2 0.8</diffuse>
         </material>
       </visual>
 
       <visual name="visual_2">
-        <pose> 0 0 0.06 0 0 0 </pose>
+        <pose> 0 0 0.03 0 0 0 </pose>
         <geometry>
           <box>
-           <size>0.02 0.02 0.002 </size>
+           <size>0.01 0.01 0.002 </size>
           </box>
         </geometry>
         <material>
-          <diffuse>0.6 0.2 0.2 0.9</diffuse>
+          <diffuse>0.8 0.8 0.2 0.9</diffuse>
         </material>
       </visual>
 
       <collision name="collision">
         <geometry>
           <sphere>
-            <radius>0.06</radius>
+            <radius>0.03</radius>
           </sphere>
         </geometry>
         <surface>

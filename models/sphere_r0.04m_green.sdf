@@ -17,7 +17,7 @@
       <visual name="visual">
         <geometry>
           <sphere>
-            <radius>0.06</radius>
+            <radius>0.04</radius>
           </sphere>
         </geometry>
         <material>
@@ -26,21 +26,21 @@
       </visual>
 
       <visual name="visual_2">
-        <pose> 0 0 0.06 0 0 0 </pose>
+        <pose> 0 0 0.04 0 0 0 </pose>
         <geometry>
           <box>
-           <size>0.02 0.02 0.002 </size>
+           <size>0.01 0.01 0.002 </size>
           </box>
         </geometry>
         <material>
-          <diffuse>0.6 0.2 0.2 0.9</diffuse>
+          <diffuse>0.2 0.2 0.8 0.9</diffuse>
         </material>
       </visual>
 
       <collision name="collision">
         <geometry>
           <sphere>
-            <radius>0.06</radius>
+            <radius>0.04</radius>
           </sphere>
         </geometry>
         <surface>

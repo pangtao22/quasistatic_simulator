@@ -1,0 +1,54 @@
+directives:
+
+- add_model:
+    name: allegro_hand_right
+    file: package://quasistatic_simulator/allegro_hand_floating_palm_down.sdf
+
+- add_model:
+    name: ground
+    file: package://quasistatic_simulator/ground_box_thin.sdf    
+
+- add_model:
+    name: wall
+    file: package://quasistatic_simulator/wall_box.sdf 
+
+- add_model:
+    name: wall_left
+    file: package://quasistatic_simulator/wall_box_left.sdf        
+
+- add_frame:
+    name: wall_frame1
+    X_PF:
+        base_frame: ground
+        translation: [0, -0.5, 0]
+        rotation: !Rpy {deg: [0, 0, 0]}
+
+- add_frame:
+    name: wall_frame2
+    X_PF:
+        base_frame: ground
+        translation: [0.5, 0, 0]
+        rotation: !Rpy {deg: [0, 0, 90]}
+
+- add_frame:
+    name: world_hand_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0, 0]
+        rotation: !Rpy {deg: [0., 90.0, 90.0]}
+
+- add_weld:
+    parent: world_hand_offset
+    child: allegro_hand_right::ghost_body_x
+
+- add_weld:
+    parent: world
+    child: ground
+
+- add_weld:
+    parent: wall_frame1
+    child: wall
+
+- add_weld:
+    parent: wall_frame2
+    child: wall_left    
