@@ -5,13 +5,13 @@
       <inertial>
         <mass>1.0</mass>
         <inertia>
-          <ixx>0.001</ixx>
+          <ixx>0.00036</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.001</iyy>
+          <iyy>0.00036</iyy>
           <iyz>0</iyz>
-          <izz>0.001</izz>
-        </inertia>
+          <izz>0.00036</izz>
+        </inertia>        
       </inertial>
 
       <visual name="visual">
