@@ -7,11 +7,11 @@ robots:
 objects:
   -
     name: plate
-    file: package://quasistatic_simulator/plate_ellipsoid.sdf
+    file: package://quasistatic_simulator/book.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, -10.]
-  nd_per_contact: 8
-  contact_detection_tolerance: 0.025
+  nd_per_contact: 4
+  contact_detection_tolerance: 0.0125
   is_quasi_dynamic: True
   unactuated_mass_scale: .NAN
