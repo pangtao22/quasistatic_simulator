@@ -204,15 +204,7 @@ class QuasistaticSimulator:
 
     @staticmethod
     def copy_sim_params(params_from: QuasistaticSimParameters):
-        """
-        Annoying isn't it? Why can't we call copy.deepcopy() on C++ structs?
-        """
-        params_to = QuasistaticSimParameters()
-        for name in params_from.__dir__():
-            if name.startswith("_"):
-                continue
-            params_to.__setattr__(name, params_from.__getattribute__(name))
-        return params_to
+        return copy.deepcopy(params_from)
 
     @staticmethod
     def check_params_validity(q_params: QuasistaticSimParameters):
