@@ -8,7 +8,7 @@
        the box and the world so that we can attach two prismatic joints for
        these two DOFs. The ghost body has negligible mass.
   -->
-  <model name="sphere_yz">
+  <model name="sphere_yz_actuated">
     <!-- Ghost body of negligible mass. -->
     <link name="ghost_body">
       <inertial>
@@ -62,7 +62,7 @@
           </sphere>
         </geometry>
         <material>
-          <diffuse>0.8 0.8 0.8 0.8</diffuse>
+          <diffuse>1.0 0 0 1.0</diffuse>
         </material>
       </visual>
       <collision name="collision">
