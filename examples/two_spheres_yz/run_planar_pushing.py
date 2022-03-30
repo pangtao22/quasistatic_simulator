@@ -8,9 +8,6 @@ from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.simulator import ForwardDynamicsMode, GradientMode
 from qsim.model_paths import models_dir
 
-object_sdf_path = os.path.join(models_dir, "sphere_yz.sdf")
-model_directive_path = os.path.join(models_dir, "sphere_yz_actuated.yml")
-
 #%% sim setup
 q_model_path = os.path.join(models_dir, 'q_sys', 'two_spheres_yz.yml')
 
