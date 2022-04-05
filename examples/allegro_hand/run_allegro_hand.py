@@ -4,7 +4,9 @@ import numpy as np
 from pydrake.all import PiecewisePolynomial
 
 from examples.setup_simulations import run_quasistatic_sim
-from qsim.parser import QuasistaticParser, QuasistaticSystemBackend, GradientMode
+from qsim.parser import (QuasistaticParser, QuasistaticSystemBackend,
+                         GradientMode)
+from qsim.simulator import ForwardDynamicsMode
 from qsim.model_paths import models_dir
 
 # %% sim setup
@@ -34,19 +36,22 @@ q0_dict_str = {hand_name: qa_knots[0],
                object_name: qu0}
 
 q_parser = QuasistaticParser(q_model_path)
-q_parser.set_sim_params(is_quasi_dynamic=True, h=h)
+q_parser.set_sim_params(is_quasi_dynamic=True, h=h,
+                        gravity=[0, 0, -10],
+                        log_barrier_weight=100,
+                        forward_mode=ForwardDynamicsMode.kLogIcecreamMp)
 
 q_sim = q_parser.make_simulator_py(internal_vis=False)
 q_sim_cpp = q_parser.make_simulator_cpp()
 
-# loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-#     q_parser=q_parser,
-#     h=h,
-#     backend=QuasistaticSystemBackend.PYTHON,
-#     q_a_traj_dict_str=q_a_traj_dict_str,
-#     q0_dict_str=q0_dict_str,
-#     is_visualizing=True,
-#     real_time_rate=1.0)
+loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+    q_parser=q_parser,
+    h=h,
+    backend=QuasistaticSystemBackend.CPP,
+    q_a_traj_dict_str=q_a_traj_dict_str,
+    q0_dict_str=q0_dict_str,
+    is_visualizing=True,
+    real_time_rate=1.0)
 
 # %% look into the plant.
 plant = q_sim.get_plant()
