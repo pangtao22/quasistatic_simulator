@@ -11,7 +11,6 @@ Some interactive animations generated using the code in this repo can be found i
 - Possibly others (if import fails...)
 
 ## C++ backend
-- Only 2D systems are supported at the moment. 
 - To use, build [this repo](https://github.com/pangtao22/quasistatic_simulator_cpp.git), and put the built pybind library (which looks like `quasistatic_simulator_py.cpython-39-darwin.so` on a Mac) on `PYTHONPATH`.  
 
 ## Running the tests
