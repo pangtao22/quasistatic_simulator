@@ -39,7 +39,7 @@ q_parser = QuasistaticParser(q_model_path)
 q_parser.set_sim_params(is_quasi_dynamic=True, h=h,
                         gravity=[0, 0, -10],
                         log_barrier_weight=100,
-                        forward_mode=ForwardDynamicsMode.kLogIcecreamMp)
+                        forward_mode=ForwardDynamicsMode.kLogPyramidMy)
 
 q_sim = q_parser.make_simulator_py(internal_vis=False)
 q_sim_cpp = q_parser.make_simulator_cpp()

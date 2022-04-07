@@ -49,13 +49,13 @@ q_parser = QuasistaticParser(q_model_path)
 q_parser.set_sim_params(
     h=h,
     is_quasi_dynamic=True,
-    forward_mode=ForwardDynamicsMode.kQpMp,
+    forward_mode=ForwardDynamicsMode.kSocpMp,
     log_barrier_weight=100)
 
 
 loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
     q_parser=q_parser,
-    backend=QuasistaticSystemBackend.PYTHON,
+    backend=QuasistaticSystemBackend.CPP,
     q_a_traj_dict_str=q_a_traj_dict_str,
     q0_dict_str=q0_dict_str,
     is_visualizing=True,

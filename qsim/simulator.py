@@ -23,7 +23,8 @@ from qsim.model_paths import add_package_paths_local
 from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktPinv, QpDerivativesKktActive)
 
-from qsim_cpp import GradientMode, QuasistaticSimParameters, ForwardDynamicsMode
+from qsim_cpp import (GradientMode, QuasistaticSimParameters,
+                      ForwardDynamicsMode, QpLogBarrierSolver)
 from .utils import calc_tangent_vectors
 from .normalization_derivatives import calc_normalization_derivatives
 
@@ -173,6 +174,7 @@ class QuasistaticSimulator:
         # solver
         self.solver_grb = GurobiSolver()
         self.solver_msk = MosekSolver()
+        self.solver_qp_log = QpLogBarrierSolver()
         assert self.solver_grb.available()
 
         # step function dictionary
@@ -224,8 +226,7 @@ class QuasistaticSimulator:
 
         log_forward_modes = {ForwardDynamicsMode.kLogPyramidCvx,
                              ForwardDynamicsMode.kLogPyramidMp,
-                             ForwardDynamicsMode.kLogIcecreamMp,
-                             ForwardDynamicsMode.kLogIcecreamCvx}
+                             ForwardDynamicsMode.kLogIcecream}
 
         if q_params.forward_mode in log_forward_modes:
             if np.isnan(q_params.log_barrier_weight):

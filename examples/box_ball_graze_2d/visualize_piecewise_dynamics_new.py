@@ -42,7 +42,7 @@ q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
 
 #%%
 def run_100_times():
-    q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
+    q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMy
     q_sim_params.gradient_mode = GradientMode.kNone
     for i in tqdm.tqdm(range(200)):
         q_sim.update_mbp_positions(q0_dict)
@@ -61,7 +61,7 @@ def run_100_times():
 q_sim_params.gradient_mode = GradientMode.kNone
 
 q_next = np.zeros((n, 3))
-q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMp
+q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMy
 for i in tqdm.tqdm(range(n)):
     q_a_cmd_dict = {model_a: q_a_cmd[i]}
     tau_ext_dict = q_sim_cpp.calc_tau_ext([])
@@ -73,17 +73,17 @@ for i in tqdm.tqdm(range(n)):
     q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
 
-q_next2 = np.zeros((n, 3))
-q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
-for i in tqdm.tqdm(range(n)):
-    q_sim.update_mbp_positions(q0_dict)
-    q_a_cmd_dict = {model_a: q_a_cmd[i]}
-    tau_ext_dict = q_sim.calc_tau_ext([])
-    q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-               tau_ext_dict=tau_ext_dict,
-               sim_params=q_sim_params)
-    q_next = q_sim.get_mbp_positions()
-    q_next2[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
+# q_next2 = np.zeros((n, 3))
+# q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
+# for i in tqdm.tqdm(range(n)):
+#     q_sim.update_mbp_positions(q0_dict)
+#     q_a_cmd_dict = {model_a: q_a_cmd[i]}
+#     tau_ext_dict = q_sim.calc_tau_ext([])
+#     q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
+#                tau_ext_dict=tau_ext_dict,
+#                sim_params=q_sim_params)
+#     q_next = q_sim.get_mbp_positions()
+#     q_next2[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
 
 # %% plot the points
 # viz.delete()
@@ -93,9 +93,9 @@ dynamics_lcp = np.hstack([q_a_cmd, q_next[:, :1]])  # [x_cmd, y_cmd, x_u_next]
 discontinuity_lcp = np.hstack([q_a_cmd[:, 0][:, None],
                                q_next[:, 2][:, None],
                                q_next[:, 0][:, None]])
-discontinuity2_lcp = np.hstack([q_a_cmd[:, 0][:, None],
-                                q_a_cmd[:, 1][:, None],
-                                q_next[:, 0][:, None]])
+# discontinuity2_lcp = np.hstack([q_a_cmd[:, 0][:, None],
+#                                 q_a_cmd[:, 1][:, None],
+#                                 q_next[:, 0][:, None]])
 
 viz["dynamics_unconstrained_100"].set_object(
     meshcat.geometry.PointCloud(
