@@ -40,63 +40,66 @@ n = 1000
 q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
 
 
-#%%
-def run_100_times():
-    q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMy
-    q_sim_params.gradient_mode = GradientMode.kNone
-    for i in tqdm.tqdm(range(200)):
-        q_sim.update_mbp_positions(q0_dict)
-        q_a_cmd_dict = {model_a: q_a_cmd[i]}
-        tau_ext_dict = q_sim.calc_tau_ext([])
-        q_next_dict = q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-                                 tau_ext_dict=tau_ext_dict,
-                                 sim_params=q_sim_params)
-
-# cProfile.runctx('run_100_times()',
-#                 globals=globals(), locals=locals(),
-#                 filename='cvxpy_no_gradients.stat')
-
 # %% sample dynamics
 # Sample actions between the box x \in [-0.05, 0.05] and y \in [-0.05, 0.05].
 q_sim_params.gradient_mode = GradientMode.kNone
 
-q_next = np.zeros((n, 3))
-q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMy
-for i in tqdm.tqdm(range(n)):
-    q_a_cmd_dict = {model_a: q_a_cmd[i]}
-    tau_ext_dict = q_sim_cpp.calc_tau_ext([])
-    q_sim_cpp.update_mbp_positions(q0_dict)
-    q_sim_cpp.step(q_a_cmd_dict=q_a_cmd_dict,
-                   tau_ext_dict=tau_ext_dict,
-                   sim_params=q_sim_params)
-    q_next_dict = q_sim_cpp.get_mbp_positions()
-    q_next[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
+
+def calc_dynamics(forward_mode: ForwardDynamicsMode):
+    q_next = np.zeros((n, 3))
+    q_sim_params.forward_mode = forward_mode
+    for i in tqdm.tqdm(range(n)):
+        q_a_cmd_dict = {model_a: q_a_cmd[i]}
+        tau_ext_dict = q_sim_cpp.calc_tau_ext([])
+        q_sim_cpp.update_mbp_positions(q0_dict)
+        q_sim_cpp.step(q_a_cmd_dict=q_a_cmd_dict,
+                       tau_ext_dict=tau_ext_dict,
+                       sim_params=q_sim_params)
+        q_next_dict = q_sim_cpp.get_mbp_positions()
+        q_next[i] = np.hstack([q_next_dict[model_a], q_next_dict[model_u]])
+
+    return q_next
+
+q_next_pyramid = calc_dynamics(ForwardDynamicsMode.kLogPyramidMy)
+q_next_icecream = calc_dynamics(ForwardDynamicsMode.kLogIcecream)
+q_next_qp = calc_dynamics(ForwardDynamicsMode.kQpMp)
 
 
-# q_next2 = np.zeros((n, 3))
-# q_sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidCvx
-# for i in tqdm.tqdm(range(n)):
-#     q_sim.update_mbp_positions(q0_dict)
-#     q_a_cmd_dict = {model_a: q_a_cmd[i]}
-#     tau_ext_dict = q_sim.calc_tau_ext([])
-#     q_sim.step(q_a_cmd_dict=q_a_cmd_dict,
-#                tau_ext_dict=tau_ext_dict,
-#                sim_params=q_sim_params)
-#     q_next = q_sim.get_mbp_positions()
-#     q_next2[i] = np.hstack([q_next_dict[model_u], q_next_dict[model_a]])
+#%%
+i = 30
+q_a_cmd_dict = {model_a: q_a_cmd[i]}
+tau_ext_dict = q_sim_cpp.calc_tau_ext([])
+
+
+
 
 # %% plot the points
-# viz.delete()
+viz.delete()
 n_u = problem_definition['n_u']
 h = problem_definition['h']
-dynamics_lcp = np.hstack([q_a_cmd, q_next[:, :1]])  # [x_cmd, y_cmd, x_u_next]
-discontinuity_lcp = np.hstack([q_a_cmd[:, 0][:, None],
-                               q_next[:, 2][:, None],
-                               q_next[:, 0][:, None]])
-# discontinuity2_lcp = np.hstack([q_a_cmd[:, 0][:, None],
-#                                 q_a_cmd[:, 1][:, None],
-#                                 q_next[:, 0][:, None]])
+# [x_cmd, y_cmd, x_u_next]
+dynamics_pyramid = np.hstack([q_a_cmd, q_next_pyramid[:, -1:]])
+dynamics_icecream = np.hstack([q_a_cmd, q_next_icecream[:, -1:]])
+dynamics_exact = np.hstack([q_a_cmd, q_next_qp[:, -1:]])
 
-viz["dynamics_unconstrained_100"].set_object(
+
+viz["dynamics_pyramid"].set_object(
     meshcat.geometry.PointCloud(
-        position=dynamics_lcp.T, color=np.zeros_like(dynamics_lcp).T * 0.8))
+        position=dynamics_pyramid.T,
+        color=np.zeros_like(dynamics_pyramid).T * 0.8))
+
+viz["dynamics_icecream"].set_object(
+    meshcat.geometry.PointCloud(
+        position=dynamics_icecream.T,
+        color=np.ones_like(dynamics_icecream).T * 0.8))
+
+
+color_exact = np.ones_like(dynamics_exact)
+color_exact[:] = [1, 0, 0]
+viz["dynamics_exact"].set_object(
+    meshcat.geometry.PointCloud(
+        position=dynamics_exact.T,
+        color=color_exact.T))
+
+#%%
+
