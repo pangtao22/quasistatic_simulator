@@ -4,7 +4,7 @@ import numpy as np
 from pydrake.autodiffutils import (InitializeAutoDiff, AutoDiffXd,
                                    ExtractGradient)
 
-from .normalization_derivatives import calc_normalization_derivatives
+from qsim.normalization_derivatives import calc_normalization_derivatives
 
 
 class TestNormalizationDerivatives(unittest.TestCase):

@@ -1,0 +1,7 @@
+directives:
+- add_model:
+    name: sphere_xyz_actuated
+    file: package://quasistatic_simulator/sphere_xyz_r_0.1m_actuated.sdf
+
+- add_directives:
+    file: package://quasistatic_simulator/ground.yml

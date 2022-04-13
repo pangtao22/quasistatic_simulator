@@ -8,9 +8,9 @@
        the box and the world so that we can attach two prismatic joints for
        these two DOFs. The ghost body has negligible mass.
   -->
-  <model name="sphere_yz_actuated">
+  <model name="sphere">
     <!-- Ghost body of negligible mass. -->
-    <link name="ghost_body">
+    <link name="ghost_body_world_x">
       <inertial>
         <mass>1.0e-6</mass>
         <inertia>
@@ -23,12 +23,34 @@
         </inertia>
       </inertial>
     </link>
+
+    <link name="ghost_body_x_y">
+      <inertial>
+        <mass>1.0e-6</mass>
+        <inertia>
+          <ixx>1.0e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.0e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1.0e-6</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <joint name="x_slider" type="prismatic">
+      <parent>world</parent>
+      <child>ghost_body_world_x</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+      </axis>
+    </joint>
+
     <!-- The y slider will have an actuator with a corresponding input port
          in our MultibodyPlant model so that we can apply an external force.
     -->
     <joint name="y_slider" type="prismatic">
-      <parent>world</parent>
-      <child>ghost_body</child>
+      <parent>ghost_body_world_x</parent>
+      <child>ghost_body_x_y</child>
       <axis>
         <xyz>0 1 0</xyz>
       </axis>
@@ -36,23 +58,23 @@
     <!-- The z slider allows the box to freely move up and down. Thus, the
          box would free fall if it wasn't for the contact with the ground. -->
     <joint name="z_slider" type="prismatic">
-      <parent>ghost_body</parent>
-      <child>sphere_actuated</child>
+      <parent>ghost_body_x_y</parent>
+      <child>sphere</child>
       <axis>
         <xyz>0 0 1</xyz>
       </axis>
     </joint>
     <!-- The model for a solid box of uniform density. -->
-    <link name="sphere_actuated">
+    <link name="sphere">
       <inertial>
         <mass>1.0</mass>
         <inertia>
-          <ixx>0.004</ixx>
+          <ixx>0.166666666666667</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.004</iyy>
+          <iyy>0.166666666666667</iyy>
           <iyz>0</iyz>
-          <izz>0.004</izz>
+          <izz>0.166666666666667</izz>
         </inertia>
       </inertial>
       <visual name="visual">
@@ -61,10 +83,12 @@
             <radius>0.1</radius>
           </sphere>
         </geometry>
+
         <material>
-          <diffuse>1.0 0 0 1.0</diffuse>
+          <diffuse>0.9 0.9 0.9 0.8</diffuse>
         </material>
       </visual>
+
       <collision name="collision">
         <geometry>
           <sphere>
@@ -76,8 +100,8 @@
             <ode>
               <!-- MultibodyPlant's time stepping only uses the static
                    coefficient of friction, <mu>. -->
-              <mu>1.0</mu>
-              <mu2>1.0</mu2>
+              <mu>0.8</mu>
+              <mu2>0.8</mu2>
             </ode>
           </friction>
         </surface>

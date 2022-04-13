@@ -1,0 +1,16 @@
+model_directive: package://quasistatic_simulator/sphere_xyz_actuated_with_ground.yml
+robots:
+  -
+    name: sphere_xyz_actuated
+    Kp: [1000, 1000, 1000]
+
+objects:
+  -
+    name: sphere_xyz
+    file: package://quasistatic_simulator/sphere_xyz_r_0.5m.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, -10]
+  nd_per_contact: 4
+  is_quasi_dynamic: True
+  contact_detection_tolerance: 0.2
