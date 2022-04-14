@@ -36,7 +36,7 @@ def calc_iwa_trajectory_for_point_tracking(plant: MultibodyPlant,
     for i in range(0, num_knot_points):
         ik = InverseKinematics(plant)
         q_variables = ik.q()
-        R_WL7_r = RotationMatrix(R_WL7_traj.value(t_knots[i]))
+        R_WL7_r = RotationMatrix(R_WL7_traj.orientation(t_knots[i]))
 
         ik.AddOrientationConstraint(
             frameAbar=plant.world_frame(),

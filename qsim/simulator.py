@@ -5,7 +5,7 @@ from typing import List, Union, Dict
 import cvxpy as cp
 import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
-                         MosekSolver,
+                         MosekSolver, SolverOptions,
                          AbstractValue, ExternallyAppliedSpatialForce, Context,
                          JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
                          PenetrationAsPointPair, ConnectMeshcatVisualizer,
@@ -175,6 +175,8 @@ class QuasistaticSimulator:
         self.solver_grb = GurobiSolver()
         self.solver_msk = MosekSolver()
         self.solver_qp_log = QpLogBarrierSolver()
+        self.options_grb = SolverOptions()
+        self.options_grb.SetOption(GurobiSolver.id(), "QCPDual", 1)
         assert self.solver_grb.available()
 
         # step function dictionary
@@ -802,12 +804,14 @@ class QuasistaticSimulator:
             ub=e,
             vars=v)
 
-        result = self.solver_grb.Solve(prog, None, None)
+        result = self.solver_grb.Solve(prog, None, self.options_grb)
         # self.optimizer_time_log.append(
         #     result.get_solver_details().optimizer_time)
         assert result.is_success()
-        beta = -result.GetDualSolution(constraints)
-        beta = np.array(beta).squeeze()
+        beta = np.zeros(0)
+        if J.shape[0] > 0:
+            beta = -result.GetDualSolution(constraints)
+            beta = np.array(beta).squeeze()
 
         # extract v_h from vector into a dictionary.
         v_values = result.GetSolution(v)
