@@ -1377,8 +1377,6 @@ class QuasistaticSimulator:
         _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
         parser = Parser(plant=plant, scene_graph=scene_graph)
         add_package_paths_local(parser)
-        ProcessModelDirectives(LoadModelDirectives(model_directive_path),
-                               plant, parser)
 
         # Objects
         # It is important that object_models and robot_models are ordered.
@@ -1388,6 +1386,8 @@ class QuasistaticSimulator:
                 parser.AddModelFromFile(sdf_path, model_name=name))
 
         # Robots
+        ProcessModelDirectives(LoadModelDirectives(model_directive_path),
+                               plant, parser)
         robot_models = set()
         for name in robot_names:
             robot_model = plant.GetModelInstanceByName(name)
