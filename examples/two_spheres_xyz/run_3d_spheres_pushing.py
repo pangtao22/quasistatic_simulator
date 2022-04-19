@@ -10,7 +10,6 @@ from qsim.simulator import ForwardDynamicsMode, GradientMode
 from qsim.model_paths import models_dir
 
 
-
 #%% sim setup
 q_model_path = os.path.join(models_dir, 'q_sys', 'two_spheres_xyz.yml')
 
