@@ -85,18 +85,19 @@ q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
 q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict,
            sim_params=sim_params)
-
-q_sim_cpp.update_mbp_positions(q_dict)
-q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict,
-               sim_params=sim_params)
-
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
-dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 # numerical gradient
 dfdu_numerical = q_sim.calc_dfdu_numerical(
     q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=5e-4,
     sim_params=sim_params)
+
+# CPP analytic gradients
+sim_params.forward_mode = ForwardDynamicsMode.kSocpMp
+q_sim_cpp.update_mbp_positions(q_dict)
+q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict,
+               sim_params=sim_params)
+dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 #%%
 # quaternion derivatives
