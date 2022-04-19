@@ -1222,25 +1222,25 @@ class QuasistaticSimulator:
         Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd
         if self.n_v == self.n_q:
             return h * Dv_nextDqa_cmd
-        else:
-            Dq_dot_nextDqa_cmd = np.zeros((self.n_q, n_a))
-            for model in self.models_all:
-                idx_v_model = self.velocity_indices[model]
-                idx_q_model = self.position_indices[model]
-                if self.is_3d_floating[model]:
-                    # rotation
-                    Q_WB = q_dict[model][:4]
-                    E = self.get_E(Q_WB)
-                    # D = calc_normalization_derivatives(Q_WB)
-                    Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = (
-                            E @ Dv_nextDqa_cmd[idx_v_model[:3], :])
-                    # translation
-                    Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
-                        Dv_nextDqa_cmd[idx_v_model[3:], :]
-                else:
-                    Dq_dot_nextDqa_cmd[idx_q_model, :] = \
-                        Dv_nextDqa_cmd[idx_v_model, :]
-            return h * Dq_dot_nextDqa_cmd
+
+        Dq_dot_nextDqa_cmd = np.zeros((self.n_q, n_a))
+        for model in self.models_all:
+            idx_v_model = self.velocity_indices[model]
+            idx_q_model = self.position_indices[model]
+            if self.is_3d_floating[model]:
+                # rotation
+                Q_WB = q_dict[model][:4]
+                E = self.get_E(Q_WB)
+                # D = calc_normalization_derivatives(Q_WB)
+                Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = (
+                        E @ Dv_nextDqa_cmd[idx_v_model[:3], :])
+                # translation
+                Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
+                    Dv_nextDqa_cmd[idx_v_model[3:], :]
+            else:
+                Dq_dot_nextDqa_cmd[idx_q_model, :] = \
+                    Dv_nextDqa_cmd[idx_v_model, :]
+        return h * Dq_dot_nextDqa_cmd
 
     def calc_dfdx(self, Dv_nextDb: np.ndarray, Dv_nextDe: np.ndarray,
                   h: float, n_f: int, n_c: int,
