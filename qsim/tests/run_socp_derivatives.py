@@ -44,7 +44,7 @@ DzDe0 = np.zeros((n, m))
 DzDe1 = np.zeros((n, m))
 DzDe2 = np.zeros((n, m))
 
-DzDJ = np.zeros((n, *J.shape))
+DzDvecJ = np.zeros((n, J.size))
 
 for i in range(n):
     dv = np.zeros(n)
@@ -56,7 +56,7 @@ for i in range(n):
     DzDe1[i] = e1.gradient
     DzDe2[i] = e2.gradient
     DzDb[i] = b.gradient
-    DzDJ[i] = J.gradient
+    DzDvecJ[i] = np.concatenate(J.gradient.transpose())
 
 
 #%%
@@ -81,8 +81,19 @@ lambda_star_list = [result.GetDualSolution(c) for c in constraints]
 G_list = [-J_i for J_i in J_list]
 d_socp.UpdateProblem(
     np.zeros((n, n)), b.value, G_list, e_list, v_star, lambda_star_list,
-    1e-2, False)
+    1e-2, True)
 
 
 print(d_socp.get_DzDe())
+DzDvecG_active, lambda_star_active_indices = d_socp.get_DzDvecG_active()
 
+n_active = len(lambda_star_active_indices)
+DzDvecG = []
+for i in range(n_active):
+    DzDvecGi = np.zeros((n, n * m))
+
+    for j in range(n):
+        idx = j * n * m + i * m
+        DzDvecGi[:, m * j: m * j + m] = DzDvecG_active[:, idx: idx + m]
+
+    DzDvecG.append(DzDvecGi)
