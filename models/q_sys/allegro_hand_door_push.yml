@@ -14,4 +14,4 @@ quasistatic_sim_params:
   nd_per_contact: 4
   contact_detection_tolerance: 0.025
   is_quasi_dynamic: True
-  unactuated_mass_scale: .NAN
+  unactuated_mass_scale: 1.0
