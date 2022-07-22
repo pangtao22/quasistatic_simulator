@@ -1,4 +1,6 @@
 import os
+import copy
+
 import numpy as np
 
 from pydrake.all import PiecewisePolynomial
@@ -44,14 +46,14 @@ q_parser.set_sim_params(is_quasi_dynamic=True, h=h,
 q_sim = q_parser.make_simulator_py(internal_vis=False)
 q_sim_cpp = q_parser.make_simulator_cpp()
 
-loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-    q_parser=q_parser,
-    h=h,
-    backend=QuasistaticSystemBackend.CPP,
-    q_a_traj_dict_str=q_a_traj_dict_str,
-    q0_dict_str=q0_dict_str,
-    is_visualizing=True,
-    real_time_rate=1.0)
+# loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+#     q_parser=q_parser,
+#     h=h,
+#     backend=QuasistaticSystemBackend.CPP,
+#     q_a_traj_dict_str=q_a_traj_dict_str,
+#     q0_dict_str=q0_dict_str,
+#     is_visualizing=True,
+#     real_time_rate=1.0)
 
 # %% look into the plant.
 plant = q_sim.get_plant()
@@ -71,26 +73,31 @@ q_dict = {
     idx_u: np.array([0.96040786, 0.07943188, 0.26694634, 0.00685272, -0.08083068,
                      0.00117524, 0.0711])}
 
-qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.1}
+qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.05}
 
 # analytical gradient
+sim_params = copy.deepcopy(q_sim.sim_params)
+sim_params.forward_mode = ForwardDynamicsMode.kQpMp
+sim_params.gradient_mode = GradientMode.kBOnly
+sim_params.h = h
+
 q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
-q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
-           mode="qp_mp", gradient_mode=GradientMode.kBOnly,
-           unactuated_mass_scale=0)
-
-q_sim_cpp.update_mbp_positions(q_dict)
-q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, h=h,
-               mode="qp_mp",
-               gradient_mode=GradientMode.kBOnly, unactuated_mass_scale=0)
-
+q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict,
+           sim_params=sim_params)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
-dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 # numerical gradient
 dfdu_numerical = q_sim.calc_dfdu_numerical(
-    q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=5e-4, h=h)
+    q_dict=q_dict, qa_cmd_dict=qa_cmd_dict, du=5e-4,
+    sim_params=sim_params)
+
+# CPP analytic gradients
+sim_params.forward_mode = ForwardDynamicsMode.kSocpMp
+q_sim_cpp.update_mbp_positions(q_dict)
+q_sim_cpp.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict,
+               sim_params=sim_params)
+dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 #%%
 # quaternion derivatives

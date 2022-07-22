@@ -43,6 +43,7 @@ q_a_cmd = np.random.rand(n, 2) * 0.1 - 0.05
 # %% sample dynamics
 # Sample actions between the box x \in [-0.05, 0.05] and y \in [-0.05, 0.05].
 q_sim_params.gradient_mode = GradientMode.kNone
+q_sim_params.calc_contact_forces = False
 
 
 def calc_dynamics(forward_mode: ForwardDynamicsMode):
@@ -60,9 +61,10 @@ def calc_dynamics(forward_mode: ForwardDynamicsMode):
 
     return q_next
 
+
 q_next_pyramid = calc_dynamics(ForwardDynamicsMode.kLogPyramidMy)
 q_next_icecream = calc_dynamics(ForwardDynamicsMode.kLogIcecream)
-q_next_qp = calc_dynamics(ForwardDynamicsMode.kQpMp)
+q_next_qp = calc_dynamics(ForwardDynamicsMode.kSocpMp)
 
 
 #%%
@@ -100,6 +102,4 @@ viz["dynamics_exact"].set_object(
     meshcat.geometry.PointCloud(
         position=dynamics_exact.T,
         color=color_exact.T))
-
-#%%
 

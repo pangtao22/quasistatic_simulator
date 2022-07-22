@@ -1,4 +1,4 @@
-model_directive: package://quasistatic_simulator/allegro_hand.yml
+model_directive: package://quasistatic_simulator/allegro_hand_tilted.yml
 robots:
   -
     name: allegro_hand_right
@@ -10,8 +10,8 @@ objects:
     file: package://quasistatic_simulator/sphere_r0.06m.sdf
 
 quasistatic_sim_params:
-  gravity: [0, 0, -10.]
+  gravity: [0, 0, 0.]
   nd_per_contact: 4
   contact_detection_tolerance: 0.025
   is_quasi_dynamic: True
-  unactuated_mass_scale: 5.
+  unactuated_mass_scale: .NAN

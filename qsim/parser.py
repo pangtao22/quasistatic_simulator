@@ -98,7 +98,7 @@ class QuasistaticParser:
             sim_params=q_sim_params)
 
     def make_batch_simulator(self) -> BatchQuasistaticSimulator:
-        q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
+        q_sim_params = copy.deepcopy(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return BatchQuasistaticSimulator(
             model_directive_path=self.model_directive_path,

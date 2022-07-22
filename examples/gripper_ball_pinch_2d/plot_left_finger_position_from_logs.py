@@ -20,9 +20,12 @@ idx = [0, 2]
 for i, ax in enumerate(axes):
     color = "red"
     color2 = np.array([0, 204, 163, 255]) / 255
-    ax.step(t_sim1, q_log[:, 2 + idx[i]],,
-    ax.step(t_sim1, q_log_anitescu[:, 2 + idx[i]],,
-    ax.step(t_sim1[1:], qa_cmd_log[:, idx[i]],,
+    ax.step(t_sim1, q_log[:, 2 + idx[i]], where="post", color="blue",
+            label=labels[i], linewidth=2)
+    ax.step(t_sim1, q_log_anitescu[:, 2 + idx[i]], where="post",
+            color=color, label=labels_anitescu[i], linewidth=1)
+    ax.step(t_sim1[1:], qa_cmd_log[:, idx[i]], where="post", color=color2,
+            label=cmd_labels[i], linewidth=1)
 
     ax.set_ylabel("[m]".format(i + 1))
     ax.grid(True)
