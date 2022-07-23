@@ -60,6 +60,7 @@
         </material>        
       </visual>
     </link>
+<!-- ====================== Index Finger ====================== -->
     <link name="link_0">
       <pose>0 0.0435 0.093458 -0.087267 0 0</pose>
       <inertial>
@@ -301,234 +302,9 @@
         </dynamics>
       </axis>
     </joint>
-    <link name="link_12">
-      <pose>-0.0182 0.019333 0.049013 3.14159 -1.48353 1.5708</pose>
-      <inertial>
-        <mass>0.0176</mass>
-        <inertia>
-          <ixx> 0.8139e-05</ixx>
-          <ixy> 0.2552e-05</ixy>
-          <ixz> 0.3899e-05</ixz>
-          <iyy>  1.314e-05</iyy>
-          <iyz>-0.1463e-05</iyz>
-          <izz>  1.002e-05</izz>
-        </inertia>
-      </inertial>
-<!--       <collision name="link_12_collision">
-        <pose>-0.0179 0.009 0.0145 0 0 0</pose>
-        <geometry>
-          <box>
-            <size>0.0358 0.034 0.0455</size>
-          </box>
-        </geometry>
-      </collision> -->
-      <visual name="link_12_visual">
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_12.0_right.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
-      </visual>
-    </link>
-    <joint name="joint_12" type="revolute">
-      <child>link_12</child>
-      <parent>hand_root</parent>
-      <axis>
-        <xyz expressed_in="__model__">0 -0.087156 -0.996195</xyz>
-        <limit>
-          <lower>0.263</lower>
-          <upper>1.396</upper>
-          <effort>0.7</effort>
-        </limit>
-        <dynamics>
-          <damping>1.5e-2</damping>
-        </dynamics>
-      </axis>
-    </joint>
-    <link name="link_13">
-      <pose>-0.0132 0.056728 0.018638 3.14159 -1.48353 1.5708</pose>
-      <inertial>
-        <mass>0.0119</mass>
-        <inertia>
-          <ixx>   1.926e-06</ixx>
-          <ixy> 0.00305e-06</ixy>
-          <ixz> 0.08866e-06</ixz>
-          <iyy>   1.153e-06</iyy>
-          <iyz>-0.03645e-06</iyz>
-          <izz>   1.496e-06</izz>
-        </inertia>
-      </inertial>
-      <!--
-      <collision name='link_13_collision'>
-        <pose>0 0 0.00885 0 0 0</pose>
-        <geometry>
-          <box>
-            <size>0.0196 0.0275 0.0177</size>
-          </box>
-        </geometry>
-      </collision>  
-    -->
-      <visual name="link_13_visual">
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_13.0.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
-      </visual>
-    </link>
-    <joint name="joint_13" type="revolute">
-      <child>link_13</child>
-      <parent>link_12</parent>
-      <axis>
-        <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
-        <limit>
-          <lower>-0.105</lower>
-          <upper>1.163</upper>
-          <effort>0.7</effort>
-        </limit>
-        <dynamics>
-          <damping>1.5e-2</damping>
-        </dynamics>
-      </axis>
-    </joint>
-    <link name="link_14">
-      <pose>-0.0132 0.074361 0.017096 3.14159 -1.48353 1.5708</pose>
-      <inertial>
-        <mass>0.038</mass>
-        <inertia>
-          <ixx>  3.670e-05</ixx>
-          <ixy> 0.0001e-05</ixy>
-          <ixz>0.01485e-05</ixz>
-          <iyy>  3.540e-05</iyy>
-          <iyz>-0.0037e-05</iyz>
-          <izz> 0.3633e-05</izz>
-        </inertia>
-      </inertial>
-<!--       <collision name="link_14_collision">
-        <pose>0 0 0.0257 0 0 0</pose>
-        <geometry>
-          <box>
-            <size>0.0196 0.0275 0.0514</size>
-          </box>
-        </geometry>
-      </collision> -->
-      <collision name="link_14_collision_1">
-        <pose>0 0 0.0257 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.013</radius>
-          </sphere>
-        </geometry>
-      </collision>
-      <visual name="link_14_visual">
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_14.0.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
-      </visual>
-    </link>
-    <joint name="joint_14" type="revolute">
-      <child>link_14</child>
-      <parent>link_13</parent>
-      <axis>
-        <xyz expressed_in="__model__">1 0 0</xyz>
-        <limit>
-          <lower>-0.189</lower>
-          <upper>1.644</upper>
-          <effort>0.7</effort>
-        </limit>
-        <dynamics>
-          <damping>1.5e-2</damping>
-        </dynamics>
-      </axis>
-    </joint>
-    <link name="link_15">
-      <pose>-0.0132 0.125565 0.012616 3.14159 -1.48353 1.5708</pose>
-      <inertial>
-        <pose>0 0 0.012781 0 0 0</pose>
-        <mass>0.0556</mass>
-        <inertia>
-          <ixx>  7.054e-05</ixx>
-          <ixy>          0</ixy>
-          <ixz>          0</ixz>
-          <iyy>  6.564e-05</iyy>
-          <iyz>-0.0033e-05</iyz>
-          <izz>  1.954e-05</izz>
-        </inertia>
-      </inertial>
-<!--       <collision name="link_15_collision">
-        <pose>0 0 0.02115 0 0 0</pose>
-        <geometry>
-          <box>
-            <size>0.0196 0.0275 0.0423</size>
-          </box>
-        </geometry>
-      </collision> -->
-      <collision name="link_15_tip_collision_0">
-        <pose>0 0 0.016 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.013</radius>
-          </sphere>
-        </geometry>
-      </collision>
-      <collision name="link_15_tip_collision_1">
-        <pose>0 0 0.042 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.012</radius>
-          </sphere>
-        </geometry>
-      </collision>
-      <visual name="link_15_visual">
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
-      </visual>
-      <visual name="link_15_tip_visual_1">
-        <pose>0 0 0.0423 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0_tip.obj</uri>
-          </mesh>
-        </geometry>
-      </visual>
-    </link>
-    <joint name="joint_15" type="revolute">
-      <child>link_15</child>
-      <parent>link_14</parent>
-      <axis>
-        <xyz expressed_in="__model__">1 0 0</xyz>
-        <limit>
-          <lower>-0.162</lower>
-          <upper>1.719</upper>
-          <effort>0.7</effort>
-        </limit>
-        <dynamics>
-          <damping>1.5e-2</damping>
-        </dynamics>
-      </axis>
-    </joint>
+
+    <!-- ====================== Middle Finger ====================== -->
+
     <link name="link_4">
       <pose>0 0 0.0957 0 0 0</pose>
       <inertial>
@@ -807,6 +583,8 @@
 
       </visual>
     </link>
+
+    <!-- ====================== Ring Finger ====================== -->
     <joint name="joint_8" type="revolute">
       <child>link_8</child>
       <parent>hand_root</parent>
@@ -1011,6 +789,237 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
+          <effort>0.7</effort>
+        </limit>
+        <dynamics>
+          <damping>1.5e-2</damping>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- ====================== Thumb ====================== -->
+
+    <link name="link_12">
+      <pose>-0.0182 0.019333 0.049013 3.14159 -1.48353 1.5708</pose>
+      <inertial>
+        <mass>0.0176</mass>
+        <inertia>
+          <ixx> 0.8139e-05</ixx>
+          <ixy> 0.2552e-05</ixy>
+          <ixz> 0.3899e-05</ixz>
+          <iyy>  1.314e-05</iyy>
+          <iyz>-0.1463e-05</iyz>
+          <izz>  1.002e-05</izz>
+        </inertia>
+      </inertial>
+<!--       <collision name="link_12_collision">
+        <pose>-0.0179 0.009 0.0145 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0358 0.034 0.0455</size>
+          </box>
+        </geometry>
+      </collision> -->
+      <visual name="link_12_visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_12.0_right.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="joint_12" type="revolute">
+      <child>link_12</child>
+      <parent>hand_root</parent>
+      <axis>
+        <xyz expressed_in="__model__">0 -0.087156 -0.996195</xyz>
+        <limit>
+          <lower>0.263</lower>
+          <upper>1.396</upper>
+          <effort>0.7</effort>
+        </limit>
+        <dynamics>
+          <damping>1.5e-2</damping>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="link_13">
+      <pose>-0.0132 0.056728 0.018638 3.14159 -1.48353 1.5708</pose>
+      <inertial>
+        <mass>0.0119</mass>
+        <inertia>
+          <ixx>   1.926e-06</ixx>
+          <ixy> 0.00305e-06</ixy>
+          <ixz> 0.08866e-06</ixz>
+          <iyy>   1.153e-06</iyy>
+          <iyz>-0.03645e-06</iyz>
+          <izz>   1.496e-06</izz>
+        </inertia>
+      </inertial>
+      <!--
+      <collision name='link_13_collision'>
+        <pose>0 0 0.00885 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0196 0.0275 0.0177</size>
+          </box>
+        </geometry>
+      </collision>
+    -->
+      <visual name="link_13_visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_13.0.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="joint_13" type="revolute">
+      <child>link_13</child>
+      <parent>link_12</parent>
+      <axis>
+        <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
+        <limit>
+          <lower>-0.105</lower>
+          <upper>1.163</upper>
+          <effort>0.7</effort>
+        </limit>
+        <dynamics>
+          <damping>1.5e-2</damping>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="link_14">
+      <pose>-0.0132 0.074361 0.017096 3.14159 -1.48353 1.5708</pose>
+      <inertial>
+        <mass>0.038</mass>
+        <inertia>
+          <ixx>  3.670e-05</ixx>
+          <ixy> 0.0001e-05</ixy>
+          <ixz>0.01485e-05</ixz>
+          <iyy>  3.540e-05</iyy>
+          <iyz>-0.0037e-05</iyz>
+          <izz> 0.3633e-05</izz>
+        </inertia>
+      </inertial>
+<!--       <collision name="link_14_collision">
+        <pose>0 0 0.0257 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0196 0.0275 0.0514</size>
+          </box>
+        </geometry>
+      </collision> -->
+      <collision name="link_14_collision_1">
+        <pose>0 0 0.0257 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.013</radius>
+          </sphere>
+        </geometry>
+      </collision>
+      <visual name="link_14_visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_14.0.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="joint_14" type="revolute">
+      <child>link_14</child>
+      <parent>link_13</parent>
+      <axis>
+        <xyz expressed_in="__model__">1 0 0</xyz>
+        <limit>
+          <lower>-0.189</lower>
+          <upper>1.644</upper>
+          <effort>0.7</effort>
+        </limit>
+        <dynamics>
+          <damping>1.5e-2</damping>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="link_15">
+      <pose>-0.0132 0.125565 0.012616 3.14159 -1.48353 1.5708</pose>
+      <inertial>
+        <pose>0 0 0.012781 0 0 0</pose>
+        <mass>0.0556</mass>
+        <inertia>
+          <ixx>  7.054e-05</ixx>
+          <ixy>          0</ixy>
+          <ixz>          0</ixz>
+          <iyy>  6.564e-05</iyy>
+          <iyz>-0.0033e-05</iyz>
+          <izz>  1.954e-05</izz>
+        </inertia>
+      </inertial>
+<!--       <collision name="link_15_collision">
+        <pose>0 0 0.02115 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.0196 0.0275 0.0423</size>
+          </box>
+        </geometry>
+      </collision> -->
+      <collision name="link_15_tip_collision_0">
+        <pose>0 0 0.016 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.013</radius>
+          </sphere>
+        </geometry>
+      </collision>
+      <collision name="link_15_tip_collision_1">
+        <pose>0 0 0.042 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.012</radius>
+          </sphere>
+        </geometry>
+      </collision>
+      <visual name="link_15_visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
+      </visual>
+      <visual name="link_15_tip_visual_1">
+        <pose>0 0 0.0423 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0_tip.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="joint_15" type="revolute">
+      <child>link_15</child>
+      <parent>link_14</parent>
+      <axis>
+        <xyz expressed_in="__model__">1 0 0</xyz>
+        <limit>
+          <lower>-0.162</lower>
+          <upper>1.719</upper>
           <effort>0.7</effort>
         </limit>
         <dynamics>
