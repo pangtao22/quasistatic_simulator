@@ -7,12 +7,12 @@ import numpy as np
 from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
                          MosekSolver, SolverOptions,
                          AbstractValue, ExternallyAppliedSpatialForce, Context,
-                         JacobianWrtVariable, RigidBody, DrakeVisualizer, Role,
-                         PenetrationAsPointPair, ConnectMeshcatVisualizer,
-                         MeshcatContactVisualizer, DrakeVisualizerParams,
-                         MeshcatVisualizer)
-from pydrake.multibody.parsing import Parser, ProcessModelDirectives, \
-    LoadModelDirectives
+                         JacobianWrtVariable, RigidBody, Role,
+                         PenetrationAsPointPair)
+from pydrake.systems.meshcat_visualizer import (MeshcatContactVisualizer,
+                                                ConnectMeshcatVisualizer)
+from pydrake.multibody.parsing import (Parser, ProcessModelDirectives,
+                                       LoadModelDirectives)
 from pydrake.multibody.plant import (
     PointPairContactInfo, ContactResults,
     CalcContactFrictionFromSurfaceProperties, MultibodyPlant,
@@ -21,7 +21,7 @@ from pydrake.solvers import mathematicalprogram as mp
 from pydrake.systems.framework import DiagramBuilder
 from qsim.model_paths import add_package_paths_local
 from robotics_utilities.qp_derivatives.qp_derivatives import (
-    QpDerivativesKktPinv, QpDerivativesKktActive)
+    QpDerivativesKktActive)
 
 from qsim_cpp import (GradientMode, QuasistaticSimParameters,
                       ForwardDynamicsMode, QpLogBarrierSolver)
