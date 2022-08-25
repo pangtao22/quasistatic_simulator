@@ -14,13 +14,13 @@ directives:
     name: world_left_arm_offset
     X_PF:
         base_frame: world
-        translation: [0, 0.483, 0]
+        translation: [0, 0.406, 0]
 
 - add_frame:
     name: world_right_arm_offset
     X_PF:
         base_frame: world
-        translation: [0, -0.483, 0]
+        translation: [0, -0.406, 0]
 
 - add_weld:
     parent: world_left_arm_offset
