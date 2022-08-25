@@ -1,0 +1,31 @@
+directives:
+- add_directives:
+    file: package://quasistatic_simulator/ground.yml
+
+- add_model:
+    name: iiwa_right
+    file: package://quasistatic_simulator/iiwa7_sphere_collision.sdf
+
+- add_model:
+    name: iiwa_left
+    file: package://quasistatic_simulator/iiwa7_sphere_collision.sdf
+
+- add_frame:
+    name: world_left_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0.483, 0]
+
+- add_frame:
+    name: world_right_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, -0.483, 0]
+
+- add_weld:
+    parent: world_left_arm_offset
+    child: iiwa_left::iiwa_link_0
+
+- add_weld:
+    parent: world_right_arm_offset
+    child: iiwa_right::iiwa_link_0
