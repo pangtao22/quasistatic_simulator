@@ -3,11 +3,11 @@ directives:
     file: package://quasistatic_simulator/ground.yml
 
 - add_model:
-    name: iiwa_right
+    name: iiwa_left
     file: package://quasistatic_simulator/iiwa7_sphere_collision.sdf
 
 - add_model:
-    name: iiwa_left
+    name: iiwa_right
     file: package://quasistatic_simulator/iiwa7_sphere_collision.sdf
 
 - add_frame:
