@@ -51,7 +51,34 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.4 0.4 0.4 1.0</diffuse>
+          <diffuse>0.4 0.4 0.4 0.5</diffuse>
+        </material>
+      </visual>
+      <collision name='iiwa_link_1_contact'>
+        <pose>0 -0.05 0.175 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='iiwa_link_1_contact_visual'>
+        <pose>0 -0.05 0.175 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.065</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
         </material>
       </visual>
       <gravity>1</gravity>
@@ -99,9 +126,63 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>1.0 0.423529411765 0.0392156862745 1.0</diffuse>
+          <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
         </material>
       </visual>
+      <visual name='iiwa_link_2_contact_visual'>
+        <pose>0 0.18 0 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name='iiwa_link_2_contact'>
+        <pose>0 0.18 0 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='iiwa_link_2_contact_visual2'>
+        <pose>0 0.01 0.05 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.065</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name='iiwa_link_2_contact2'>
+        <pose>0 0.01 0.05 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.065</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
       <gravity>1</gravity>
       <velocity_decay/>
       <self_collide>0</self_collide>
@@ -166,6 +247,33 @@
         <geometry>
           <sphere>
             <radius>0.063</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='iiwa_link_3_contact_visual2'>
+        <pose>0 0.0 0.035 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name='iiwa_link_3_contact2'>
+        <pose>0 0.0 0.035 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
           </sphere>
         </geometry>
         <surface>
@@ -252,6 +360,33 @@
           </friction>
         </surface>
       </collision>
+      <visual name='iiwa_link_4_contact_visual2'>
+        <pose>0 0.177 0.0 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name='iiwa_link_4_contact2'>
+        <pose>0 0.177 0.0 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.067</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
       <gravity>1</gravity>
       <velocity_decay/>
       <self_collide>0</self_collide>
@@ -302,7 +437,7 @@
       </visual>
 
       <visual name='iiwa_link_5_contact_visual'>
-        <pose>0 0 0 0 -0 0</pose>
+        <pose>0 0 0.03 0 -0 0</pose>
         <geometry>
           <sphere>
             <radius>0.067</radius>
@@ -314,7 +449,7 @@
       </visual>
 
       <collision name='iiwa_link_5_contact'>
-        <pose>0 0 0 0 -0 0</pose>
+        <pose>0 0 0.03 0 -0 0</pose>
         <geometry>
           <sphere>
             <radius>0.067</radius>
@@ -347,6 +482,64 @@
         <geometry>
           <sphere>
             <radius>0.06</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <visual name='iiwa_link_5_contact_visual3'>
+        <pose>0 0.058 0.18 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.04</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+
+      <collision name='iiwa_link_5_contact3'>
+        <pose>0 0.058 0.18 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.04</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>0.5</mu>
+            <mu2>0.5</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <visual name='iiwa_link_5_contact_visual4'>
+        <pose>0 0.04 0.12 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.045</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+        </material>
+      </visual>
+
+      <collision name='iiwa_link_5_contact4'>
+        <pose>0 0.04 0.12 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.045</radius>
           </sphere>
         </geometry>
         <surface>
