@@ -29,7 +29,7 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.460 0.457 0.406</size>
+            <size>0.459 0.456 0.405</size>
           </box>
         </geometry>
         <surface>
