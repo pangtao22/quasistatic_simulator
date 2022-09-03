@@ -177,7 +177,7 @@
     <axis>
       <xyz> 1 0 0 </xyz>
       <limit>
-        <lower>-1.5708</lower>
+        <lower>-2.4</lower>
         <upper>0</upper>
       </limit>
     </axis>

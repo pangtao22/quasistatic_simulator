@@ -177,7 +177,7 @@
       <xyz> 1 0 0 </xyz>
       <limit>
         <lower>0</lower>
-        <upper>1.5708</upper>
+        <upper>2.4</upper>
       </limit>
     </axis>
   </joint>
