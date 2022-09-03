@@ -105,7 +105,7 @@
       </axis>
     </joint>
     <link name="iiwa_link_2">
-      <pose>0 0 0.3405 1.5708 0 -3.14159</pose>
+      <pose>0 0 0.3405 0 -1.5708 -1.5708</pose>
       <inertial>
         <pose>0.000 0.0668 0.0344 0 0 0</pose>
         <mass>2.7258</mass>
@@ -190,24 +190,9 @@
     <joint name="iiwa_joint_2" type="fixed">
       <child>iiwa_link_2</child>
       <parent>iiwa_link_1</parent>
-      <axis>
-        <xyz expressed_in="__model__">-0 1 0</xyz>
-        <limit>
-          <lower>-2.0944</lower>
-          <upper>2.0944</upper>
-          <effort>300</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>0.0</damping>
-          <friction>0</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
     </joint>
     <link name="iiwa_link_3">
-      <pose>0 0 0.5245 0 0 0</pose>
+      <pose>0.1840 0 0.3405 1.5708 0 1.5708</pose>
       <inertial>
         <pose>0 0.0296 0.1265 0 0 0</pose>
         <mass>3.175</mass>
@@ -289,27 +274,12 @@
       <velocity_decay/>
       <self_collide>0</self_collide>
     </link>
-    <joint name="iiwa_joint_3" type="revolute">
+    <joint name="iiwa_joint_3" type="fixed">
       <child>iiwa_link_3</child>
       <parent>iiwa_link_2</parent>
-      <axis>
-        <xyz expressed_in="__model__">0 0 1</xyz>
-        <limit>
-          <lower>-2.96706</lower>
-          <upper>2.96706</upper>
-          <effort>300</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>0.0</damping>
-          <friction>0</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
     </joint>
     <link name="iiwa_link_4">
-      <pose>0 0 0.74 1.5708 0 0</pose>
+      <pose>0.3995 0 0.3405 -3.1416 0 1.5708</pose>
       <inertial>
         <pose>0 0.067 0.034 0 0 0</pose>
         <mass>2.73</mass>
@@ -395,7 +365,7 @@
       <child>iiwa_link_4</child>
       <parent>iiwa_link_3</parent>
       <axis>
-        <xyz expressed_in="__model__">0 -1 0</xyz>
+        <xyz expressed_in="__model__">0 0 -1</xyz>
         <limit>
           <lower>-2.0944</lower>
           <upper>2.0944</upper>
@@ -411,7 +381,7 @@
       </axis>
     </joint>
     <link name="iiwa_link_5">
-      <pose>0 0 0.924 0 0 -3.14159</pose>
+      <pose>0.5835 0 0.3405 -1.5708 0 -1.5708</pose>
       <inertial>
         <pose>0.0001 0.021 0.076 0 0 0</pose>
         <mass>1.69</mass>
@@ -556,27 +526,12 @@
       <velocity_decay/>
       <self_collide>0</self_collide>
     </link>
-    <joint name="iiwa_joint_5" type="revolute">
+    <joint name="iiwa_joint_5" type="fixed">
       <child>iiwa_link_5</child>
       <parent>iiwa_link_4</parent>
-      <axis>
-        <xyz expressed_in="__model__">0 0 1</xyz>
-        <limit>
-          <lower>-2.96706</lower>
-          <upper>2.96706</upper>
-          <effort>300</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>0.0</damping>
-          <friction>0</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
     </joint>
     <link name="iiwa_link_6">
-      <pose>0 0 1.1395 1.5708 0 -3.14159</pose>
+      <pose>0.7990 0 0.3405 0 0 -1.5708</pose>
       <inertial>
         <pose>0 0.0026 0.0005 0 0 0</pose>
         <mass>1.8</mass>
@@ -668,7 +623,7 @@
       <child>iiwa_link_6</child>
       <parent>iiwa_link_5</parent>
       <axis>
-        <xyz expressed_in="__model__">-0 1 -0</xyz>
+        <xyz expressed_in="__model__">0 0 1</xyz>
         <limit>
           <lower>-2.0944</lower>
           <upper>2.0944</upper>
@@ -684,7 +639,7 @@
       </axis>
     </joint>
     <link name="iiwa_link_7">
-      <pose>0 0 1.22 0 0 0</pose>
+      <pose>0.8795 0 0.3405 1.5708 0 1.5708</pose>
       <inertial>
         <pose>0 0 0.0294 0 0 0</pose>
         <mass>.4</mass>
@@ -712,24 +667,9 @@
       <velocity_decay/>
       <self_collide>0</self_collide>
     </link>
-    <joint name="iiwa_joint_7" type="revolute">
+    <joint name="iiwa_joint_7" type="fixed">
       <child>iiwa_link_7</child>
       <parent>iiwa_link_6</parent>
-      <axis>
-        <xyz expressed_in="__model__">0 0 1</xyz>
-        <limit>
-          <lower>-3.05433</lower>
-          <upper>3.05433</upper>
-          <effort>300</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>0.0</damping>
-          <friction>0</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
     </joint>
     <static>0</static>
   </model>
