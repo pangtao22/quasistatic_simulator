@@ -26,8 +26,6 @@
         </material>
       </visual>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <link name="iiwa_link_1">
       <pose>0 0 0.1575 0 0 0</pose>
@@ -82,8 +80,6 @@
         </material>
       </visual>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_1" type="revolute">
       <child>iiwa_link_1</child>
@@ -184,8 +180,6 @@
         </surface>
       </collision>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_2" type="fixed">
       <child>iiwa_link_2</child>
@@ -271,8 +265,6 @@
         </surface>
       </collision>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_3" type="fixed">
       <child>iiwa_link_3</child>
@@ -358,8 +350,6 @@
         </surface>
       </collision>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_4" type="revolute">
       <child>iiwa_link_4</child>
@@ -521,10 +511,7 @@
           </friction>
         </surface>
       </collision>
-
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_5" type="fixed">
       <child>iiwa_link_5</child>
@@ -614,10 +601,7 @@
           </friction>
         </surface>
       </collision>
-
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_6" type="revolute">
       <child>iiwa_link_6</child>
@@ -664,8 +648,6 @@
         </material>
       </visual>
       <gravity>1</gravity>
-      <velocity_decay/>
-      <self_collide>0</self_collide>
     </link>
     <joint name="iiwa_joint_7" type="fixed">
       <child>iiwa_link_7</child>
