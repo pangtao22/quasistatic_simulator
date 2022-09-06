@@ -11,6 +11,7 @@ objects:
   -
     name: box
     file: package://quasistatic_simulator/cylinder_xy_yaw.sdf
+    #file: package://quasistatic_simulator/box_uhaul_medium_xy_yaw.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, -9.8]
