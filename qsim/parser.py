@@ -6,9 +6,12 @@ import numpy as np
 import parse
 import yaml
 
+from pydrake.all import (MultibodyPlant, Parser, ProcessModelDirectives,
+                         LoadModelDirectives)
+
 from qsim_cpp import (QuasistaticSimulatorCpp,
                       BatchQuasistaticSimulator, GradientMode)
-from .model_paths import package_paths_dict
+from .model_paths import package_paths_dict, add_package_paths_local
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 from .system import (QuasistaticSystem, QuasistaticSystemBackend)
 
@@ -88,14 +91,26 @@ class QuasistaticParser:
             sim_params=q_sim_params,
             internal_vis=internal_vis)
 
-    def make_simulator_cpp(self) -> QuasistaticSimulatorCpp:
+    def make_simulator_cpp(self, has_objects=True) -> QuasistaticSimulatorCpp:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
+        objects_sdf_paths = self.object_sdf_paths if has_objects else {}
         return QuasistaticSimulatorCpp(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
-            object_sdf_paths=self.object_sdf_paths,
+            object_sdf_paths=objects_sdf_paths,
             sim_params=q_sim_params)
+
+    def make_robot_only_plant(self):
+        plant = MultibodyPlant(1e-3)
+        parser = Parser(plant=plant)
+        add_package_paths_local(parser)
+        ProcessModelDirectives(LoadModelDirectives(self.model_directive_path),
+                               plant, parser)
+
+        plant.mutable_gravity_field().set_gravity_vector(self.get_gravity())
+        plant.Finalize()
+        return plant
 
     def make_batch_simulator(self) -> BatchQuasistaticSimulator:
         q_sim_params = copy.deepcopy(self.q_sim_params)

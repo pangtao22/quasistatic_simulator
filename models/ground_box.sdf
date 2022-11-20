@@ -11,7 +11,7 @@
       </box>
     </geometry>
     <material>
-      <diffuse>0 1 0 1.0</diffuse>
+      <diffuse>0.39 0.4 0.42 1.0</diffuse>
     </material>
   </visual>
 

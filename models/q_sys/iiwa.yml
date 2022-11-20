@@ -6,7 +6,6 @@ robots:
 
 objects:
 
-
 quasistatic_sim_params:
   gravity: [0, 0, -10]
   nd_per_contact: 4
