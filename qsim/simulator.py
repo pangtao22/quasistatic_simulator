@@ -4,27 +4,48 @@ from typing import List, Union, Dict
 
 import cvxpy as cp
 import numpy as np
-from pydrake.all import (QueryObject, ModelInstanceIndex, GurobiSolver,
-                         MosekSolver, SolverOptions,
-                         AbstractValue, ExternallyAppliedSpatialForce, Context,
-                         JacobianWrtVariable, RigidBody, Role,
-                         PenetrationAsPointPair)
-from pydrake.systems.meshcat_visualizer import (MeshcatContactVisualizer,
-                                                ConnectMeshcatVisualizer)
-from pydrake.multibody.parsing import (Parser, ProcessModelDirectives,
-                                       LoadModelDirectives)
+from pydrake.all import (
+    QueryObject,
+    ModelInstanceIndex,
+    GurobiSolver,
+    MosekSolver,
+    SolverOptions,
+    AbstractValue,
+    ExternallyAppliedSpatialForce,
+    Context,
+    JacobianWrtVariable,
+    RigidBody,
+    PenetrationAsPointPair,
+    MeshcatVisualizer,
+    ContactVisualizer,
+    StartMeshcat,
+)
+
+from pydrake.multibody.parsing import (
+    Parser,
+    ProcessModelDirectives,
+    LoadModelDirectives,
+)
 from pydrake.multibody.plant import (
-    PointPairContactInfo, ContactResults,
-    CalcContactFrictionFromSurfaceProperties, MultibodyPlant,
-    AddMultibodyPlantSceneGraph)
+    PointPairContactInfo,
+    ContactResults,
+    CalcContactFrictionFromSurfaceProperties,
+    MultibodyPlant,
+    AddMultibodyPlantSceneGraph,
+)
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.systems.framework import DiagramBuilder
 from qsim.model_paths import add_package_paths_local
 from robotics_utilities.qp_derivatives.qp_derivatives import (
-    QpDerivativesKktActive)
+    QpDerivativesKktActive,
+)
 
-from qsim_cpp import (GradientMode, QuasistaticSimParameters,
-                      ForwardDynamicsMode, QpLogBarrierSolver)
+from qsim_cpp import (
+    GradientMode,
+    QuasistaticSimParameters,
+    ForwardDynamicsMode,
+    QpLogBarrierSolver,
+)
 from .utils import calc_tangent_vectors
 from .normalization_derivatives import calc_normalization_derivatives
 
@@ -38,8 +59,16 @@ class MyContactInfo:
     contact point.
     """
 
-    def __init__(self, bodyA_index, bodyB_index, geometry_id_A, geometry_id_B,
-                 p_WC_W, n_W, dC_W):
+    def __init__(
+        self,
+        bodyA_index,
+        bodyB_index,
+        geometry_id_A,
+        geometry_id_B,
+        p_WC_W,
+        n_W,
+        dC_W,
+    ):
         self.bodyA_index = bodyA_index
         self.bodyB_index = bodyB_index
         self.geometry_id_A = geometry_id_A
@@ -50,11 +79,14 @@ class MyContactInfo:
 
 
 class QuasistaticSimulator:
-    def __init__(self, model_directive_path: str,
-                 robot_stiffness_dict: Dict[str, np.ndarray],
-                 object_sdf_paths: Dict[str, str],
-                 sim_params: QuasistaticSimParameters,
-                 internal_vis: bool = False):
+    def __init__(
+        self,
+        model_directive_path: str,
+        robot_stiffness_dict: Dict[str, np.ndarray],
+        object_sdf_paths: Dict[str, str],
+        sim_params: QuasistaticSimParameters,
+        internal_vis: bool = False,
+    ):
         """
         Assumptions:
         - Each rigid body has one contact geometry.
@@ -68,26 +100,31 @@ class QuasistaticSimulator:
         self.sim_params = sim_params
         # Construct diagram system for proximity queries, Jacobians.
         builder = DiagramBuilder()
-        plant, scene_graph, robot_models, object_models = \
-            self.create_plant_with_robots_and_objects(
-                builder=builder,
-                model_directive_path=model_directive_path,
-                robot_names=[name for name in robot_stiffness_dict.keys()],
-                object_sdf_paths=object_sdf_paths,
-                time_step=1e-3,  # Only useful for MBP simulations.
-                gravity=sim_params.gravity)
+        (
+            plant,
+            scene_graph,
+            robot_models,
+            object_models,
+        ) = self.create_plant_with_robots_and_objects(
+            builder=builder,
+            model_directive_path=model_directive_path,
+            robot_names=[name for name in robot_stiffness_dict.keys()],
+            object_sdf_paths=object_sdf_paths,
+            time_step=1e-3,  # Only useful for MBP simulations.
+            gravity=sim_params.gravity,
+        )
 
         # visualization.
         self.internal_vis = internal_vis
         if internal_vis:
-            viz = ConnectMeshcatVisualizer(builder, scene_graph,
-                                           role=Role.kIllustration)
+            self.meshcat = StartMeshcat()
+            self.viz = MeshcatVisualizer.AddToBuilder(
+                builder, scene_graph, self.meshcat
+            )
             # ContactVisualizer
-            contact_viz = MeshcatContactVisualizer(
-                meshcat_viz=viz, plant=plant)
-            builder.AddSystem(contact_viz)
-            self.viz = viz
-            self.contact_viz = contact_viz
+            self.contact_viz = ContactVisualizer.AddToBuilder(
+                builder, plant, self.meshcat
+            )
 
         diagram = builder.Build()
         self.diagram = diagram
@@ -97,9 +134,11 @@ class QuasistaticSimulator:
 
         self.context = diagram.CreateDefaultContext()
         self.context_plant = diagram.GetMutableSubsystemContext(
-            plant, self.context)
+            plant, self.context
+        )
         self.context_sg = diagram.GetMutableSubsystemContext(
-            scene_graph, self.context)
+            scene_graph, self.context
+        )
 
         # Internal visualization is used when QuasistaticSimulator is used
         # outside the Systems framework.
@@ -107,9 +146,11 @@ class QuasistaticSimulator:
             self.viz.vis.delete()
             self.viz.load()
             self.context_meshcat = diagram.GetMutableSubsystemContext(
-                self.viz, self.context)
+                self.viz, self.context
+            )
             self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
-                self.contact_viz, self.context)
+                self.contact_viz, self.context
+            )
 
         self.models_unactuated = object_models
         self.models_actuated = robot_models
@@ -184,12 +225,13 @@ class QuasistaticSimulator:
             ForwardDynamicsMode.kQpMp: self.step_qp_mp,
             ForwardDynamicsMode.kQpCvx: self.step_qp_cvx,
             ForwardDynamicsMode.kLogPyramidCvx: self.step_log_cvx,
-            ForwardDynamicsMode.kLogPyramidMp: self.step_log_mp}
+            ForwardDynamicsMode.kLogPyramidMp: self.step_log_mp,
+        }
 
-        '''
+        """
         Both self.contact_results and self.query_object are updated by calling
         self.step(...)
-        '''
+        """
         # For contact force visualization. It is updated when
         #   self.calc_contact_results is called.
         self.contact_results = ContactResults()
@@ -214,31 +256,40 @@ class QuasistaticSimulator:
     def check_params_validity(q_params: QuasistaticSimParameters):
         gm = q_params.gradient_mode
         if q_params.nd_per_contact > 2 and gm == GradientMode.kAB:
-            raise RuntimeError("Computing A matrix for 3D systems is not yet "
-                               "supported.")
+            raise RuntimeError(
+                "Computing A matrix for 3D systems is not yet " "supported."
+            )
 
         if q_params.unactuated_mass_scale == 0:
             if gm == GradientMode.kAB or gm == GradientMode.kBOnly:
-                raise RuntimeError("Dynamics gradient cannot be computed when "
-                                   "the object has infinite mass.")
+                raise RuntimeError(
+                    "Dynamics gradient cannot be computed when "
+                    "the object has infinite mass."
+                )
 
         if q_params.unactuated_mass_scale == np.inf:
-            raise RuntimeError("Setting mass matrix to 0 should be achieved "
-                               "using the is_quasi_dynamic flag.")
+            raise RuntimeError(
+                "Setting mass matrix to 0 should be achieved "
+                "using the is_quasi_dynamic flag."
+            )
 
-        log_forward_modes = {ForwardDynamicsMode.kLogPyramidCvx,
-                             ForwardDynamicsMode.kLogPyramidMp,
-                             ForwardDynamicsMode.kLogIcecream}
+        log_forward_modes = {
+            ForwardDynamicsMode.kLogPyramidCvx,
+            ForwardDynamicsMode.kLogPyramidMp,
+            ForwardDynamicsMode.kLogIcecream,
+        }
 
         if q_params.forward_mode in log_forward_modes:
             if np.isnan(q_params.log_barrier_weight):
                 raise RuntimeError(
                     f"Log barrier weight is nan when running in"
-                    f" {q_params.forward_mode}.")
+                    f" {q_params.forward_mode}."
+                )
 
             if gm == GradientMode.kAB:
                 raise RuntimeError(
-                    f"Computing A for mode {gm} is not supported ")
+                    f"Computing A for mode {gm} is not supported "
+                )
 
     def get_sim_parmas_copy(self):
         return self.copy_sim_params(self.sim_params)
@@ -274,16 +325,20 @@ class QuasistaticSimulator:
         return self.velocity_indices
 
     def num_actuated_dofs(self):
-        return np.sum(
-            [self.n_v_dict[model] for model in self.models_actuated])
+        return np.sum([self.n_v_dict[model] for model in self.models_actuated])
 
     def num_unactuated_dof(self):
         return np.sum(
-            [self.n_v_dict[model] for model in self.models_unactuated])
+            [self.n_v_dict[model] for model in self.models_unactuated]
+        )
 
     def get_dynamics_derivatives(self):
-        return (np.copy(self.Dv_nextDb), np.copy(self.Dv_nextDe),
-                np.copy(self.Dq_nextDq), np.copy(self.Dq_nextDqa_cmd))
+        return (
+            np.copy(self.Dv_nextDb),
+            np.copy(self.Dv_nextDe),
+            np.copy(self.Dq_nextDq),
+            np.copy(self.Dq_nextDqa_cmd),
+        )
 
     def get_model_instance_name_to_index_map(self):
         name_to_model = dict()
@@ -295,10 +350,12 @@ class QuasistaticSimulator:
         self.plant.SetPositions(self.context_plant, q)
         # Update query object.
         self.query_object = self.scene_graph.get_query_output_port().Eval(
-            self.context_sg)
+            self.context_sg
+        )
 
     def update_mbp_positions(
-            self, q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+        self, q_dict: Dict[ModelInstanceIndex, np.ndarray]
+    ):
         """
         :param q_dict: A dict of np arrays keyed by model instance indices.
             Each array is the configuration of a model instance in
@@ -309,12 +366,12 @@ class QuasistaticSimulator:
         assert len(q_dict) == len(self.models_all)
 
         for model_instance_idx, q in q_dict.items():
-            self.plant.SetPositions(
-                self.context_plant, model_instance_idx, q)
+            self.plant.SetPositions(self.context_plant, model_instance_idx, q)
 
         # Update query object.
         self.query_object = self.scene_graph.get_query_output_port().Eval(
-            self.context_sg)
+            self.context_sg
+        )
 
     def get_mbp_positions(self):
         """
@@ -322,8 +379,10 @@ class QuasistaticSimulator:
             instances stored in self.context_plant, keyed by
             ModelInstanceIndex.
         """
-        return {model: self.plant.GetPositions(self.context_plant, model)
-                for model in self.models_all}
+        return {
+            model: self.plant.GetPositions(self.context_plant, model)
+            for model in self.models_all
+        }
 
     def draw_current_configuration(self, draw_forces=True):
         # Body poses
@@ -333,7 +392,8 @@ class QuasistaticSimulator:
         if draw_forces:
             self.contact_viz.GetInputPort("contact_results").FixValue(
                 self.context_meshcat_contact,
-                AbstractValue.Make(self.contact_results))
+                AbstractValue.Make(self.contact_results),
+            )
             self.contact_viz.DoPublish(self.context_meshcat_contact, [])
 
     def calc_tau_ext(self, easf_list: List[ExternallyAppliedSpatialForce]):
@@ -348,14 +408,14 @@ class QuasistaticSimulator:
         tau_ext_u_dict = self.calc_gravity_for_unactuated_models()
 
         # external spatial force for actuated models.
-        tau_ext_a_dict = \
-            self.get_generalized_force_from_external_spatial_force(
-                easf_list)
+        tau_ext_a_dict = self.get_generalized_force_from_external_spatial_force(
+            easf_list
+        )
         return {**tau_ext_a_dict, **tau_ext_u_dict}
 
-    def animate_system_trajectory(self, h: float,
-                                  q_dict_traj: List[
-                                      Dict[ModelInstanceIndex, np.ndarray]]):
+    def animate_system_trajectory(
+        self, h: float, q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]
+    ):
         self.viz.draw_period = h
         self.viz.reset_recording()
         self.viz.start_recording()
@@ -367,20 +427,21 @@ class QuasistaticSimulator:
         self.viz.publish_recording()
 
     def update_normal_and_tangential_jacobian_rows(
-            self,
-            body: RigidBody,
-            pC_D: np.ndarray,
-            n_W: np.ndarray,
-            d_W: np.ndarray,
-            i_c: int,
-            n_di: int,
-            i_f_start: int,
-            position_indices: Union[List[int], None],
-            Jn: np.ndarray,
-            Jf: np.ndarray,
-            jacobian_wrt_variable: JacobianWrtVariable,
-            plant: MultibodyPlant = None,
-            context: Context = None):
+        self,
+        body: RigidBody,
+        pC_D: np.ndarray,
+        n_W: np.ndarray,
+        d_W: np.ndarray,
+        i_c: int,
+        n_di: int,
+        i_f_start: int,
+        position_indices: Union[List[int], None],
+        Jn: np.ndarray,
+        Jf: np.ndarray,
+        jacobian_wrt_variable: JacobianWrtVariable,
+        plant: MultibodyPlant = None,
+        context: Context = None,
+    ):
         """
         Updates corresponding rows of Jn and Jf.
         :param body: a RigidBody object that belongs to either
@@ -408,12 +469,13 @@ class QuasistaticSimulator:
             frame_B=body.body_frame(),
             p_BoBi_B=pC_D,
             frame_A=plant.world_frame(),
-            frame_E=plant.world_frame())
+            frame_E=plant.world_frame(),
+        )
         if position_indices is not None:
             J_WBi = J_WBi[:, position_indices]
 
         Jn[i_c] += n_W.dot(J_WBi)
-        Jf[i_f_start: i_f_start + n_di] += d_W.dot(J_WBi)
+        Jf[i_f_start : i_f_start + n_di] += d_W.dot(J_WBi)
 
     def find_model_instance_index_for_body(self, body):
         for model, body_indices in self.body_indices.items():
@@ -422,16 +484,21 @@ class QuasistaticSimulator:
 
     def calc_gravity_for_unactuated_models(self):
         gravity_all = self.plant.CalcGravityGeneralizedForces(
-            self.context_plant)
-        return {model: gravity_all[self.velocity_indices[model]]
-                for model in self.models_unactuated}
+            self.context_plant
+        )
+        return {
+            model: gravity_all[self.velocity_indices[model]]
+            for model in self.models_unactuated
+        }
 
     def get_generalized_force_from_external_spatial_force(
-            self, easf_list: List[ExternallyAppliedSpatialForce]):
+        self, easf_list: List[ExternallyAppliedSpatialForce]
+    ):
         # TODO: test this more thoroughly.
         tau_ext_actuated = {
             model: np.zeros(self.n_v_dict[model])
-            for model in self.models_actuated}
+            for model in self.models_actuated
+        }
 
         for easf in easf_list:
             body = self.plant.get_body(easf.body_index)
@@ -445,10 +512,12 @@ class QuasistaticSimulator:
                 frame_B=body.body_frame(),
                 p_BP=easf.p_BoBq_B,
                 frame_A=self.plant.world_frame(),
-                frame_E=self.plant.world_frame())
+                frame_E=self.plant.world_frame(),
+            )
 
-            tau_ext_actuated[model] += \
-                J[:, self.velocity_indices[model]].T.dot(F_Bq_W)
+            tau_ext_actuated[model] += J[:, self.velocity_indices[model]].T.dot(
+                F_Bq_W
+            )
 
         return tau_ext_actuated
 
@@ -461,9 +530,11 @@ class QuasistaticSimulator:
         """
         # Evaluate contacts.
         query_object = self.query_object
-        signed_distance_pairs = \
+        signed_distance_pairs = (
             query_object.ComputeSignedDistancePairwiseClosestPoints(
-                contact_detection_tolerance)
+                contact_detection_tolerance
+            )
+        )
 
         n_c = len(signed_distance_pairs)
         n_d = np.full(n_c, self.nd_per_contact)
@@ -478,18 +549,17 @@ class QuasistaticSimulator:
 
         i_f_start = 0
         for i_c, sdp in enumerate(signed_distance_pairs):
-            '''
+            """
             A and B denote the body frames of bodyA and bodyB.
             Fa/b is the contact geometry frame relative to the body to which
-                the contact geometry belongs. sdp.p_ACa is relative to frame 
-                Fa (geometry frame), not frame A (body frame). 
+                the contact geometry belongs. sdp.p_ACa is relative to frame
+                Fa (geometry frame), not frame A (body frame).
             p_ACa_A is the coordinates of the "contact" point Ca relative
                 to the body frame A expressed in frame A.
-            '''
+            """
 
             phi[i_c] = sdp.distance
-            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(
-                sdp)
+            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(sdp)
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AGa = self.inspector.GetPoseInFrame(sdp.id_A)
@@ -505,17 +575,17 @@ class QuasistaticSimulator:
             is_B_in = model_B is not None
 
             if is_A_in and is_B_in:
-                '''
+                """
                 When a contact pair exists between an unactuated body and
                  an actuated body, we need dC_a_W = -dC_u_W. In contrast,
                  if a contact pair contains a body that is neither actuated nor
                  unactuated, e.g. the ground, we do not need dC_a_W = -dC_u_W.
-                
-                As CalcTangentVectors(n, nd) != - CalcTangentVectors(-n, nd), 
+
+                As CalcTangentVectors(n, nd) != - CalcTangentVectors(-n, nd),
                     care is needed to ensure that the conditions above are met.
-                    
-                The normal n_A/B_W needs to point into body A/B, respectively. 
-                '''
+
+                The normal n_A/B_W needs to point into body A/B, respectively.
+                """
                 n_A_W = sdp.nhat_BA_W
                 d_A_W = calc_tangent_vectors(n_A_W, n_d[i_c])
                 n_B_W = -n_A_W
@@ -523,44 +593,74 @@ class QuasistaticSimulator:
 
                 # new Jn and Jf
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyA, pC_D=p_ACa_A, n_W=n_A_W, d_W=d_A_W,
-                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
+                    body=bodyA,
+                    pC_D=p_ACa_A,
+                    n_W=n_A_W,
+                    d_W=d_A_W,
+                    i_c=i_c,
+                    n_di=n_d[i_c],
+                    i_f_start=i_f_start,
                     position_indices=None,
-                    Jn=Jn, Jf=Jf,
-                    jacobian_wrt_variable=JacobianWrtVariable.kV)
+                    Jn=Jn,
+                    Jf=Jf,
+                    jacobian_wrt_variable=JacobianWrtVariable.kV,
+                )
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyB, pC_D=p_BCb_B, n_W=n_B_W, d_W=d_B_W,
-                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
+                    body=bodyB,
+                    pC_D=p_BCb_B,
+                    n_W=n_B_W,
+                    d_W=d_B_W,
+                    i_c=i_c,
+                    n_di=n_d[i_c],
+                    i_f_start=i_f_start,
                     position_indices=None,
-                    Jn=Jn, Jf=Jf,
-                    jacobian_wrt_variable=JacobianWrtVariable.kV)
+                    Jn=Jn,
+                    Jf=Jf,
+                    jacobian_wrt_variable=JacobianWrtVariable.kV,
+                )
 
             elif is_B_in:
                 n_B_W = -sdp.nhat_BA_W
                 d_B_W = calc_tangent_vectors(n_B_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyB, pC_D=p_BCb_B, n_W=n_B_W, d_W=d_B_W,
-                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
+                    body=bodyB,
+                    pC_D=p_BCb_B,
+                    n_W=n_B_W,
+                    d_W=d_B_W,
+                    i_c=i_c,
+                    n_di=n_d[i_c],
+                    i_f_start=i_f_start,
                     position_indices=None,
-                    Jn=Jn, Jf=Jf,
-                    jacobian_wrt_variable=JacobianWrtVariable.kV)
+                    Jn=Jn,
+                    Jf=Jf,
+                    jacobian_wrt_variable=JacobianWrtVariable.kV,
+                )
 
             elif is_A_in:
                 n_A_W = sdp.nhat_BA_W
                 d_A_W = calc_tangent_vectors(n_A_W, n_d[i_c])
 
                 self.update_normal_and_tangential_jacobian_rows(
-                    body=bodyA, pC_D=p_ACa_A, n_W=n_A_W, d_W=d_A_W,
-                    i_c=i_c, n_di=n_d[i_c], i_f_start=i_f_start,
+                    body=bodyA,
+                    pC_D=p_ACa_A,
+                    n_W=n_A_W,
+                    d_W=d_A_W,
+                    i_c=i_c,
+                    n_di=n_d[i_c],
+                    i_f_start=i_f_start,
                     position_indices=None,
-                    Jn=Jn, Jf=Jf,
-                    jacobian_wrt_variable=JacobianWrtVariable.kV)
+                    Jn=Jn,
+                    Jf=Jf,
+                    jacobian_wrt_variable=JacobianWrtVariable.kV,
+                )
             else:
                 # either A or B is in self.body_indices_list
-                raise RuntimeError("At least one body in a contact pair "
-                                   "should be in self.body_indices_list.")
+                raise RuntimeError(
+                    "At least one body in a contact pair "
+                    "should be in self.body_indices_list."
+                )
 
             i_f_start += n_d[i_c]
 
@@ -568,8 +668,7 @@ class QuasistaticSimulator:
             # TODO: contact forces at step (l+1) is drawn with the
             # configuration at step l.
             if is_A_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyA)
+                X_WD = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyA)
                 contact_info_list.append(
                     MyContactInfo(
                         bodyA_index=bodyB.index(),
@@ -578,10 +677,11 @@ class QuasistaticSimulator:
                         geometry_id_B=sdp.id_A,
                         p_WC_W=X_WD.multiply(p_ACa_A),
                         n_W=n_A_W,
-                        dC_W=d_A_W))
+                        dC_W=d_A_W,
+                    )
+                )
             elif is_B_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(
-                    self.context_plant, bodyB)
+                X_WD = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyB)
                 contact_info_list.append(
                     MyContactInfo(
                         bodyA_index=bodyA.index(),
@@ -590,26 +690,36 @@ class QuasistaticSimulator:
                         geometry_id_B=sdp.id_B,
                         p_WC_W=X_WD.multiply(p_BCb_B),
                         n_W=n_B_W,
-                        dC_W=d_B_W))
+                        dC_W=d_B_W,
+                    )
+                )
             else:
-                raise RuntimeError("At least one body in a contact pair "
-                                   "should be unactuated.")
+                raise RuntimeError(
+                    "At least one body in a contact pair "
+                    "should be unactuated."
+                )
 
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
 
-    def update_contact_results(self, my_contact_info_list: List[MyContactInfo],
-                               beta: np.ndarray, h: float, n_c: int,
-                               n_d: np.ndarray,
-                               mu_list: np.ndarray):
+    def update_contact_results(
+        self,
+        my_contact_info_list: List[MyContactInfo],
+        beta: np.ndarray,
+        h: float,
+        n_c: int,
+        n_d: np.ndarray,
+        mu_list: np.ndarray,
+    ):
         assert len(my_contact_info_list) == n_c
         contact_results = ContactResults()
         i_f_start = 0
         for i_c, my_contact_info in enumerate(my_contact_info_list):
             i_f_end = i_f_start + n_d[i_c]
-            beta_i = beta[i_f_start: i_f_end]
+            beta_i = beta[i_f_start:i_f_end]
             f_normal_W = my_contact_info.n_W * beta_i.sum() / h
-            f_tangential_W = \
+            f_tangential_W = (
                 my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h
+            )
             point_pair = PenetrationAsPointPair()
             point_pair.id_A = my_contact_info.geometry_id_A
             point_pair.id_B = my_contact_info.geometry_id_B
@@ -619,7 +729,11 @@ class QuasistaticSimulator:
                     my_contact_info.bodyB_index,
                     f_normal_W + f_tangential_W,
                     my_contact_info.p_WC_W,
-                    0, 0, point_pair))
+                    0,
+                    0,
+                    point_pair,
+                )
+            )
 
             i_f_start += n_d[i_c]
 
@@ -632,12 +746,14 @@ class QuasistaticSimulator:
     def get_position_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_positions())
         return self.plant.GetPositionsFromArray(
-            model_instance_index, selector).astype(int)
+            model_instance_index, selector
+        ).astype(int)
 
     def get_velocity_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_velocities())
         return self.plant.GetVelocitiesFromArray(
-            model_instance_index, selector).astype(int)
+            model_instance_index, selector
+        ).astype(int)
 
     def get_friction_coefficient_for_signed_distance_pair(self, sdp):
         props_A = self.inspector.GetProximityProperties(sdp.id_A)
@@ -648,9 +764,16 @@ class QuasistaticSimulator:
         return cf.static_friction()
 
     def calc_jacobian_and_phi(self, contact_detection_tolerance):
-        (n_c, n_d, n_f, Jn, Jf, phi_l, U,
-         contact_info_list) = self.calc_contact_jacobians(
-            contact_detection_tolerance)
+        (
+            n_c,
+            n_d,
+            n_f,
+            Jn,
+            Jf,
+            phi_l,
+            U,
+            contact_info_list,
+        ) = self.calc_contact_jacobians(contact_detection_tolerance)
 
         phi_constraints = np.zeros(n_f)
         J = np.zeros_like(Jf)
@@ -662,8 +785,17 @@ class QuasistaticSimulator:
                 phi_constraints[idx] = phi_l[i_c]
             j_start += n_d[i_c]
 
-        return (phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d,
-                n_f, U)
+        return (
+            phi_constraints,
+            J,
+            phi_l,
+            Jn,
+            contact_info_list,
+            n_c,
+            n_d,
+            n_f,
+            U,
+        )
 
     @staticmethod
     def check_cvx_status(status: str):
@@ -671,19 +803,20 @@ class QuasistaticSimulator:
             if status == "optimal_inaccurate":
                 warnings.warn("CVX solver is inaccurate.")
             else:
-                raise RuntimeError(
-                    "CVX solver status is {}".format(status))
+                raise RuntimeError("CVX solver status is {}".format(status))
 
     @staticmethod
     def set_sim_params(params: QuasistaticSimParameters, **kwargs):
         for name, value in kwargs.items():
-                params.__setattr__(name, value)
+            params.__setattr__(name, value)
 
     @staticmethod
     def convert_sim_params_into_dict(params: QuasistaticSimParameters):
         q_sim_params_dict = {
             name: params.__getattribute__(name)
-            for name in params.__dir__() if not name.startswith("_")}
+            for name in params.__dir__()
+            if not name.startswith("_")
+        }
         return q_sim_params_dict
 
     def calc_scaled_mass_matrix(self, h: float, unactuated_mass_scale: float):
@@ -738,33 +871,34 @@ class QuasistaticSimulator:
             return M_u_dict
 
         max_eigen_value_M_u = {
-            model: np.max(M_u.diagonal())
-            for model, M_u in M_u_dict.items()}
+            model: np.max(M_u.diagonal()) for model, M_u in M_u_dict.items()
+        }
 
-        min_K_a_h2 = self.min_K_a * h ** 2
+        min_K_a_h2 = self.min_K_a * h**2
 
         for model, M_u in M_u_dict.items():
-            epsilon = (min_K_a_h2 / max_eigen_value_M_u[model]
-                       / unactuated_mass_scale)
+            epsilon = (
+                min_K_a_h2 / max_eigen_value_M_u[model] / unactuated_mass_scale
+            )
             M_u *= epsilon
 
         return M_u_dict
 
     def form_Q_and_tau_h(
-            self,
-            q_dict: Dict[ModelInstanceIndex, np.ndarray],
-            q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-            tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-            h: float,
-            unactuated_mass_scale: float):
+        self,
+        q_dict: Dict[ModelInstanceIndex, np.ndarray],
+        q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+        tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+        h: float,
+        unactuated_mass_scale: float,
+    ):
         Q = np.zeros((self.n_v, self.n_v))
         tau_h = np.zeros(self.n_v)
 
         # TODO: make this an input to the function, so that there exists a
         #  version of self.step which is independent of self.sim_params.
         if self.sim_params.is_quasi_dynamic:
-            M_u_dict = self.calc_scaled_mass_matrix(
-                h, unactuated_mass_scale)
+            M_u_dict = self.calc_scaled_mass_matrix(h, unactuated_mass_scale)
 
         for model in self.models_unactuated:
             idx_v_model = self.velocity_indices[model]
@@ -780,18 +914,21 @@ class QuasistaticSimulator:
             tau_a = self.K_a[model].dot(dq_a_cmd) + tau_ext_dict[model]
             tau_h[idx_v_model] = tau_a * h
 
-            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.K_a[model].diagonal() * h ** 2
+            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = (
+                self.K_a[model].diagonal() * h**2
+            )
         return Q, tau_h
 
-    def step_qp_mp(self,
-                   h: float,
-                   phi_constraints: np.ndarray,
-                   J: np.ndarray,
-                   Q: np.ndarray,
-                   tau_h: np.ndarray,
-                   gradient_mode: GradientMode,
-                   **kwargs):
+    def step_qp_mp(
+        self,
+        h: float,
+        phi_constraints: np.ndarray,
+        J: np.ndarray,
+        Q: np.ndarray,
+        tau_h: np.ndarray,
+        gradient_mode: GradientMode,
+        **kwargs,
+    ):
         prog = mp.MathematicalProgram()
         # generalized velocity times time step.
         v = prog.NewContinuousVariables(self.n_v, "v")
@@ -799,10 +936,8 @@ class QuasistaticSimulator:
         prog.AddQuadraticCost(Q, -tau_h, v)
         e = phi_constraints / h
         constraints = prog.AddLinearConstraint(
-            A=-J,
-            lb=np.full_like(phi_constraints, -np.inf),
-            ub=e,
-            vars=v)
+            A=-J, lb=np.full_like(phi_constraints, -np.inf), ub=e, vars=v
+        )
 
         result = self.solver_grb.Solve(prog, None, self.options_grb)
         # self.optimizer_time_log.append(
@@ -828,8 +963,14 @@ class QuasistaticSimulator:
             #  h.
             dqp = self.dqp_active
             dqp.update_problem(
-                Q=Q, b=-tau_h, G=-J, e=e, z_star=v_values, lambda_star=beta,
-                lambda_threshold=0.1 * h)
+                Q=Q,
+                b=-tau_h,
+                G=-J,
+                e=e,
+                z_star=v_values,
+                lambda_star=beta,
+                lambda_threshold=0.1 * h,
+            )
 
             if gradient_mode == GradientMode.kAB:
                 DvDb = dqp.calc_DzDb()
@@ -842,14 +983,16 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, beta, DvDb, DvDe
 
-    def step_log_mp(self,
-                    h: float,
-                    phi_constraints: np.ndarray,
-                    J: np.ndarray,
-                    Q: np.ndarray,
-                    tau_h: np.ndarray,
-                    gradient_mode: GradientMode,
-                    log_barrier_weight: float):
+    def step_log_mp(
+        self,
+        h: float,
+        phi_constraints: np.ndarray,
+        J: np.ndarray,
+        Q: np.ndarray,
+        tau_h: np.ndarray,
+        gradient_mode: GradientMode,
+        log_barrier_weight: float,
+    ):
         m = len(phi_constraints)
         n_v = self.n_v
 
@@ -869,7 +1012,8 @@ class QuasistaticSimulator:
 
             b = np.array([phi_constraints[i] / h, 1, 0])
             prog.AddExponentialConeConstraint(
-                A=A, b=b, vars=np.hstack([v, [s[i]]]))
+                A=A, b=b, vars=np.hstack([v, [s[i]]])
+            )
 
         result = self.solver_msk.Solve(prog, None, None)
         assert result.is_success()
@@ -889,31 +1033,33 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, beta, DvDb, DvDe
 
-    def step_qp_cvx(self,
-                    h: float,
-                    phi_constraints: np.ndarray,
-                    J: np.ndarray,
-                    Q: np.ndarray,
-                    tau_h: np.ndarray,
-                    gradient_mode: GradientMode,
-                    **kwargs):
+    def step_qp_cvx(
+        self,
+        h: float,
+        phi_constraints: np.ndarray,
+        J: np.ndarray,
+        Q: np.ndarray,
+        tau_h: np.ndarray,
+        gradient_mode: GradientMode,
+        **kwargs,
+    ):
         # Make a CVX problem.
         # The cholesky decomposition is needed because cp.sum_squares() is the
         # only way I've found so far to ensure the problem is DCP (
         # disciplined convex program).
-        '''
-        The original non-penetration constraint is given by 
+        """
+        The original non-penetration constraint is given by
             phi_constraints / h + J @ v >= 0
         The "standard form" in Cotler's paper is
             min. 1 / 2 * z.dot(Q).dot(z) + b.dot(z)
             s.t. G @ z <= e (or e >= G @ z).
         Rearranging the non-penetration constraint as:
-            phi_constraints / h >= -J @ v 
+            phi_constraints / h >= -J @ v
         gives
             G := -J; e := phi_constraints / h.
 
         Objective: b := -tau_h.
-        '''
+        """
         L = np.linalg.cholesky(Q)
         L_cp = cp.Parameter(L.shape)
         L_cp.value = L
@@ -930,10 +1076,12 @@ class QuasistaticSimulator:
         constraints = [e_cp + J @ v >= 0]
         prob = cp.Problem(
             cp.Minimize(0.5 * cp.sum_squares(L_cp.T @ v) + b_cp @ v),
-            constraints)
+            constraints,
+        )
 
-        prob.solve(requires_grad=gradient_mode != GradientMode.kNone,
-                   solver="GUROBI")
+        prob.solve(
+            requires_grad=gradient_mode != GradientMode.kNone, solver="GUROBI"
+        )
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.
@@ -966,22 +1114,28 @@ class QuasistaticSimulator:
 
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
-    def step_log_cvx(self,
-                     h: float,
-                     phi_constraints: np.ndarray,
-                     J: np.ndarray,
-                     Q: np.ndarray,
-                     tau_h: np.ndarray,
-                     gradient_mode: GradientMode,
-                     log_barrier_weight):
+    def step_log_cvx(
+        self,
+        h: float,
+        phi_constraints: np.ndarray,
+        J: np.ndarray,
+        Q: np.ndarray,
+        tau_h: np.ndarray,
+        gradient_mode: GradientMode,
+        log_barrier_weight,
+    ):
         v = cp.Variable(self.n_v)
 
-        log_barriers_sum = 0.
+        log_barriers_sum = 0.0
         if len(phi_constraints) > 0:
             log_barriers_sum = cp.sum(cp.log(phi_constraints / h + J @ v))
         prob = cp.Problem(
-            cp.Minimize(0.5 * cp.quad_form(v, Q) - tau_h @ v -
-                        log_barriers_sum / log_barrier_weight))
+            cp.Minimize(
+                0.5 * cp.quad_form(v, Q)
+                - tau_h @ v
+                - log_barriers_sum / log_barrier_weight
+            )
+        )
 
         prob.solve(solver="MOSEK")
         self.check_cvx_status(prob.status)
@@ -996,30 +1150,33 @@ class QuasistaticSimulator:
         DvDb, DvDe = None, None
         return v_h_value_dict, np.zeros_like(phi_constraints), DvDb, DvDe
 
-    def step(self, q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-             tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
-             sim_params: QuasistaticSimParameters):
+    def step(
+        self,
+        q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+        tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+        sim_params: QuasistaticSimParameters,
+    ):
         """
-         This function does the following:
-         1. Extracts q_dict, a dictionary containing current system
-             configuration, from self.plant_context.
-         2. Runs collision query by calling self.calc_contact_jacobians.
-         3. Constructs and solves the quasistatic QP described in the paper.
-         4. Integrates q_dict to the next time step.
-         5. Calls self.update_configuration with the new q_dict.
-             self.update_configuration updates self.context_plant and
-             self.query_object.
-         6. Updates self.contact_results.
-         :param q_a_cmd_dict:
-         :param tau_ext_dict:
-         :param h: simulation time step.
-         :param forward_mode: one of {'qp_mp', 'qp_cvx', 'unconstrained'}.
-         :param gradient_mode: whether gradient of the dynamics is computed.
-         :param grad_from_active_constraints: whether gradient is computed only
-            from active constraints.
-         :return: system configuration at the next time step, stored in a
-             dictionary keyed by ModelInstanceIndex.
-         """
+        This function does the following:
+        1. Extracts q_dict, a dictionary containing current system
+            configuration, from self.plant_context.
+        2. Runs collision query by calling self.calc_contact_jacobians.
+        3. Constructs and solves the quasistatic QP described in the paper.
+        4. Integrates q_dict to the next time step.
+        5. Calls self.update_configuration with the new q_dict.
+            self.update_configuration updates self.context_plant and
+            self.query_object.
+        6. Updates self.contact_results.
+        :param q_a_cmd_dict:
+        :param tau_ext_dict:
+        :param h: simulation time step.
+        :param forward_mode: one of {'qp_mp', 'qp_cvx', 'unconstrained'}.
+        :param gradient_mode: whether gradient of the dynamics is computed.
+        :param grad_from_active_constraints: whether gradient is computed only
+           from active constraints.
+        :return: system configuration at the next time step, stored in a
+            dictionary keyed by ModelInstanceIndex.
+        """
         # Unpack some parameters.
         h = sim_params.h
         unactuated_mass_scale = sim_params.unactuated_mass_scale
@@ -1030,17 +1187,38 @@ class QuasistaticSimulator:
         q_dict = self.get_mbp_positions()
 
         Q, tau_h = self.form_Q_and_tau_h(
-            q_dict, q_a_cmd_dict, tau_ext_dict, h,
-            unactuated_mass_scale=unactuated_mass_scale)
+            q_dict,
+            q_a_cmd_dict,
+            tau_ext_dict,
+            h,
+            unactuated_mass_scale=unactuated_mass_scale,
+        )
 
-        phi_constraints, J, phi_l, Jn, contact_info_list, n_c, n_d, n_f, U = \
-            self.calc_jacobian_and_phi(
-                self.sim_params.contact_detection_tolerance)
+        (
+            phi_constraints,
+            J,
+            phi_l,
+            Jn,
+            contact_info_list,
+            n_c,
+            n_d,
+            n_f,
+            U,
+        ) = self.calc_jacobian_and_phi(
+            self.sim_params.contact_detection_tolerance
+        )
 
-        v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = \
-            self.step_function_dict[forward_mode](
-                h, phi_constraints, J, Q, tau_h, gradient_mode,
-                log_barrier_weight=sim_params.log_barrier_weight)
+        v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = self.step_function_dict[
+            forward_mode
+        ](
+            h,
+            phi_constraints,
+            J,
+            Q,
+            tau_h,
+            gradient_mode,
+            log_barrier_weight=sim_params.log_barrier_weight,
+        )
 
         dq_dict = dict()
         for model in self.models_actuated:
@@ -1069,7 +1247,7 @@ class QuasistaticSimulator:
         self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
         # Gradients.
-        '''
+        """
         Generic dynamical system: x_next = f(x, u). We need DfDx and DfDu.
 
         In a quasistatic system, x := [qu, qa], u = qa_cmd.
@@ -1085,31 +1263,54 @@ class QuasistaticSimulator:
                     + Dv_nextDe @ (1 / h * Dphi_constraints_Dq)
         Dv_nextDqa_cmd = Dv_nextDb @ DbDqa_cmd,
             - where DbDqa_cmd != np.vstack([0, Kq]).        
-        '''
+        """
         self.Dv_nextDb = Dv_nextDb
         self.Dv_nextDe = Dv_nextDe
 
-        if (forward_mode == ForwardDynamicsMode.kQpMp
-                or forward_mode == ForwardDynamicsMode.kQpCvx):
+        if (
+            forward_mode == ForwardDynamicsMode.kQpMp
+            or forward_mode == ForwardDynamicsMode.kQpCvx
+        ):
             self.backward_qp(
                 gradient_mode=gradient_mode,
-                h=h, q_dict=q_dict, n_f=n_f, n_c=n_c, n_d=n_d, Jn=Jn)
+                h=h,
+                q_dict=q_dict,
+                n_f=n_f,
+                n_c=n_c,
+                n_d=n_d,
+                Jn=Jn,
+            )
 
-        elif (forward_mode == ForwardDynamicsMode.kLogPyramidMp
-                or forward_mode == ForwardDynamicsMode.kLogPyramidCvx):
+        elif (
+            forward_mode == ForwardDynamicsMode.kLogPyramidMp
+            or forward_mode == ForwardDynamicsMode.kLogPyramidCvx
+        ):
             self.backward_log(
-                gradient_mode=gradient_mode, h=h, v_h_dict=v_h_value_dict,
-                Q=Q, J=J, phi_constraints=phi_constraints,
-                log_barrier_weight=self.sim_params.log_barrier_weight)
+                gradient_mode=gradient_mode,
+                h=h,
+                v_h_dict=v_h_value_dict,
+                Q=Q,
+                J=J,
+                phi_constraints=phi_constraints,
+                log_barrier_weight=self.sim_params.log_barrier_weight,
+            )
         else:
             raise NotImplementedError(
-                f"{self.sim_params.mode} is not supported.")
+                f"{self.sim_params.mode} is not supported."
+            )
 
         return q_dict
 
-    def backward_qp(self, gradient_mode: GradientMode, h: float,
-                    q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                    n_f: int, n_c: int, n_d: int, Jn: np.ndarray):
+    def backward_qp(
+        self,
+        gradient_mode: GradientMode,
+        h: float,
+        q_dict: Dict[ModelInstanceIndex, np.ndarray],
+        n_f: int,
+        n_c: int,
+        n_d: int,
+        Jn: np.ndarray,
+    ):
         if gradient_mode == GradientMode.kNone:
             return
 
@@ -1121,13 +1322,25 @@ class QuasistaticSimulator:
         elif gradient_mode == GradientMode.kAB:
             self.Dq_nextDqa_cmd = self.calc_dfdu(Dv_nextDb, h, q_dict)
             self.Dq_nextDq = self.calc_dfdx(
-            Dv_nextDb=Dv_nextDb, Dv_nextDe=Dv_nextDe, h=h, n_f=n_f, n_c=n_c,
-            n_d=n_d, Jn=Jn)
+                Dv_nextDb=Dv_nextDb,
+                Dv_nextDe=Dv_nextDe,
+                h=h,
+                n_f=n_f,
+                n_c=n_c,
+                n_d=n_d,
+                Jn=Jn,
+            )
 
-    def backward_log(self, gradient_mode: GradientMode, h: float,
-                     v_h_dict: Dict[ModelInstanceIndex, np.ndarray],
-                     Q: np.ndarray, J: np.ndarray, phi_constraints: np.ndarray,
-                     log_barrier_weight: float):
+    def backward_log(
+        self,
+        gradient_mode: GradientMode,
+        h: float,
+        v_h_dict: Dict[ModelInstanceIndex, np.ndarray],
+        Q: np.ndarray,
+        J: np.ndarray,
+        phi_constraints: np.ndarray,
+        log_barrier_weight: float,
+    ):
         if gradient_mode == GradientMode.kNone:
             return
 
@@ -1141,8 +1354,11 @@ class QuasistaticSimulator:
             dydu = np.zeros_like(Q)
             for j in range(J.shape[1]):
                 for i in range(J.shape[0]):
-                    dydu[j] += J[i] * J[i, j] / (
-                            phi_constraints[i] / h + J[i, :] @ vstar) ** 2.0
+                    dydu[j] += (
+                        J[i]
+                        * J[i, j]
+                        / (phi_constraints[i] / h + J[i, :] @ vstar) ** 2.0
+                    )
 
             coeff = Q + dydu / log_barrier_weight
             bias = np.zeros((self.n_v, self.n_v))
@@ -1151,8 +1367,9 @@ class QuasistaticSimulator:
             for model in self.models_actuated:
                 idx_v_model = self.velocity_indices[model]
                 idx_u += list(idx_v_model)
-                bias[idx_i[idx_v_model], idx_j[idx_v_model]] = \
+                bias[idx_i[idx_v_model], idx_j[idx_v_model]] = (
                     self.K_a[model].diagonal() * h
+                )
 
             DvDu = h * np.linalg.solve(coeff, bias)[:, idx_u]
 
@@ -1163,16 +1380,22 @@ class QuasistaticSimulator:
 
         # gradient_mode == GradientMode.kAB:
         raise NotImplementedError(
-            "GradientMode.kAB is not implemented for log barrier dynamics.")
+            "GradientMode.kAB is not implemented for log barrier dynamics."
+        )
 
-    def step_default(self,
-                     q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                     tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray]):
+    def step_default(
+        self,
+        q_a_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+        tau_ext_dict: Dict[ModelInstanceIndex, np.ndarray],
+    ):
         """
         Steps the dynamics forward by h using the params in self.sim_params.
         """
-        return self.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict,
-                         sim_params=self.sim_params)
+        return self.step(
+            q_a_cmd_dict=q_a_cmd_dict,
+            tau_ext_dict=tau_ext_dict,
+            sim_params=self.sim_params,
+        )
 
     @staticmethod
     def get_E(Q_AB: np.ndarray):
@@ -1197,11 +1420,16 @@ class QuasistaticSimulator:
 
     @staticmethod
     def copy_model_instance_index_dict(
-            q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+        q_dict: Dict[ModelInstanceIndex, np.ndarray]
+    ):
         return {key: np.array(value) for key, value in q_dict.items()}
 
-    def calc_dfdu(self, Dv_nextDb: np.ndarray, h: float,
-                  q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+    def calc_dfdu(
+        self,
+        Dv_nextDb: np.ndarray,
+        h: float,
+        q_dict: Dict[ModelInstanceIndex, np.ndarray],
+    ):
         """
         Computes dfdu, aka the B matrix in x_next = Ax + Bu, using the chain
         rule.
@@ -1233,18 +1461,28 @@ class QuasistaticSimulator:
                 E = self.get_E(Q_WB)
                 # D = calc_normalization_derivatives(Q_WB)
                 Dq_dot_nextDqa_cmd[idx_q_model[:4], :] = (
-                        E @ Dv_nextDqa_cmd[idx_v_model[:3], :])
+                    E @ Dv_nextDqa_cmd[idx_v_model[:3], :]
+                )
                 # translation
-                Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = \
-                    Dv_nextDqa_cmd[idx_v_model[3:], :]
+                Dq_dot_nextDqa_cmd[idx_q_model[4:], :] = Dv_nextDqa_cmd[
+                    idx_v_model[3:], :
+                ]
             else:
-                Dq_dot_nextDqa_cmd[idx_q_model, :] = \
-                    Dv_nextDqa_cmd[idx_v_model, :]
+                Dq_dot_nextDqa_cmd[idx_q_model, :] = Dv_nextDqa_cmd[
+                    idx_v_model, :
+                ]
         return h * Dq_dot_nextDqa_cmd
 
-    def calc_dfdx(self, Dv_nextDb: np.ndarray, Dv_nextDe: np.ndarray,
-                  h: float, n_f: int, n_c: int,
-                  n_d: np.ndarray, Jn: np.ndarray):
+    def calc_dfdx(
+        self,
+        Dv_nextDb: np.ndarray,
+        Dv_nextDe: np.ndarray,
+        h: float,
+        n_f: int,
+        n_c: int,
+        n_d: np.ndarray,
+        Jn: np.ndarray,
+    ):
         """
         Computes dfdx, aka the A matrix in x_next = Ax + Bu, using the chain
             rule. Note the term that includes the partial derivatives of the
@@ -1260,7 +1498,7 @@ class QuasistaticSimulator:
         Dphi_constraints_Dq = np.zeros((n_f, self.n_v))
         j_start = 0
         for i_c in range(n_c):
-            Dphi_constraints_Dq[j_start: j_start + n_d[i_c]] = Jn[i_c]
+            Dphi_constraints_Dq[j_start : j_start + n_d[i_c]] = Jn[i_c]
             j_start += n_d[i_c]
 
         # ---------------------------------------------------------------------
@@ -1282,11 +1520,13 @@ class QuasistaticSimulator:
 
         return np.eye(self.n_v) + h * Dv_nextDq
 
-    def calc_dfdu_numerical(self,
-                            q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                            qa_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
-                            du: float,
-                            sim_params: QuasistaticSimParameters):
+    def calc_dfdu_numerical(
+        self,
+        q_dict: Dict[ModelInstanceIndex, np.ndarray],
+        qa_cmd_dict: Dict[ModelInstanceIndex, np.ndarray],
+        du: float,
+        sim_params: QuasistaticSimParameters,
+    ):
         """
         Not an efficient way to compute gradients. For debugging only.
         :param q_dict: nominal state (x) of the quasistatic system.
@@ -1307,33 +1547,43 @@ class QuasistaticSimulator:
 
             for i in range(n_q_i):
                 qa_cmd_dict_plus = self.copy_model_instance_index_dict(
-                    qa_cmd_dict)
+                    qa_cmd_dict
+                )
                 qa_cmd_dict_plus[model_a][i] += du
                 self.update_mbp_positions(q_dict)
-                q_dict_plus = self.step(q_a_cmd_dict=qa_cmd_dict_plus,
-                                        tau_ext_dict=tau_ext_dict,
-                                        sim_params=sim_params)
+                q_dict_plus = self.step(
+                    q_a_cmd_dict=qa_cmd_dict_plus,
+                    tau_ext_dict=tau_ext_dict,
+                    sim_params=sim_params,
+                )
 
                 qa_cmd_dict_minus = self.copy_model_instance_index_dict(
-                    qa_cmd_dict)
+                    qa_cmd_dict
+                )
                 qa_cmd_dict_minus[model_a][i] -= du
                 self.update_mbp_positions(q_dict)
-                q_dict_minus = self.step(q_a_cmd_dict=qa_cmd_dict_minus,
-                                         tau_ext_dict=tau_ext_dict,
-                                         sim_params=sim_params)
+                q_dict_minus = self.step(
+                    q_a_cmd_dict=qa_cmd_dict_minus,
+                    tau_ext_dict=tau_ext_dict,
+                    sim_params=sim_params,
+                )
 
                 for model in self.models_all:
                     idx_v_model = self.position_indices[model]
                     dfdu[idx_v_model, idx_a] = (
-                            (q_dict_plus[model] - q_dict_minus[model]) / 2 / du)
+                        (q_dict_plus[model] - q_dict_minus[model]) / 2 / du
+                    )
 
                 idx_a += 1
 
         return dfdu
 
-    def step_configuration(self, q_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           dq_dict: Dict[ModelInstanceIndex, np.ndarray],
-                           unactuated_mass_scale: float):
+    def step_configuration(
+        self,
+        q_dict: Dict[ModelInstanceIndex, np.ndarray],
+        dq_dict: Dict[ModelInstanceIndex, np.ndarray],
+        unactuated_mass_scale: float,
+    ):
         """
         Adds the delta of each model state, e.g. dq_u_list[i], to the
             corresponding model configuration in q_list. If q_list[i]
@@ -1354,12 +1604,14 @@ class QuasistaticSimulator:
             q_dict[model] += dq_dict[model]
 
     @staticmethod
-    def create_plant_with_robots_and_objects(builder: DiagramBuilder,
-                                             model_directive_path: str,
-                                             robot_names: List[str],
-                                             object_sdf_paths: Dict[str, str],
-                                             time_step: float,
-                                             gravity: np.ndarray):
+    def create_plant_with_robots_and_objects(
+        builder: DiagramBuilder,
+        model_directive_path: str,
+        robot_names: List[str],
+        object_sdf_paths: Dict[str, str],
+        time_step: float,
+        gravity: np.ndarray,
+    ):
         """
         Add plant and scene_graph constructed from a model_directive to builder.
         :param builder:
@@ -1383,11 +1635,13 @@ class QuasistaticSimulator:
         object_models = set()
         for name, sdf_path in object_sdf_paths.items():
             object_models.add(
-                parser.AddModelFromFile(sdf_path, model_name=name))
+                parser.AddModelFromFile(sdf_path, model_name=name)
+            )
 
         # Robots
-        ProcessModelDirectives(LoadModelDirectives(model_directive_path),
-                               plant, parser)
+        ProcessModelDirectives(
+            LoadModelDirectives(model_directive_path), plant, parser
+        )
         robot_models = set()
         for name in robot_names:
             robot_model = plant.GetModelInstanceByName(name)
