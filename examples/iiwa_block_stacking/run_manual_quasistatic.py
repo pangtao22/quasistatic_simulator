@@ -7,12 +7,13 @@ from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.setup_simulations import (
     shift_q_traj_to_start_at_minus_h,
     create_dict_keyed_by_model_instance_index,
-    create_dict_keyed_by_string)
+    create_dict_keyed_by_string,
+)
 
 
 def extract_log_for_object(
-        q_log: List[Dict[ModelInstanceIndex, np.array]],
-        model: ModelInstanceIndex):
+    q_log: List[Dict[ModelInstanceIndex, np.array]], model: ModelInstanceIndex
+):
     n = len(q_log)
     m = len(q_log[0][model])
     q_i_log = np.zeros((n, m))
@@ -34,28 +35,31 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     q_sim = q_parser.make_simulator_py(internal_vis=False)
 
     q0_dict = create_dict_keyed_by_model_instance_index(
-        q_sim.plant, q0_dict_str)
+        q_sim.plant, q0_dict_str
+    )
 
-    #%% show initial configuration before simulation starts.
+    # %% show initial configuration before simulation starts.
     q_sim.update_mbp_positions(q0_dict)
     if is_visualizing:
         q_sim.viz.vis["drake"]["contact_forces"].delete()
         q_sim.draw_current_configuration()
 
-    #%%
+    # %%
     shift_q_traj_to_start_at_minus_h(q_iiwa_traj, h)
     shift_q_traj_to_start_at_minus_h(q_schunk_traj, h)
     n_steps = round(q_iiwa_traj.end_time() / h)
     idx_iiwa, idx_schunk = q_sim.models_actuated
 
     q_log = [q0_dict]
-    t_log = [0.]
+    t_log = [0.0]
     q_a_cmd_log = []
 
     for i in range(n_steps):
         t = h * i
-        q_a_cmd_dict = {idx_iiwa: q_iiwa_traj.value(t).squeeze(),
-                        idx_schunk: q_schunk_traj.value(t).squeeze()}
+        q_a_cmd_dict = {
+            idx_iiwa: q_iiwa_traj.value(t).squeeze(),
+            idx_schunk: q_schunk_traj.value(t).squeeze(),
+        }
         tau_ext_dict = q_sim.calc_tau_ext([])
         q_dict = q_sim.step_default(q_a_cmd_dict, tau_ext_dict)
         if is_visualizing:
@@ -67,20 +71,25 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
 
     q_logs_dict = {
         model: extract_log_for_object(q_log, model)
-        for model in q_sim.models_all}
+        for model in q_sim.models_all
+    }
 
-    return (create_dict_keyed_by_string(q_sim.plant, q_logs_dict),
-            np.array(t_log))
+    return (
+        create_dict_keyed_by_string(q_sim.plant, q_logs_dict),
+        np.array(t_log),
+    )
 
 
 if __name__ == "__main__":
     # Show that two consecutive simulations have non-deterministic differences.
     # TODO: figure out why.
     q_quasistatic_logs_dict_str1, t_qs = run_quasistatic_sim_manually(
-        h=0.2, is_visualizing=False)
+        h=0.2, is_visualizing=False
+    )
 
     q_quasistatic_logs_dict_str2, _ = run_quasistatic_sim_manually(
-        h=0.2, is_visualizing=False)
+        h=0.2, is_visualizing=False
+    )
 
     for model_name in q0_dict_str.keys():
         q_log1 = q_quasistatic_logs_dict_str1[model_name]

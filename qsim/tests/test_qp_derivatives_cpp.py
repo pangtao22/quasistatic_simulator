@@ -3,8 +3,10 @@ import unittest
 import numpy as np
 from pydrake.all import OsqpSolver, GurobiSolver
 
-from robotics_utilities.qp_derivatives.qp_derivatives import(
-    QpDerivativesKktActive, build_qp_and_solve)
+from robotics_utilities.qp_derivatives.qp_derivatives import (
+    QpDerivativesKktActive,
+    build_qp_and_solve,
+)
 
 from qsim_cpp import QpDerivativesActive
 
@@ -35,7 +37,7 @@ class TestQpDerivatives(unittest.TestCase):
         # a way to avoid the copying?
         n_z = 2
         self.Q_list = [np.eye(n_z)]
-        self.b_list = [-np.array([1., -1])]
+        self.b_list = [-np.array([1.0, -1])]
         self.G_list = [-np.eye(n_z)]
         self.e_list = [np.zeros(n_z)]
 
@@ -46,7 +48,7 @@ class TestQpDerivatives(unittest.TestCase):
         self.Q_list.append(L.T.dot(L))
         self.b_list.append(np.random.rand(n_z) - 1)
         self.G_list.append(np.random.rand(n_lambda, n_z))
-        self.e_list.append(np.array([0, 0, 10.]))
+        self.e_list.append(np.array([0, 0, 10.0]))
 
         gurobi_solver = GurobiSolver()
         if gurobi_solver.available():
@@ -60,14 +62,22 @@ class TestQpDerivatives(unittest.TestCase):
     def test_derivatives(self):
         lambda_threshold = 1e-3
         atol = 1e-8
-        for Q, b, G, e in zip(self.Q_list,
-                              self.b_list, self.G_list, self.e_list):
+        for Q, b, G, e in zip(
+            self.Q_list, self.b_list, self.G_list, self.e_list
+        ):
             z_star, lambda_star = build_qp_and_solve(Q, b, G, e, self.solver)
             self.dqp_py.update_problem(
-                Q=Q, b=b, G=G, e=e, z_star=z_star, lambda_star=lambda_star,
-                lambda_threshold=lambda_threshold)
+                Q=Q,
+                b=b,
+                G=G,
+                e=e,
+                z_star=z_star,
+                lambda_star=lambda_star,
+                lambda_threshold=lambda_threshold,
+            )
             self.dqp_cpp.UpdateProblem(
-                Q, b, G, e, z_star, lambda_star, lambda_threshold, True)
+                Q, b, G, e, z_star, lambda_star, lambda_threshold, True
+            )
 
             DzDe_py = self.dqp_py.calc_DzDe()
             DzDe_cpp = self.dqp_cpp.get_DzDe()
@@ -76,12 +86,16 @@ class TestQpDerivatives(unittest.TestCase):
             DzDb_cpp = self.dqp_cpp.get_DzDb()
 
             DzdG_vec_py = self.dqp_py.calc_DzDG_vec()
-            (DzdG_vec_active_cpp, active_row_indices
-             ) = self.dqp_cpp.get_DzDvecG_active()
+            (
+                DzdG_vec_active_cpp,
+                active_row_indices,
+            ) = self.dqp_cpp.get_DzDvecG_active()
             DzdG_vec_active_py = get_DzDG_active_from_DzDG(
-                DzdG_vec_py, active_row_indices)
+                DzdG_vec_py, active_row_indices
+            )
 
             np.testing.assert_allclose(DzDe_py, DzDe_cpp, atol=atol)
             np.testing.assert_allclose(DzDb_py, DzDb_cpp, atol=atol)
             np.testing.assert_allclose(
-                DzdG_vec_active_cpp, DzdG_vec_active_py, atol=atol)
+                DzdG_vec_active_cpp, DzdG_vec_active_py, atol=atol
+            )

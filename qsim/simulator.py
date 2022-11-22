@@ -218,7 +218,6 @@ class QuasistaticSimulator:
         self.solver_qp_log = QpLogBarrierSolver()
         self.options_grb = SolverOptions()
         self.options_grb.SetOption(GurobiSolver.id(), "QCPDual", 1)
-        assert self.solver_grb.available()
 
         # step function dictionary
         self.step_function_dict = {
@@ -1137,7 +1136,7 @@ class QuasistaticSimulator:
             )
         )
 
-        prob.solve(solver="MOSEK")
+        prob.solve()
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.

@@ -1,11 +1,19 @@
 from collections import namedtuple
 from typing import List, Union, Dict
 
-from pydrake.all import (AutoDiffXd, ModelInstanceIndex,
-                         Sphere, GeometryId, JacobianWrtVariable)
-from pydrake.autodiffutils import (initializeAutoDiff, autoDiffToValueMatrix,
-                                   autoDiffToGradientMatrix,
-                                   initializeAutoDiffGivenGradientMatrix)
+from pydrake.all import (
+    AutoDiffXd,
+    ModelInstanceIndex,
+    Sphere,
+    GeometryId,
+    JacobianWrtVariable,
+)
+from pydrake.autodiffutils import (
+    initializeAutoDiff,
+    autoDiffToValueMatrix,
+    autoDiffToGradientMatrix,
+    initializeAutoDiffGivenGradientMatrix,
+)
 
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.snopt import SnoptSolver
@@ -18,14 +26,15 @@ solver_snopt = SnoptSolver()
 
 
 #%%
-SignedDistancePairTuple = namedtuple("SignedDistancePairTuple",
-                                     ["id_A", "id_B", "p_ACa", "p_BCb",
-                                      "distance", "nhat_BA_W"])
+SignedDistancePairTuple = namedtuple(
+    "SignedDistancePairTuple",
+    ["id_A", "id_B", "p_ACa", "p_BCb", "distance", "nhat_BA_W"],
+)
 
 
 class TrajectoryOptimizer:
     def __init__(self):
-        #TODO: Most of these are imported from run_planar_hand.py. They
+        # TODO: Most of these are imported from run_planar_hand.py. They
         # should come from... elsewhere...
 
         # MultibodyPlant.
@@ -35,7 +44,8 @@ class TrajectoryOptimizer:
             gravity=np.array([0, 0, -10]),
             nd_per_contact=2,
             sim_settings=sim_settings,
-            internal_vis=False)
+            internal_vis=False,
+        )
         self.q_sim = q_sim
         self.plant = q_sim.plant
         self.sg = q_sim.scene_graph
@@ -52,12 +62,14 @@ class TrajectoryOptimizer:
         model_sphere = q_sim.models_unactuated[0]
         body_object = self.plant.GetBodyByName("sphere", model_sphere)
         collision_geometries = self.plant.GetCollisionGeometriesForBody(
-            body_object)
+            body_object
+        )
         assert len(collision_geometries) == 1
         object_collision_g_id = collision_geometries[0]
 
         ground_collsion_g_id = self.plant.GetCollisionGeometriesForBody(
-            self.plant.GetBodyByName("ground"))[0]
+            self.plant.GetBodyByName("ground")
+        )[0]
 
         # Get collision pairs that include the candidate. The first geometry
         # in each pair is always the collision geometry of the object being
@@ -66,39 +78,48 @@ class TrajectoryOptimizer:
         for cc in inspector.GetCollisionCandidates():
             if cc[0] == object_collision_g_id:
                 if cc[1] != ground_collsion_g_id:
-                    self.collision_pairs.append(
-                        (object_collision_g_id, cc[1]))
+                    self.collision_pairs.append((object_collision_g_id, cc[1]))
             elif cc[1] == object_collision_g_id:
                 if cc[0] != ground_collsion_g_id:
-                    self.collision_pairs.append(
-                        (object_collision_g_id, cc[0]))
+                    self.collision_pairs.append((object_collision_g_id, cc[0]))
 
         # dictionary of geometry to frame transforms.
-        self.X_FG_dict = {object_collision_g_id:
-                          inspector.GetPoseInFrame(object_collision_g_id)}
+        self.X_FG_dict = {
+            object_collision_g_id: inspector.GetPoseInFrame(
+                object_collision_g_id
+            )
+        }
         for _, g_id in self.collision_pairs:
             self.X_FG_dict[g_id] = inspector.GetPoseInFrame(g_id)
 
         self.g_id_to_mbp_body_id_map = {
             g_id: self.plant.GetBodyFromFrameId(
-                inspector.GetFrameId(g_id)).index()
-            for g_id in inspector.GetAllGeometryIds()}
+                inspector.GetFrameId(g_id)
+            ).index()
+            for g_id in inspector.GetAllGeometryIds()
+        }
 
-        self.name_to_model_idx_map = q_sim.get_model_instance_name_to_index_map()
+        self.name_to_model_idx_map = (
+            q_sim.get_model_instance_name_to_index_map()
+        )
 
     def update_configuration(
-            self, q_ad_dict: Dict[ModelInstanceIndex, np.ndarray]):
+        self, q_ad_dict: Dict[ModelInstanceIndex, np.ndarray]
+    ):
         assert len(q_ad_dict) == len(self.q_sim.models_all)
 
         # Update configuration in self.q_sim.context_plant.
-        q_dict = {model: autoDiffToValueMatrix(q_ad).squeeze()
-                  for model, q_ad in q_ad_dict.items()}
+        q_dict = {
+            model: autoDiffToValueMatrix(q_ad).squeeze()
+            for model, q_ad in q_ad_dict.items()
+        }
         self.q_sim.update_mbp_positions(q_dict)
 
         # Update state in self.plant_context_ad.
         for model_instance_idx, q_ad in q_ad_dict.items():
             self.plant_ad.SetPositions(
-                self.context_plant_ad, model_instance_idx, q_ad)
+                self.context_plant_ad, model_instance_idx, q_ad
+            )
 
     def detect_collision(self):
         """
@@ -108,7 +129,8 @@ class TrajectoryOptimizer:
         query_object = self.sg.get_query_output_port().Eval(self.context_sg)
         signed_distance_pairs = [
             query_object.ComputeSignedDistancePairClosestPoints(*geometry_pair)
-            for geometry_pair in self.collision_pairs]
+            for geometry_pair in self.collision_pairs
+        ]
         return signed_distance_pairs
 
     def get_geometry_pose_in_world_frame(self, g_id: GeometryId):
@@ -153,7 +175,7 @@ class TrajectoryOptimizer:
             p_BoW_W = X_WB.translation()
 
             d = p_AoW_W - p_BoW_W
-            d_norm = np.sqrt((d ** 2).sum())
+            d_norm = np.sqrt((d**2).sum())
             distance = d_norm - r_A - r_B
             nhat_BA_W = d / d_norm
             p_AcA_W = -nhat_BA_W * r_A
@@ -167,7 +189,8 @@ class TrajectoryOptimizer:
                 p_ACa=p_AcA_A,
                 p_BCb=p_BcB_B,
                 distance=distance,
-                nhat_BA_W=nhat_BA_W)
+                nhat_BA_W=nhat_BA_W,
+            )
 
             signed_distance_pairs.append(sdp)
 
@@ -181,11 +204,15 @@ class TrajectoryOptimizer:
 
         print()
         for f_id in inspector.all_frame_ids():
-            print(f_id, inspector.GetName(f_id),
-                  inspector.NumGeometriesForFrame(f_id))
+            print(
+                f_id,
+                inspector.GetName(f_id),
+                inspector.NumGeometriesForFrame(f_id),
+            )
 
-    def q_dict_to_vec(self,
-                      q_dict: Dict[Union[str, ModelInstanceIndex], np.ndarray]):
+    def q_dict_to_vec(
+        self, q_dict: Dict[Union[str, ModelInstanceIndex], np.ndarray]
+    ):
         for q_sample in q_dict.values():
             break
         q_vec = np.zeros(self.q_sim.n_v, dtype=q_sample.dtype)
@@ -219,15 +246,16 @@ class TrajectoryOptimizer:
         assert input.size == n_q + 2 * n_v + n_a
         assert n_q == n_v
         q = input[:n_q]
-        v = input[n_q: n_q + n_v]
-        v_next = input[n_q + n_v: n_q + 2 * n_v]
-        tau_a = input[n_q + 2 * n_v:]
+        v = input[n_q : n_q + n_v]
+        v_next = input[n_q + n_v : n_q + 2 * n_v]
+        tau_a = input[n_q + 2 * n_v :]
 
         # update MBP context.
         q_float = autoDiffToValueMatrix(q).squeeze()
         self.plant.SetPositions(self.context_plant, q_float)
-        self.plant_ad.SetPositions(self.context_plant_ad,
-                                   initializeAutoDiff(q_float))
+        self.plant_ad.SetPositions(
+            self.context_plant_ad, initializeAutoDiff(q_float)
+        )
 
         # collision query.
         signed_distance_pairs_ad = self.detect_collision_ad()
@@ -242,9 +270,11 @@ class TrajectoryOptimizer:
         for i_c, sdp in enumerate(signed_distance_pairs_ad):
             # Note that sdp.id_A is always the collision geometry of the object.
             bodyA = self.plant_ad.get_body(
-                self.g_id_to_mbp_body_id_map[sdp.id_A])
+                self.g_id_to_mbp_body_id_map[sdp.id_A]
+            )
             bodyB = self.plant_ad.get_body(
-                self.g_id_to_mbp_body_id_map[sdp.id_B])
+                self.g_id_to_mbp_body_id_map[sdp.id_B]
+            )
             X_AGa = self.X_FG_dict[sdp.id_A].cast[AutoDiffXd]()
             X_BGb = self.X_FG_dict[sdp.id_B].cast[AutoDiffXd]()
             p_AcA_A = X_AGa.multiply(sdp.p_ACa)
@@ -256,25 +286,43 @@ class TrajectoryOptimizer:
 
             # update Jn and Jf
             self.q_sim.update_normal_and_tangential_jacobian_rows(
-                body=bodyA, pC_D=p_AcA_A, n_W=n_A_W, d_W=d_A_W,
-                i_c=i_c, n_di=n_d, i_f_start=i_f_start,
+                body=bodyA,
+                pC_D=p_AcA_A,
+                n_W=n_A_W,
+                d_W=d_A_W,
+                i_c=i_c,
+                n_di=n_d,
+                i_f_start=i_f_start,
                 position_indices=None,
-                Jn=Jn_ad, Jf=Jf_ad,
+                Jn=Jn_ad,
+                Jf=Jf_ad,
                 jacobian_wrt_variable=JacobianWrtVariable.kV,
-                plant=self.plant_ad, context=self.context_plant_ad)
+                plant=self.plant_ad,
+                context=self.context_plant_ad,
+            )
 
             self.q_sim.update_normal_and_tangential_jacobian_rows(
-                body=bodyB, pC_D=p_BcB_B, n_W=n_B_W, d_W=d_B_W,
-                i_c=i_c, n_di=n_d, i_f_start=i_f_start,
+                body=bodyB,
+                pC_D=p_BcB_B,
+                n_W=n_B_W,
+                d_W=d_B_W,
+                i_c=i_c,
+                n_di=n_d,
+                i_f_start=i_f_start,
                 position_indices=None,
-                Jn=Jn_ad, Jf=Jf_ad,
+                Jn=Jn_ad,
+                Jf=Jf_ad,
                 jacobian_wrt_variable=JacobianWrtVariable.kV,
-                plant=self.plant_ad, context=self.context_plant_ad)
+                plant=self.plant_ad,
+                context=self.context_plant_ad,
+            )
 
             phi[i_c] = sdp.distance.value()
-            U[i_c] = \
-                self.q_sim.get_friction_coefficient_for_signed_distance_pair(
-                    sdp)
+            U[
+                i_c
+            ] = self.q_sim.get_friction_coefficient_for_signed_distance_pair(
+                sdp
+            )
             i_f_start += n_d
 
         dq = autoDiffToGradientMatrix(q)
@@ -288,16 +336,18 @@ class TrajectoryOptimizer:
 
         i_f_start = 0
         for i_c in range(n_c):
-            J_ad_q[i_f_start: i_f_start + n_d] = \
-                Jn_ad[i_c] + U[i_c] * Jf_ad[i_f_start: i_f_start + n_d]
-            phi_J_ad[i_f_start: i_f_start + n_d] = phi_ad[i_c]
+            J_ad_q[i_f_start : i_f_start + n_d] = (
+                Jn_ad[i_c] + U[i_c] * Jf_ad[i_f_start : i_f_start + n_d]
+            )
+            phi_J_ad[i_f_start : i_f_start + n_d] = phi_ad[i_c]
             i_f_start += n_d
 
         J_ad = np.zeros_like(J_ad_q, dtype=J_ad_q.dtype)
         for i in range(J_ad.shape[0]):
             J_ad[i] = initializeAutoDiffGivenGradientMatrix(
                 autoDiffToValueMatrix(J_ad_q[i]),
-                autoDiffToGradientMatrix(J_ad_q[i]).dot(dq))
+                autoDiffToGradientMatrix(J_ad_q[i]).dot(dq),
+            )
 
         # compute gravity torque
         tau_ext_u_dict = self.q_sim.calc_gravity_for_unactuated_models()
@@ -320,10 +370,11 @@ class TrajectoryOptimizer:
             idx_v_model = self.q_sim.velocity_indices[model]
             # tau_a = Kq_a[model].dot(dq_a_cmd).
             # TODO: this is hard-coded.
-            tau[idx_v_model] = tau_a[i * 2: (i+1) * 2]
+            tau[idx_v_model] = tau_a[i * 2 : (i + 1) * 2]
 
-            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = \
-                self.q_sim.K_a[model].diagonal() * h ** 2
+            Q[idx_i[idx_v_model], idx_j[idx_v_model]] = (
+                self.q_sim.K_a[model].diagonal() * h**2
+            )
 
         phi_J_ad_next_by_h = phi_J_ad / h + J_ad.dot(v_next)
         # dynamic: Q.dot(v_next - v)
@@ -331,8 +382,7 @@ class TrajectoryOptimizer:
         nabla_f0 = Q.dot(v_next) - h * tau
 
         t = self.q_sim.sim_settings.log_barrier_weight
-        output = t * nabla_f0 - \
-                 np.sum(J_ad.T / phi_J_ad_next_by_h, axis=1)
+        output = t * nabla_f0 - np.sum(J_ad.T / phi_J_ad_next_by_h, axis=1)
 
         return output
 
@@ -366,7 +416,8 @@ for model_instance_idx, q_ad in q0_ad_dict.items():
 query_object_ad = sg_ad.get_query_output_port().Eval(context_sg_ad)
 signed_distance_pairs = [
     query_object_ad.ComputeSignedDistancePairClosestPoints(*geometry_pair)
-    for geometry_pair in traj_opt.collision_pairs]
+    for geometry_pair in traj_opt.collision_pairs
+]
 
 #%%
 for sdp1, sdp2 in zip(signed_distance_pairs_ad, signed_distance_pairs):
@@ -377,22 +428,28 @@ for sdp1, sdp2 in zip(signed_distance_pairs_ad, signed_distance_pairs):
 for sdp, sdp_ad in zip(signed_distance_pairs_float, signed_distance_pairs_ad):
     if sdp.id_A == sdp_ad.id_A:
         assert sdp.id_B == sdp_ad.id_B
-        assert np.allclose(sdp.p_ACa,
-                           autoDiffToValueMatrix(sdp_ad.p_ACa).squeeze())
-        assert np.allclose(sdp.p_BCb,
-                           autoDiffToValueMatrix(sdp_ad.p_BCb).squeeze())
+        assert np.allclose(
+            sdp.p_ACa, autoDiffToValueMatrix(sdp_ad.p_ACa).squeeze()
+        )
+        assert np.allclose(
+            sdp.p_BCb, autoDiffToValueMatrix(sdp_ad.p_BCb).squeeze()
+        )
         assert np.allclose(sdp.distance, sdp_ad.distance.value())
-        assert np.allclose(sdp.nhat_BA_W,
-                           autoDiffToValueMatrix(sdp_ad.nhat_BA_W).squeeze())
+        assert np.allclose(
+            sdp.nhat_BA_W, autoDiffToValueMatrix(sdp_ad.nhat_BA_W).squeeze()
+        )
     elif sdp.id_A == sdp_ad.id_B:
         assert sdp.id_B == sdp_ad.id_A
-        assert np.allclose(sdp.p_BCb,
-                           autoDiffToValueMatrix(sdp_ad.p_ACa).squeeze())
-        assert np.allclose(sdp.p_ACa,
-                           autoDiffToValueMatrix(sdp_ad.p_BCb).squeeze())
+        assert np.allclose(
+            sdp.p_BCb, autoDiffToValueMatrix(sdp_ad.p_ACa).squeeze()
+        )
+        assert np.allclose(
+            sdp.p_ACa, autoDiffToValueMatrix(sdp_ad.p_BCb).squeeze()
+        )
         assert np.allclose(sdp.distance, sdp_ad.distance.value())
-        assert np.allclose(-sdp.nhat_BA_W,
-                           autoDiffToValueMatrix(sdp_ad.nhat_BA_W).squeeze())
+        assert np.allclose(
+            -sdp.nhat_BA_W, autoDiffToValueMatrix(sdp_ad.nhat_BA_W).squeeze()
+        )
     else:
         raise RuntimeError("hand-written collision detection is wrong.")
 
@@ -401,7 +458,7 @@ for sdp, sdp_ad in zip(signed_distance_pairs_float, signed_distance_pairs_ad):
 q0 = traj_opt.q_dict_to_vec(q0_dict)
 v0 = np.zeros_like(q0)
 v1 = np.zeros_like(v0)
-tau_a0 = np.array([0, 0, 0, 0.])
+tau_a0 = np.array([0, 0, 0, 0.0])
 input_ad = initializeAutoDiff(np.hstack([q0, v0, v1, tau_a0])).squeeze()
 output = traj_opt.eval_dynamics_constraint(input_ad)
 
@@ -415,7 +472,8 @@ loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
     gravity=gravity,
     is_visualizing=True,
     real_time_rate=0.0,
-    sim_settings=sim_settings)
+    sim_settings=sim_settings,
+)
 
 #%%
 n_q = traj_opt.plant.num_positions()
@@ -426,8 +484,10 @@ v_traj_initial = np.zeros((T, n_v))
 tau_a_traj_initial = np.zeros((T, n_a))
 
 for i in range(T):
-    q_dict_i = {name: logger.data()[:, i]
-                for name, logger in loggers_dict_quasistatic_str.items()}
+    q_dict_i = {
+        name: logger.data()[:, i]
+        for name, logger in loggers_dict_quasistatic_str.items()
+    }
     q_traj_initial[i] = traj_opt.q_dict_to_vec(q_dict_i)
 
 for i in range(1, T):
@@ -474,8 +534,12 @@ for l in range(T - 1):
 
     # dynamics.
     input = np.hstack([q_traj[l], v_traj[l], v_traj[l + 1], tau_a_traj[l + 1]])
-    prog.AddConstraint(traj_opt.eval_dynamics_constraint,
-                       lb=np.zeros(n_v), ub=np.zeros(n_v), vars=input)
+    prog.AddConstraint(
+        traj_opt.eval_dynamics_constraint,
+        lb=np.zeros(n_v),
+        ub=np.zeros(n_v),
+        vars=input,
+    )
 
 
 # initial guess
@@ -484,9 +548,11 @@ prog.SetInitialGuess(v_traj, v_traj_initial)
 prog.SetInitialGuess(tau_a_traj, tau_a_traj_initial)
 
 # Cost
-prog.AddQuadraticCost((tau_a_traj[1:]**2).sum())
+prog.AddQuadraticCost((tau_a_traj[1:] ** 2).sum())
 idx_object = traj_opt.q_sim.velocity_indices[name_to_model_map[object_name]]
-prog.AddQuadraticCost(10 * ((q_traj[-1][idx_object] - np.array([0, 1.4, 0]))**2).sum())
+prog.AddQuadraticCost(
+    10 * ((q_traj[-1][idx_object] - np.array([0, 1.4, 0])) ** 2).sum()
+)
 
 #%% Solve.
 # cProfile.runctx('solver_snopt.Solve(prog)',

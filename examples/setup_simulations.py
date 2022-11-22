@@ -17,6 +17,7 @@ from pydrake.all import (
     MeshcatVisualizer,
     ContactVisualizer,
     StartMeshcat,
+    Meshcat,
 )
 from qsim.parser import QuasistaticParser
 from qsim.system import *
@@ -121,6 +122,7 @@ def run_quasistatic_sim(
     q0_dict_str: Dict[str, np.ndarray],
     is_visualizing: bool,
     real_time_rate: float,
+    meshcat: Meshcat = None,
     **kwargs
 ):
     h = q_parser.get_param_attribute("h")
@@ -170,9 +172,15 @@ def run_quasistatic_sim(
 
     # visualization
     if is_visualizing:
-        meshcat = StartMeshcat()
+        if meshcat is None:
+            meshcat = StartMeshcat()
         meshcat_vis = MeshcatVisualizer.AddToBuilder(
-            builder, q_sys.q_sim.get_scene_graph(), meshcat
+            builder, q_sys.query_object_output_port, meshcat
+        )
+        ContactVisualizer.AddToBuilder(
+            builder,
+            q_sys.contact_results_output_port,
+            meshcat,
         )
 
     diagram = builder.Build()
@@ -185,14 +193,14 @@ def run_quasistatic_sim(
     sim.Initialize()
     sim.set_target_realtime_rate(real_time_rate)
     if is_visualizing:
-        meshcat_vis.reset_recording()
-        meshcat_vis.start_recording()
+        meshcat_vis.DeleteRecording()
+        meshcat_vis.StartRecording()
 
     sim.AdvanceTo(t_final)
 
     # get logs from sim context.
     if is_visualizing:
-        meshcat_vis.publish_recording()
+        meshcat_vis.PublishRecording()
         # res = meshcat_vis.vis.static_html()
         # with open("quasistatic_sim.html", "w") as f:
         #     f.write(res)
@@ -212,6 +220,7 @@ def run_mbp_sim(
     gravity: np.ndarray,
     is_visualizing: bool,
     real_time_rate: float,
+    meshcat: Meshcat = None,
     **kwargs
 ):
     """
@@ -303,7 +312,16 @@ def run_mbp_sim(
 
     # visualization.
     if is_visualizing:
-        meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)
+        if meshcat is None:
+            meshcat = StartMeshcat()
+        meshcat_vis = MeshcatVisualizer.AddToBuilder(
+            builder, scene_graph, meshcat
+        )
+        ContactVisualizer.AddToBuilder(
+            builder,
+            plant,
+            meshcat,
+        )
 
     # logs.
     log_sinks_dict = dict()
@@ -341,8 +359,8 @@ def run_mbp_sim(
         plant.SetPositions(context_plant, model, q0)
 
     if is_visualizing:
-        meshcat_vis.reset_recording()
-        meshcat_vis.start_recording()
+        meshcat_vis.DeleteRecording()
+        meshcat_vis.StartRecording()
 
     sim.Initialize()
 
@@ -350,10 +368,7 @@ def run_mbp_sim(
     sim.AdvanceTo(q_a_traj.end_time())
 
     if is_visualizing:
-        meshcat_vis.publish_recording()
-        res = meshcat_vis.vis.static_html()
-        with open("mbp_sim.html", "w") as f:
-            f.write(res)
+        meshcat_vis.PublishRecording()
 
     loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
     return create_dict_keyed_by_string(plant, loggers_dict)

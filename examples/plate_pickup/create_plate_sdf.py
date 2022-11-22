@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 radius = 0.005
 # list of odd numbers that define the plate.
@@ -48,14 +48,15 @@ plt.show()
 
 # 1. Initialize the file.
 
-f = open("models/plate.sdf", 'w')
+f = open("models/plate.sdf", "w")
 f.write("# This sdf file is auto-generated.\n")
 f.write("# Manual modification is not recommended.\n")
 f.write("<sdf version='1.6'>\n")
 f.write("  <model name='plate'>\n")
 f.write("\n")
 
-f.write("""
+f.write(
+    """
     <!-- Ghost body of negligible mass. -->
     <link name="ghost_body_y">
       <inertial>
@@ -125,7 +126,8 @@ f.write("""
         </limit>
       </axis>
     </joint>
-""")
+"""
+)
 
 f.write("  <link name='plate_body'>\n")
 
@@ -147,13 +149,16 @@ f.write("  </inertial>\n")
 f.write("\n")
 
 
-# Add all the balls. 
+# Add all the balls.
 for i in range(0, xy_coord.shape[0]):
     f.write("  <visual name='visual_{:03d}'>\n".format(i))
-    f.write("  <pose> 0 {:03f} {:03f} 0 0 0 </pose>\n".format(
-        xy_coord[i,0], xy_coord[i,1]))
+    f.write(
+        "  <pose> 0 {:03f} {:03f} 0 0 0 </pose>\n".format(
+            xy_coord[i, 0], xy_coord[i, 1]
+        )
+    )
 
-    radius = xy_coord[i,2]
+    radius = xy_coord[i, 2]
 
     f.write("  <geometry>\n")
     f.write("    <sphere>\n")
@@ -167,8 +172,11 @@ for i in range(0, xy_coord.shape[0]):
     f.write("\n")
 
     f.write("  <collision name='collision_{:03d}'>\n".format(i))
-    f.write("  <pose> 0 {:03f} {:03f} 0 0 0 </pose>\n".format(
-        xy_coord[i,0], xy_coord[i,1]))
+    f.write(
+        "  <pose> 0 {:03f} {:03f} 0 0 0 </pose>\n".format(
+            xy_coord[i, 0], xy_coord[i, 1]
+        )
+    )
     f.write("  <geometry>\n")
     f.write("    <sphere>\n")
     f.write("       <radius>{:05f}</radius>\n".format(radius))
@@ -185,6 +193,6 @@ for i in range(0, xy_coord.shape[0]):
     f.write("  </collision>\n")
 
 # End file.
-f.write("  </link>\n\n")    
+f.write("  </link>\n\n")
 f.write("  </model>\n")
 f.write("</sdf>\n")

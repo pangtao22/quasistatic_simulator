@@ -2,8 +2,9 @@ import time
 
 import numpy as np
 from matplotlib import rc
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
-rc('text', usetex=True)
+
+rc("font", **{"family": "sans-serif", "sans-serif": ["Helvetica"]})
+rc("text", usetex=True)
 from pydrake.all import PiecewisePolynomial
 
 from qsim_old.simulator import QuasistaticSimulator
@@ -15,8 +16,8 @@ q_sim = QuasistaticSimulator(problem_definition, is_quasi_dynamic=True)
 
 #%% plot the points
 # viz.delete()
-n_u = problem_definition['n_u']
-h = problem_definition['h']
+n_u = problem_definition["n_u"]
+h = problem_definition["h"]
 
 #%% define initial conditions and actuated trajectory.
 q0 = np.array([0, 0, 0.1])

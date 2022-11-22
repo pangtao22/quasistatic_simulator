@@ -6,18 +6,18 @@ from pydrake.solvers.gurobi import GurobiSolver
 solver = GurobiSolver()
 
 #%%
-'''
+"""
 1D point mass collides with a spring-damper system. No gravity.
 Even without damping (d=0), damping is provided as a side effect of 
 implicit-Euler integration, which seems to grow with the time step h. This 
 damping seems substantial when h=0.1. 
-'''
+"""
 m = 1.0  # kg
 v0 = -0.1  # m/s
-k = 100.  # N/m
+k = 100.0  # N/m
 h = 0.1  # s, time step.
 d = 1  # damping
-q_a_cmd_next = 0.  # holding spring at origin.
+q_a_cmd_next = 0.0  # holding spring at origin.
 
 
 def dynamics(q_u, q_a, v_u):
@@ -45,8 +45,8 @@ def dynamics(q_u, q_a, v_u):
 
 
 #%%
-q_a = 0.
-q_u = 0.
+q_a = 0.0
+q_u = 0.0
 v_u = v0
 
 L = int(1 / h)
@@ -69,7 +69,6 @@ v_u_log = np.array(v_u_log)
 # compute kinetic energy
 ke = 0.5 * m * v_u_log**2
 pe = 0.5 * k * q_a_log**2
-
 
 
 #%%

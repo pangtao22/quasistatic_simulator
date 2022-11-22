@@ -11,9 +11,10 @@ class SimpleTrajectorySource(LeafSystem):
         self.q_traj = q_traj
 
         self.x_output_port = self.DeclareVectorOutputPort(
-            'x', BasicVector(q_traj.rows() * 2), self.calc_x)
+            "x", BasicVector(q_traj.rows() * 2), self.calc_x
+        )
 
-        self.t_start = 0.
+        self.t_start = 0.0
 
     def calc_x(self, context, output):
         t = context.get_time() - self.t_start
@@ -26,14 +27,19 @@ class SimpleTrajectorySource(LeafSystem):
 
 
 builder = DiagramBuilder()
-plant, scene_graph, robot_models, object_models = \
-    create_plant_with_robots_and_objects(
-        builder=builder,
-        model_directive_path=model_directive_path,
-        robot_names=[name for name in robot_stiffness_dict.keys()],
-        object_sdf_paths=object_sdf_dict,
-        time_step=4e-2,  # Only useful for MBP simulations.
-        gravity=quasistatic_sim_params.gravity)
+(
+    plant,
+    scene_graph,
+    robot_models,
+    object_models,
+) = create_plant_with_robots_and_objects(
+    builder=builder,
+    model_directive_path=model_directive_path,
+    robot_names=[name for name in robot_stiffness_dict.keys()],
+    object_sdf_paths=object_sdf_dict,
+    time_step=4e-2,  # Only useful for MBP simulations.
+    gravity=quasistatic_sim_params.gravity,
+)
 
 # robot trajectory source
 robot_model = plant.GetModelInstanceByName(robot_name)
@@ -47,17 +53,18 @@ builder.AddSystem(traj_source_qv)
 pid = PidController(Kp, np.zeros(1), 2 * np.sqrt(Kp))
 builder.AddSystem(pid)
 builder.Connect(
-    pid.get_output_port_control(),
-    plant.get_actuation_input_port(robot_model))
+    pid.get_output_port_control(), plant.get_actuation_input_port(robot_model)
+)
 
 builder.Connect(
     plant.get_state_output_port(robot_model),
-    pid.get_input_port_estimated_state())
+    pid.get_input_port_estimated_state(),
+)
 
 # PID also needs velocity reference.
 builder.Connect(
-    traj_source_qv.get_output_port(0),
-    pid.get_input_port_desired_state())
+    traj_source_qv.get_output_port(0), pid.get_input_port_desired_state()
+)
 
 # visulization
 meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)

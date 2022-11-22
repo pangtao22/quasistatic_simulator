@@ -1,8 +1,11 @@
 import unittest
 
 import numpy as np
-from pydrake.autodiffutils import (InitializeAutoDiff, AutoDiffXd,
-                                   ExtractGradient)
+from pydrake.autodiffutils import (
+    InitializeAutoDiff,
+    AutoDiffXd,
+    ExtractGradient,
+)
 
 from qsim.normalization_derivatives import calc_normalization_derivatives
 

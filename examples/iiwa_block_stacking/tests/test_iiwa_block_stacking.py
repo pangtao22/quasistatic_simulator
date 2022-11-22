@@ -11,9 +11,13 @@ class TestIiwaBlockStacking(unittest.TestCase):
 
     def test_cpp_vs_python(self):
         self.q_parser.set_sim_params(h=self.h_quasistatic)
-        compare_q_sim_cpp_vs_py(test_case=self, q_parser=self.q_parser,
-                                q_a_traj_dict_str=q_a_traj_dict_str,
-                                q0_dict_str=q0_dict_str, atol=1e-4)
+        compare_q_sim_cpp_vs_py(
+            test_case=self,
+            q_parser=self.q_parser,
+            q_a_traj_dict_str=q_a_traj_dict_str,
+            q0_dict_str=q0_dict_str,
+            atol=1e-4,
+        )
 
     def test_mbp_vs_quasistatic(self):
         """
@@ -42,12 +46,17 @@ class TestIiwaBlockStacking(unittest.TestCase):
         Accuracy thresholds are chosen based on a "visually reasonable" runs of
         both simulations.
         """
-        loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = \
-            run_comparison(h_mbp=1e-3, h_quasistatic=self.h_quasistatic,
-                           is_visualizing=False)
+        (
+            loggers_dict_mbp_str,
+            loggers_dict_quasistatic_str,
+            plant,
+        ) = run_comparison(
+            h_mbp=1e-3, h_quasistatic=self.h_quasistatic, is_visualizing=False
+        )
 
         error_dict = compare_all_models(
-            plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str)
+            plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str
+        )
 
         for model_name, error in error_dict.items():
             if model_name == "box0":
@@ -58,6 +67,5 @@ class TestIiwaBlockStacking(unittest.TestCase):
                 self.assertLessEqual(error, 0.05)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

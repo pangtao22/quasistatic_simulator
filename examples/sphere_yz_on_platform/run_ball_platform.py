@@ -3,25 +3,23 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulations import (
-    run_quasistatic_sim)
-from qsim.simulator import (
-    QuasistaticSimParameters)
+from examples.setup_simulations import run_quasistatic_sim
+from qsim.simulator import QuasistaticSimParameters
 from qsim.model_paths import models_dir
 
-model_directive_path = os.path.join(models_dir,
-                                    "ball_and_platform.yml")
+model_directive_path = os.path.join(models_dir, "ball_and_platform.yml")
 
 #%% sim setup
 h = 0.05
 T = int(round(2 / h))  # num of time steps to simulate forward.
 duration = T * h
 quasistatic_sim_params = QuasistaticSimParameters(
-    gravity=np.array([0, 0, -10.]),
+    gravity=np.array([0, 0, -10.0]),
     nd_per_contact=2,
     contact_detection_tolerance=np.inf,
     is_quasi_dynamic=True,
-    requires_grad=True)
+    requires_grad=True,
+)
 
 # robot
 Kp = np.array([100, 100], dtype=float)
@@ -50,4 +48,5 @@ if __name__ == "__main__":
         h=h,
         sim_params=quasistatic_sim_params,
         is_visualizing=True,
-        real_time_rate=1.0)
+        real_time_rate=1.0,
+    )

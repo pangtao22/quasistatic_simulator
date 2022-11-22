@@ -3,8 +3,7 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulations import (
-    run_quasistatic_sim)
+from examples.setup_simulations import run_quasistatic_sim
 from qsim.simulator import QuasistaticSimParameters
 from qsim.model_paths import models_dir
 
@@ -19,7 +18,8 @@ sim_settings = QuasistaticSimParameters(
     gravity=np.array([0, 0, 0]),
     nd_per_contact=2,
     contact_detection_tolerance=0.1,
-    is_quasi_dynamic=True)
+    is_quasi_dynamic=True,
+)
 
 # robots.
 Kp = np.array([50, 50, 100, 50, 50], dtype=float)
@@ -28,7 +28,8 @@ robot_stiffness_dict = {"gripper": Kp}
 # object
 num_pieces = 100
 object_sdf_dict = {
-    "carrot_{:02d}".format(i): object_sdf_path for i in range(num_pieces)}
+    "carrot_{:02d}".format(i): object_sdf_path for i in range(num_pieces)
+}
 
 # trajectory and initial conditions.
 nq_a = 5
@@ -36,14 +37,13 @@ qa_knots = np.zeros((2, nq_a))
 # x, y, z, dy1, dy2
 qa_knots[0] = [-0.1, 0.25, 0, -0.05, 0.05]
 qa_knots[1] = [0.4, 0.25, 0, -0.05, 0.05]
-q_robot_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, h * T], qa_knots.T)
+q_robot_traj = PiecewisePolynomial.FirstOrderHold([0, h * T], qa_knots.T)
 
 q_a_traj_dict_str = {"gripper": q_robot_traj}
 
 q0_dict_str = {"gripper": qa_knots[0]}
 
-q_u0 = 0.5 * np.random.rand(num_pieces,2)
+q_u0 = 0.5 * np.random.rand(num_pieces, 2)
 for i in range(num_pieces):
     object_name = "carrot_{:02d}".format(i)
     q0_dict_str[object_name] = q_u0[i]
@@ -59,4 +59,5 @@ if __name__ == "__main__":
         h=h,
         sim_params=sim_settings,
         is_visualizing=True,
-        real_time_rate=1.0)
+        real_time_rate=1.0,
+    )

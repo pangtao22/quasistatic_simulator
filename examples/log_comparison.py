@@ -13,9 +13,9 @@ def calc_error_integral(q_knots, t, q_gt_traj):
     assert len(q_knots) == len(t)
     e_vec = np.zeros(n - 1)
     t_e = np.zeros(n - 1)
-    e = 0.
+    e = 0.0
 
-    for i in range(n-1):
+    for i in range(n - 1):
         t_i = (t[i] + t[i + 1]) / 2
         q_i = (q_knots[i] + q_knots[i + 1]) / 2
         dt = t[i + 1] - t[i]
@@ -31,8 +31,9 @@ def get_angle_from_quaternion(q: np.array):
     return AngleAxis(Quaternion(q / np.linalg.norm(q))).angle()
 
 
-def convert_quaternion_array_to_eigen_quaternion_traj(q_array: np.array,
-                                                      t: np.array):
+def convert_quaternion_array_to_eigen_quaternion_traj(
+    q_array: np.array, t: np.array
+):
     """
     :param q_array: (n, 4) array where q_array[i] is a quaternion.
     :param t: (n,) array of times.
@@ -43,9 +44,10 @@ def convert_quaternion_array_to_eigen_quaternion_traj(q_array: np.array,
 
 
 def calc_quaternion_error_integral(
-        q_list: Union[List[Quaternion], np.array],
-        t: np.array,
-        q_traj: PiecewiseQuaternionSlerp):
+    q_list: Union[List[Quaternion], np.array],
+    t: np.array,
+    q_traj: PiecewiseQuaternionSlerp,
+):
     assert q_traj.is_time_in_range(t[0]) and q_traj.is_time_in_range(t[-1])
     assert len(q_list) == len(t)
 
@@ -59,13 +61,14 @@ def calc_quaternion_error_integral(
     angle_diff_list = np.array(angle_diff_list)
 
     zero_traj = PiecewisePolynomial.ZeroOrderHold(
-        [t[0], t[-1]], np.array([[0, 0.]]))
+        [t[0], t[-1]], np.array([[0, 0.0]])
+    )
     return calc_error_integral(angle_diff_list, t, zero_traj)
 
 
 def calc_pose_error_integral(
-        pose_list_1: np.array, t1: np.array,
-        pose_list_2: np.array, t2: np.array):
+    pose_list_1: np.array, t1: np.array, pose_list_2: np.array, t2: np.array
+):
     """
     Converts the rotation and translation parts of pose_list_2 to a
         PiecewiseQuaternionSlerp nad a PiecewisePolynomial, respectively,
@@ -82,19 +85,17 @@ def calc_pose_error_integral(
 
     # Orientation.
     quaternion_traj2 = convert_quaternion_array_to_eigen_quaternion_traj(
-        pose_list_2[:, :4], t2)
+        pose_list_2[:, :4], t2
+    )
 
     e_angle, e_vec_angle, t_angle = calc_quaternion_error_integral(
-        q_list=pose_list_1[:, :4],
-        t=t1,
-        q_traj=quaternion_traj2)
+        q_list=pose_list_1[:, :4], t=t1, q_traj=quaternion_traj2
+    )
 
     # Position.
-    xyz_traj2 = PiecewisePolynomial.FirstOrderHold(
-        t2, pose_list_2[:, 4:].T)
+    xyz_traj2 = PiecewisePolynomial.FirstOrderHold(t2, pose_list_2[:, 4:].T)
     e_xyz, e_vec_xyz, t_xyz = calc_error_integral(
-        q_knots=pose_list_1[:, 4:],
-        t=t1,
-        q_gt_traj=xyz_traj2)
+        q_knots=pose_list_1[:, 4:], t=t1, q_gt_traj=xyz_traj2
+    )
 
     return e_angle, e_vec_angle, t_angle, e_xyz, e_vec_xyz, t_xyz

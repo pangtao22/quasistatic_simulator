@@ -6,18 +6,18 @@ from pydrake.solvers.gurobi import GurobiSolver
 solver = GurobiSolver()
 
 #%%
-'''
+"""
 2D point mass supported by a plane under gravity (-y). 
-'''
+"""
 n_u = 2
-M = np.eye(n_u) * 0 # kg in x, y.
-tau_g = np.array([0, -10.])  # Newtons.
+M = np.eye(n_u) * 0  # kg in x, y.
+tau_g = np.array([0, -10.0])  # Newtons.
 v0 = np.array([0, 0])  # m/s
 mu = 0.5  # coefficient of friction
-k = 100.  # N/m
+k = 100.0  # N/m
 h = 0.1  # s, time step.
 d = 10  # damping
-q_a_cmd_next = 0.  # holding spring at origin.
+q_a_cmd_next = 0.0  # holding spring at origin.
 
 
 def dynamics(q_u, q_a, v_u, q_a_cmd_next):
@@ -35,11 +35,10 @@ def dynamics(q_u, q_a, v_u, q_a_cmd_next):
     prog.AddQuadraticCost(Q, -tau_h, v_next)
 
     phi = np.array([q_u[0] - q_a, q_u[1], q_u[1]])
-    J = np.array([[1, 0, -1],
-                  [mu, 1, 0],
-                  [-mu, 1, 0]], dtype=float)
+    J = np.array([[1, 0, -1], [mu, 1, 0], [-mu, 1, 0]], dtype=float)
     constraints = prog.AddLinearConstraint(
-        J, -phi / h, np.full_like(phi, np.inf), v_next)
+        J, -phi / h, np.full_like(phi, np.inf), v_next
+    )
 
     result = solver.Solve(prog)
 
@@ -52,8 +51,8 @@ def dynamics(q_u, q_a, v_u, q_a_cmd_next):
 
 
 #%%
-q_a = 0.
-q_u = np.array([0., 0])
+q_a = 0.0
+q_u = np.array([0.0, 0])
 v_u = v0
 
 L = int(0.5 / h)
@@ -76,8 +75,7 @@ v_u_log = np.array(v_u_log)
 
 # compute kinetic energy
 ke = 0.5 * (v_u_log.dot(M) * v_u_log).sum(axis=1)
-pe = 0.5 * k * (q_a_cmd - q_a_log)**2
-
+pe = 0.5 * k * (q_a_cmd - q_a_log) ** 2
 
 
 #%%
