@@ -3,8 +3,7 @@ import numpy as np
 
 from pydrake.all import PiecewisePolynomial
 
-from examples.setup_simulations import (
-    run_quasistatic_sim)
+from examples.setup_simulations import run_quasistatic_sim
 from qsim.simulator import QuasistaticSimParameters
 from qsim.model_paths import models_dir
 
@@ -16,10 +15,11 @@ h = 0.2
 T = int(round(12 / h))  # num of time steps to simulate forward.
 duration = T * h
 sim_settings = QuasistaticSimParameters(
-    gravity=np.array([0, 0, -10.]),
+    gravity=np.array([0, 0, -10.0]),
     nd_per_contact=2,
     contact_detection_tolerance=1.0,
-    is_quasi_dynamic=True)
+    is_quasi_dynamic=True,
+)
 
 # robots.
 Kp = np.array([50, 50, 100, 50, 50], dtype=float)
@@ -41,14 +41,14 @@ qa_knots[4] = [0.05, 0.06, -1.2, -0.01, 0.01]
 qa_knots[5] = [0.05, 0.2, -1.2, -0.00, 0.00]
 qa_knots[6] = [0.32, 0.5, -1.2, -0.00, 0.00]
 q_robot_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, 2, 4, 6, 8, 10, 12], qa_knots.T)
+    [0, 2, 4, 6, 8, 10, 12], qa_knots.T
+)
 
 q_a_traj_dict_str = {"gripper": q_robot_traj}
 
 q_u0 = np.array([0, 0.1, 0])
 
-q0_dict_str = {"plate": q_u0,
-               "gripper": qa_knots[0]}
+q0_dict_str = {"plate": q_u0, "gripper": qa_knots[0]}
 
 
 #%% run sim.
@@ -62,4 +62,5 @@ if __name__ == "__main__":
         h=h,
         sim_params=sim_settings,
         is_visualizing=True,
-        real_time_rate=1.0)
+        real_time_rate=1.0,
+    )

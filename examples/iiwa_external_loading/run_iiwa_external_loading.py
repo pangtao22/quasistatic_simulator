@@ -5,9 +5,10 @@ from matplotlib import pyplot as plt
 from qsim.model_paths import models_dir
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.utils import (
-    create_iiwa_controller_plant)
+    create_iiwa_controller_plant,
+)
 
-q_model_path = os.path.join(models_dir, 'q_sys', 'iiwa.yml')
+q_model_path = os.path.join(models_dir, "q_sys", "iiwa.yml")
 
 # Simulation parameters.
 iiwa_name = "iiwa"
@@ -22,12 +23,13 @@ q_iiwa_knots[1] = q_iiwa_knots[0]
 q_iiwa_traj = PiecewisePolynomial.FirstOrderHold([0, 2], q_iiwa_knots.T)
 
 q0_dict_str = {iiwa_name: q_iiwa_knots[0]}
-gravity = np.array([0, 0, -10.])
+gravity = np.array([0, 0, -10.0])
 
 F_WB = np.zeros((2, 3))
-F_WB[1] = [0, 0, -100.]
+F_WB[1] = [0, 0, -100.0]
 F_WB_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, q_iiwa_traj.end_time() / 2], F_WB.T)
+    [0, q_iiwa_traj.end_time() / 2], F_WB.T
+)
 
 
 def run_comparison(is_visualizing: bool, real_time_rate: float):
@@ -43,7 +45,8 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
         body_name="iiwa_link_7",
-        F_WB_traj=F_WB_traj)
+        F_WB_traj=F_WB_traj,
+    )
 
     # MBP.
     # create controller system for robot.
@@ -51,7 +54,8 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
     controller_robot = RobotInternalController(
         plant_robot=plant_robot,
         joint_stiffness=q_parser.robot_stiffness_dict[iiwa_name],
-        controller_mode="impedance")
+        controller_mode="impedance",
+    )
     robot_controller_dict = {iiwa_name: controller_robot}
 
     loggers_dict_mbp_str = run_mbp_sim(
@@ -66,14 +70,16 @@ def run_comparison(is_visualizing: bool, real_time_rate: float):
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
         body_name="iiwa_link_7",
-        F_WB_traj=F_WB_traj)
+        F_WB_traj=F_WB_traj,
+    )
 
     return loggers_dict_quasistatic_str, loggers_dict_mbp_str
 
 
 if __name__ == "__main__":
     loggers_dict_quasistatic_str, loggers_dict_mbp_str = run_comparison(
-        is_visualizing=True, real_time_rate=1.0)
+        is_visualizing=True, real_time_rate=1.0
+    )
 
     # %%
     nq = 7

@@ -22,18 +22,39 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
         The accuracy threshold are chosen based on a simulation run that
             looks reasonable.
         """
-        (q_robot_log_mbp, q_box_log_mbp, t_mbp,
-         q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic, _
-         ) = run_mbp_quasistatic_comparison(
-            q_model_path_3d, q0_dict_str,
+        (
+            q_robot_log_mbp,
+            q_box_log_mbp,
+            t_mbp,
+            q_robot_log_quasistatic,
+            q_box_log_quasistatic,
+            t_quasistatic,
+            _,
+        ) = run_mbp_quasistatic_comparison(
+            q_model_path_3d,
+            q0_dict_str,
             is_visualizing=False,
-            real_time_rate=0.0)
+            real_time_rate=0.0,
+        )
 
-        (e_robot, e_vec_robot, t_e_robot,
-         e_angle_box, e_vec_angle_box, t_angle_box,
-         e_xyz_box, e_vec_xyz_box, t_xyz_box) = calc_integral_errors(
-            q_robot_log_mbp, q_box_log_mbp, t_mbp,
-            q_robot_log_quasistatic, q_box_log_quasistatic, t_quasistatic)
+        (
+            e_robot,
+            e_vec_robot,
+            t_e_robot,
+            e_angle_box,
+            e_vec_angle_box,
+            t_angle_box,
+            e_xyz_box,
+            e_vec_xyz_box,
+            t_xyz_box,
+        ) = calc_integral_errors(
+            q_robot_log_mbp,
+            q_box_log_mbp,
+            t_mbp,
+            q_robot_log_quasistatic,
+            q_box_log_quasistatic,
+            t_quasistatic,
+        )
 
         # Quasistatic vs MBP, robot.
         self.assertLessEqual(e_robot, 0.1)
@@ -45,5 +66,5 @@ class Test3linkArmBoxPushing3D(unittest.TestCase):
         self.assertLessEqual(e_xyz_box, 0.4)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

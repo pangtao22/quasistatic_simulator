@@ -6,37 +6,45 @@ import numpy as np
 import parse
 import yaml
 
-from pydrake.all import (MultibodyPlant, Parser, ProcessModelDirectives,
-                         LoadModelDirectives)
+from pydrake.all import (
+    MultibodyPlant,
+    Parser,
+    ProcessModelDirectives,
+    LoadModelDirectives,
+)
 
-from qsim_cpp import (QuasistaticSimulatorCpp,
-                      BatchQuasistaticSimulator, GradientMode)
+from qsim_cpp import (
+    QuasistaticSimulatorCpp,
+    BatchQuasistaticSimulator,
+    GradientMode,
+)
 from .model_paths import package_paths_dict, add_package_paths_local
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
-from .system import (QuasistaticSystem, QuasistaticSystemBackend)
+from .system import QuasistaticSystem, QuasistaticSystemBackend
 
 
 class QuasistaticParser:
     def __init__(self, quasistatic_model_path: str):
-        with open(quasistatic_model_path, 'r') as f:
+        with open(quasistatic_model_path, "r") as f:
             config = yaml.safe_load(f)
 
-        self.model_directive_path = self.parse_path(config['model_directive'])
+        self.model_directive_path = self.parse_path(config["model_directive"])
 
         # robots
         robot_stiffness_dict = {}
-        for robot in config['robots']:
-            robot_stiffness_dict[robot['name']] = np.array(robot['Kp'],
-                                                           dtype=float)
+        for robot in config["robots"]:
+            robot_stiffness_dict[robot["name"]] = np.array(
+                robot["Kp"], dtype=float
+            )
         self.robot_stiffness_dict = robot_stiffness_dict
 
         # objects
         object_sdf_paths = {}
         object_sdf_paths_ordered = OrderedDict()
-        if config['objects'] is not None:
-            for obj in config['objects']:
-                name = obj['name']
-                path = self.parse_path(obj['file'])
+        if config["objects"] is not None:
+            for obj in config["objects"]:
+                name = obj["name"]
+                path = self.parse_path(obj["file"])
                 object_sdf_paths[name] = path
                 object_sdf_paths_ordered[name] = path
         self.object_sdf_paths = object_sdf_paths
@@ -44,7 +52,7 @@ class QuasistaticParser:
 
         # quasistatic_sim_params
         self.q_sim_params = QuasistaticSimParameters()
-        self.set_sim_params(**copy.deepcopy(config['quasistatic_sim_params']))
+        self.set_sim_params(**copy.deepcopy(config["quasistatic_sim_params"]))
 
     def set_sim_params(self, **kwargs):
         QuasistaticSimulator.set_sim_params(self.q_sim_params, **kwargs)
@@ -76,10 +84,13 @@ class QuasistaticParser:
     def make_system(self, backend: QuasistaticSystemBackend):
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
-        return QuasistaticSystem(model_directive_path=self.model_directive_path,
-                                 robot_stiffness_dict=self.robot_stiffness_dict,
-                                 object_sdf_paths=self.object_sdf_paths,
-                                 sim_params=q_sim_params, backend=backend)
+        return QuasistaticSystem(
+            model_directive_path=self.model_directive_path,
+            robot_stiffness_dict=self.robot_stiffness_dict,
+            object_sdf_paths=self.object_sdf_paths,
+            sim_params=q_sim_params,
+            backend=backend,
+        )
 
     def make_simulator_py(self, internal_vis: bool) -> QuasistaticSimulator:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
@@ -89,7 +100,8 @@ class QuasistaticParser:
             robot_stiffness_dict=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths_ordered,
             sim_params=q_sim_params,
-            internal_vis=internal_vis)
+            internal_vis=internal_vis,
+        )
 
     def make_simulator_cpp(self, has_objects=True) -> QuasistaticSimulatorCpp:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
@@ -99,14 +111,16 @@ class QuasistaticParser:
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=objects_sdf_paths,
-            sim_params=q_sim_params)
+            sim_params=q_sim_params,
+        )
 
     def make_robot_only_plant(self):
         plant = MultibodyPlant(1e-3)
         parser = Parser(plant=plant)
         add_package_paths_local(parser)
-        ProcessModelDirectives(LoadModelDirectives(self.model_directive_path),
-                               plant, parser)
+        ProcessModelDirectives(
+            LoadModelDirectives(self.model_directive_path), plant, parser
+        )
 
         plant.mutable_gravity_field().set_gravity_vector(self.get_gravity())
         plant.Finalize()
@@ -119,4 +133,5 @@ class QuasistaticParser:
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
-            sim_params=q_sim_params)
+            sim_params=q_sim_params,
+        )

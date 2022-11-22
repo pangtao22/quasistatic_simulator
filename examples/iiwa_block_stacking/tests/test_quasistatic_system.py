@@ -57,15 +57,17 @@ class TestQuasistaticSystem(unittest.TestCase):
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
             q_parser=q_parser,
-            backend=QuasistaticSystemBackend.PYTHON,
+            backend=QuasistaticSystemBackend.CPP,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
             is_visualizing=False,
-            real_time_rate=0.0)
+            real_time_rate=0.0,
+        )
 
         # Simulate manually.
-        q_logs_dict_str, t_quasistatic = \
-            run_quasistatic_sim_manually(h=h, is_visualizing=False)
+        q_logs_dict_str, t_quasistatic = run_quasistatic_sim_manually(
+            h=h, is_visualizing=False
+        )
 
         tolerance = 1e-6
         duraiton = t_quasistatic[-1]
@@ -78,8 +80,10 @@ class TestQuasistaticSystem(unittest.TestCase):
                 tolerance,
                 "Trajectory difference between manual and Systems simulations "
                 "is larger than {} for model instance named {}.".format(
-                    tolerance, model_name))
+                    tolerance, model_name
+                ),
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

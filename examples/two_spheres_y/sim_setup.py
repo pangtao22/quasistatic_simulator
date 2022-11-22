@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-from pydrake.all import (PiecewisePolynomial)
+from pydrake.all import PiecewisePolynomial
 
 from qsim.model_paths import models_dir
 
 
 #%% sim setup
-q_model_path = os.path.join(models_dir, 'q_sys', 'two_spheres_y.yml')
+q_model_path = os.path.join(models_dir, "q_sys", "two_spheres_y.yml")
 
 h = 0.05
 T = int(round(2 / h))  # num of time steps to simulate forward.

@@ -1,5 +1,5 @@
 import numpy as np
-from pydrake.all import (RotationMatrix)
+from pydrake.all import RotationMatrix
 
 
 def get_rotation_matrix_from_normal(normal):

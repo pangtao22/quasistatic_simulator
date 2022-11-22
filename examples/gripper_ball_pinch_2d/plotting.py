@@ -1,16 +1,23 @@
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 12})
+
+plt.rcParams.update({"font.size": 12})
 from matplotlib import rc
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
-rc('text', usetex=True)
+
+rc("font", **{"family": "sans-serif", "sans-serif": ["Helvetica"]})
+rc("text", usetex=True)
 
 from qsim_old.problem_definition_pinch import *
 
 
-#%%
-def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
-                      t_contact_mode_change,
-                      figsize, save_name):
+def PlotForceDistance(
+    t_sim,
+    phi_log,
+    lambda_n_log,
+    friction_log,
+    t_contact_mode_change,
+    figsize,
+    save_name,
+):
     """
     plot normal, friction force and distance
     :return:
@@ -19,7 +26,9 @@ def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
     for i, ax in zip([0, 2], axes):
         ax2 = ax.twinx()
         color = "blue"
-        ax2.step(t_sim, phi_log[:-1, i], 'o',,
+        ax2.step(
+            t_sim, phi_log[:-1, i], "o", markersize=3, where="post", color=color
+        )
         ax2.set_ylabel(r"$\phi_{}$ [m]".format(i + 1), color=color)
         ax2.set_ylim([-0.001, 0.0065])
         ax2.tick_params(axis="y", labelcolor=color)
@@ -28,16 +37,30 @@ def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
 
         color = "red"
         color2 = np.array([0, 204, 163, 255]) / 255
-        ax.step(t_sim, lambda_n_log[:, i],,
+        ax.step(
+            t_sim,
+            lambda_n_log[:, i],
+            where="post",
+            color=color,
+            label=r"$c_{n_%d}$" % (i + 1),
+            linewidth=1,
+        )
 
         if i != 2:
             friction = (friction_log[:, 0] + friction_log[:, 1]) / 2
         else:
             friction = friction_log[:, i]
-        ax.step(t_sim, friction,,
+        ax.step(
+            t_sim,
+            friction,
+            where="post",
+            color=color2,
+            linewidth=1,
+            label=r"$c_{f_%d}$" % (i + 1),
+        )
         ax.set_ylabel("contact force [N]".format(i + 1), color=color)
         for t in t_contact_mode_change:
-            ax.axvline(t, color='g', linestyle="--", linewidth=1.2)
+            ax.axvline(t, color="g", linestyle="--", linewidth=1.2)
         ax.tick_params(axis="y", labelcolor=color)
         ax.set_axisbelow(True)
         ax.grid(True)
@@ -50,7 +73,7 @@ def PlotForceDistance(t_sim, phi_log, lambda_n_log, friction_log,
 
     plt.tight_layout()
     # plt.margins(0, 0)
-    plt.savefig(save_name, bbox_inches='tight', pad_inches=0.01)
+    plt.savefig(save_name, bbox_inches="tight", pad_inches=0.01)
     plt.show()
     plt.close()
 
@@ -62,13 +85,13 @@ def PlotVelocity(t_sim, v_tangent, v_normal, t_contact_mode_change):
     """
     fig, axes = plt.subplots(2, 1, figsize=(4, 4), dpi=200)
     for i, ax in zip([0, 2], axes):
-        ax.step(t_sim, v_tangent[:, i * 2],,
-        ax.step(t_sim, v_normal[:, i],,
+        ax.step(t_sim, v_tangent[:, i * 2], where="post", label="t")
+        ax.step(t_sim, v_normal[:, i], where="post", label="n")
         ax.set_ylabel(r"$\tilde{v}_%d$ [m/s]" % (i + 1))
         ax.grid(True)
         ax.legend()
         for t in t_contact_mode_change:
-            ax.axvline(t, color='g', linestyle="--", linewidth=1.2)
+            ax.axvline(t, color="g", linestyle="--", linewidth=1.2)
 
         if i < n_c - 1:
             plt.setp(ax.get_xticklabels(), visible=False)
@@ -80,8 +103,9 @@ def PlotVelocity(t_sim, v_tangent, v_normal, t_contact_mode_change):
     plt.close()
 
 
-def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log, t_contact_mode_change,
-                           fig_size, save_name):
+def PlotLeftFingerPosition(
+    t_sim1, q_log, qa_cmd_log, t_contact_mode_change, fig_size, save_name
+):
     """
     plot xy cmd vs xy true
     :return:
@@ -94,12 +118,26 @@ def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log, t_contact_mode_change,
     for i, ax in enumerate(axes):
         color = "red"
         color2 = np.array([0, 204, 163, 255]) / 255
-        ax.step(t_sim1, q_log[:, 2 + idx[i]],,
-        ax.step(t_sim1[1:], qa_cmd_log[:, idx[i]],,
+        ax.step(
+            t_sim1,
+            q_log[:, 2 + idx[i]],
+            where="post",
+            color=color,
+            label=labels[i],
+            linewidth=1,
+        )
+        ax.step(
+            t_sim1[1:],
+            qa_cmd_log[:, idx[i]],
+            where="post",
+            color=color2,
+            label=cmd_labels[i],
+            linewidth=1,
+        )
         ax.set_ylabel("[m]".format(i + 1))
         ax.grid(True)
         for t in t_contact_mode_change:
-            ax.axvline(t, color='g', linestyle="--", linewidth=1.2)
+            ax.axvline(t, color="g", linestyle="--", linewidth=1.2)
         ax.legend(loc="upper right")
 
         if i < 1:
@@ -108,5 +146,5 @@ def PlotLeftFingerPosition(t_sim1, q_log, qa_cmd_log, t_contact_mode_change,
 
     plt.tight_layout()
     # plt.margins(0, 0)
-    plt.savefig(save_name, bbox_inches='tight', pad_inches=0.01)
+    plt.savefig(save_name, bbox_inches="tight", pad_inches=0.01)
     plt.show()
