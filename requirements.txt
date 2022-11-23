@@ -1,3 +1,4 @@
 cvxpy
 parse
 diffcp
+manipulation

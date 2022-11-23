@@ -143,8 +143,6 @@ class QuasistaticSimulator:
         # Internal visualization is used when QuasistaticSimulator is used
         # outside the Systems framework.
         if internal_vis:
-            self.viz.vis.delete()
-            self.viz.load()
             self.context_meshcat = diagram.GetMutableSubsystemContext(
                 self.viz, self.context
             )
@@ -385,7 +383,7 @@ class QuasistaticSimulator:
 
     def draw_current_configuration(self, draw_forces=True):
         # Body poses
-        self.viz.DoPublish(self.context_meshcat, [])
+        self.viz.ForcedPublish(self.context_meshcat)
 
         # Contact forces
         if draw_forces:
@@ -393,7 +391,7 @@ class QuasistaticSimulator:
                 self.context_meshcat_contact,
                 AbstractValue.Make(self.contact_results),
             )
-            self.contact_viz.DoPublish(self.context_meshcat_contact, [])
+            self.contact_viz.ForcedPublish(self.context_meshcat_contact)
 
     def calc_tau_ext(self, easf_list: List[ExternallyAppliedSpatialForce]):
         """
@@ -411,19 +409,6 @@ class QuasistaticSimulator:
             easf_list
         )
         return {**tau_ext_a_dict, **tau_ext_u_dict}
-
-    def animate_system_trajectory(
-        self, h: float, q_dict_traj: List[Dict[ModelInstanceIndex, np.ndarray]]
-    ):
-        self.viz.draw_period = h
-        self.viz.reset_recording()
-        self.viz.start_recording()
-        for q_dict in q_dict_traj:
-            self.update_mbp_positions(q_dict)
-            self.draw_current_configuration(draw_forces=False)
-
-        self.viz.stop_recording()
-        self.viz.publish_recording()
 
     def update_normal_and_tangential_jacobian_rows(
         self,
