@@ -11,7 +11,11 @@ Some interactive animations generated using the code in this repo can be found i
 - Possibly others (if import fails...)
 
 ## C++ backend
-- To use, build [this repo](https://github.com/pangtao22/quasistatic_simulator_cpp.git), and put the built pybind library (which looks like `quasistatic_simulator_py.cpython-39-darwin.so` on a Mac) on `PYTHONPATH`.  
+Build the python bindings in `/quasistatic_simulator_cpp`, and put the built pybind library (with name `qsim_cpp.cpython-310-darwin.so` on a Mac) located at
+```
+/quasistatic_simulator_cpp/cmake_build_release/src/
+```
+on `PYTHONPATH`.
 
 ## Running the tests
 In the root of the repo, run 
