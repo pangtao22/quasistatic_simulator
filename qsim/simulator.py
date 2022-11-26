@@ -381,7 +381,7 @@ class QuasistaticSimulator:
             for model in self.models_all
         }
 
-    def draw_current_configuration(self, draw_forces=True):
+    def draw_current_configuration(self, draw_forces=False):
         # Body poses
         self.viz.ForcedPublish(self.context_meshcat)
 

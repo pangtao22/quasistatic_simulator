@@ -41,10 +41,10 @@ include(CTest)
 
 if(APPLE)
   set(FIND_PYTHON_EXECUTABLE_PATHS /usr/local/bin)
-  set(FIND_PYTHON_INTERP_VERSION 3.9)
+  set(FIND_PYTHON_INTERP_VERSION 3.10)
 else()
   set(FIND_PYTHON_EXECUTABLE_PATHS /usr/bin)
-  set(FIND_PYTHON_INTERP_VERSION 3.6)
+  set(FIND_PYTHON_INTERP_VERSION 3.8)
 endif()
 find_program(PYTHON_EXECUTABLE NAMES python3
   PATHS "${FIND_PYTHON_EXECUTABLE_PATHS}"
@@ -68,7 +68,6 @@ get_filename_component(PYTHONPATH
 )
 
 # my packages.
-find_package(spdlog REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
