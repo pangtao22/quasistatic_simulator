@@ -3,7 +3,7 @@ FROM robotlocomotion/drake:focal
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && yes "Y" \
       | apt-get install --no-install-recommends curl apt-transport-https sudo \
-      ca-certificates libgtest-dev libgflags-dev python-dev\
+      ca-certificates libgtest-dev libgflags-dev python3.8-dev\
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
