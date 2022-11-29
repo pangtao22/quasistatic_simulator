@@ -8,4 +8,4 @@ cmake -DCMAKE_PREFIX_PATH=/opt/drake -DCMAKE_BUILD_TYPE=Release ..
 make -j
 
 # run tests
-ctest -V .
+#ctest -V .
