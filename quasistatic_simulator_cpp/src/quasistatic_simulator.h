@@ -89,6 +89,10 @@ public:
     return sim_params_;
   }
 
+  [[nodiscard]] QuasistaticSimParameters get_sim_params_copy() const {
+    return sim_params_;
+  }
+
   /*
    * Technically it only makes sense for Bodies to float. But our convention
    * is that un-actuated model instances only consist of one rigid body.
