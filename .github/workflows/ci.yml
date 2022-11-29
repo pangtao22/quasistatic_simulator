@@ -1,0 +1,20 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "0 6 * * *"  # 6am everyday.
+
+jobs:
+  focal:
+    runs-on: ubuntu-latest
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: build and test
+        uses: ./.github/actions
+        id: build_test
