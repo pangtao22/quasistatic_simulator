@@ -1,5 +1,17 @@
 FROM robotlocomotion/drake:focal
 
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && yes "Y" \
+      | apt-get install --no-install-recommends curl apt-transport-https sudo \
+      ca-certificates libgtest-dev libgflags-dev \
+      && rm -rf /var/lib/apt/lists/* \
+      && apt-get clean all
+
+RUN apt-get update \
+  && yes "Y" | bash /opt/drake/share/drake/setup/install_prereqs \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean all
+
 #COPY scripts/install_prereqs.sh /tmp/
 COPY requirements.txt /tmp/requirements.txt
 RUN #/tmp/install_prereqs.sh
