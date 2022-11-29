@@ -1,4 +1,5 @@
 # Quasistatic Simulator
+![ci_badge](https://github.com/pangtao22/quasistatic_simulator/actions/workflows/ci.yml/badge.svg)
 
 Implementation of the paper ["A Convex Quasistatic Time-stepping Scheme for Rigid Multibody Systems with Contact and Friction"](http://groups.csail.mit.edu/robotics-center/public_papers/Pang20b.pdf), published at ICRA2021. Still a work in progress, but many (>=8) unit tests are passing using the latest version of [Drake](https://drake.mit.edu). 
 
