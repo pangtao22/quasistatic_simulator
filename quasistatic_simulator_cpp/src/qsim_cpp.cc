@@ -102,6 +102,7 @@ PYBIND11_MODULE(qsim_cpp, m) {
         .def("get_sim_params_copy", &Class::get_sim_params_copy)
         .def("num_actuated_dofs", &Class::num_actuated_dofs)
         .def("num_unactuated_dofs", &Class::num_unactuated_dofs)
+        .def("num_dofs", &Class::num_dofs)
         .def("get_Dq_nextDq", &Class::get_Dq_nextDq)
         .def("get_Dq_nextDqa_cmd", &Class::get_Dq_nextDqa_cmd)
         .def("get_velocity_indices", &Class::GetVelocityIndices)
