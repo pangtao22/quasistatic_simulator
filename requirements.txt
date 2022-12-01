@@ -2,3 +2,4 @@ cvxpy==1.2.0
 parse
 diffcp
 manipulation
+meshcat
