@@ -85,9 +85,12 @@ target_link_libraries(test_log_barrier_solver log_barrier_solver gtest)
 add_executable(test_contact_forces test_contact_forces.cc)
 target_link_libraries(test_contact_forces quasistatic_simulator gtest)
 
-add_executable(test_quasistatic_sim test_quasistatic_sim.cc)
-target_link_libraries(test_quasistatic_sim quasistatic_simulator gtest)
+add_executable(test_quasistatic_sim_gradients test_quasistatic_sim_gradients.cc)
+target_link_libraries(test_quasistatic_sim_gradients
+        quasistatic_simulator gtest)
 
 add_test(NAME test_batch_simulator COMMAND test_batch_simulator)
 add_test(NAME test_log_barrier_solver COMMAND test_log_barrier_solver)
 add_test(NAME test_contact_forces COMMAND test_contact_forces)
+add_test(NAME test_quasistatic_sim_gradients
+         COMMAND test_quasistatic_sim_gradients)

@@ -440,6 +440,8 @@ std::vector<Eigen::MatrixXd> BatchQuasistaticSimulator::CalcBundledBTrjDirect(
   return B_batch;
 }
 
+//TODO (pang?): This generates all 0s for unactuated DOFs for some reason...
+// TLDR: it doesn't work at the moment. Use the python version instead of this!
 std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
 BatchQuasistaticSimulator::CalcBcLstsq(
     const Eigen::Ref<const Eigen::VectorXd> &x_nominal,
