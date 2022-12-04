@@ -6,19 +6,27 @@ Implementation of the paper ["A Convex Quasistatic Time-stepping Scheme for Rigi
 Some interactive animations generated using the code in this repo can be found in [this slide deck](https://slides.com/pang/deck-28a801).
 
 ## Dependencies
-- Drake **built with Gurobi** (replacing the QP solver with OSQP should work too).
-- cvxpy.
-- [iiwa_controller](https://github.com/pangtao22/iiwa_controller) repo (make sure it's on `PYTHONPATH`).
-- Possibly others (if import fails...)
+- Drake **built with Gurobi and Mosek**. Free solvers (OSQP + SCS) also work, but SCS is a lot slower than Mosek for solving SOCPs.
+- In addition to what's in `requirements.txt`, here are two repos that I'll need to include as submodules, but now need to be put manually on `PYTHONPATH`:
+  - [iiwa_controller](https://github.com/pangtao22/iiwa_controller) 
+  - [manipulation](https://github.com/RussTedrake/manipulation)
 
-## C++ backend
-Build the python bindings in `/quasistatic_simulator_cpp`, and put the built pybind library (with name `qsim_cpp.cpython-310-darwin.so` on a Mac) located at
-```
-/quasistatic_simulator_cpp/cmake_build_release/src/
-```
-on `PYTHONPATH`.
 
-## Running the tests
+## Docker
+In the root of this repo, to build, run
+```
+docker build -t qsim -f focal.dockerfile .
+```
+
+To run the github "build and test" action locally, run
+```
+docker run -v $PWD:"/github/workspace" --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
+```
+
+
+## Running python tests
+The python tests right now depend on [a custom branch of drake](https://github.com/pangtao22/drake/tree/my_main).
+
 In the root of the repo, run 
 ```bash
 pytest .
