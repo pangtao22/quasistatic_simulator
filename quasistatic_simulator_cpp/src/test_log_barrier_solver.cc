@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "drake/math/jacobian.h"
+#include "drake/solvers/gurobi_solver.h"
+#include "drake/solvers/mosek_solver.h"
 
 #include "log_barrier_solver.h"
 
@@ -14,9 +16,11 @@ using std::endl;
 /*
  * Test barrier solvers on the ball-box grazing problem.
  */
-class TestLogBarrierSolvers : public ::testing::Test {
+class TestLogBarrierSolvers : public ::testing::TestWithParam<bool> {
 protected:
   void SetUp() override {
+    use_free_solver_ = GetParam();
+
     Q_.resize(n_v_, n_v_);
     Q_.setIdentity();
 
@@ -45,13 +49,14 @@ protected:
     J_icecream_.row(2).setZero();
   }
 
+  bool use_free_solver_{false};
   const int n_v_{3};
   const double mu_{1}, kappa_{100}, h_{0.1};
   MatrixXd Q_, J_pyramid_, J_icecream_;
   VectorXd tau_h_, phi_pyramid_, phi_icecream_;
 };
 
-TEST_F(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
+TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
   // Test with Hessian and Gradients computed using drake.
   // Wraps cost function in a lambda function that can be consumed by
   //  drake::math::hessian(...).
@@ -79,7 +84,7 @@ TEST_F(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
     H_drake.row(i) = f_value.derivatives()[i].derivatives();
   }
 
-  auto solver_log_socp = SocpLogBarrierSolver();
+  auto solver_log_socp = SocpLogBarrierSolver(use_free_solver_);
   Eigen::VectorXd Df(n_v_);
   Eigen::MatrixXd H(n_v_, n_v_);
   solver_log_socp.CalcGradientAndHessian(
@@ -89,9 +94,9 @@ TEST_F(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
   EXPECT_LT((H_drake - H).norm(), 1e-8);
 }
 
-TEST_F(TestLogBarrierSolvers, TestSolve) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+TEST_P(TestLogBarrierSolvers, TestSolve) {
+  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
+  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
   // TODO: also compare with MOSEK.
   VectorXd v_star_pyramid, v_star_icecream;
   solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_,
@@ -101,9 +106,9 @@ TEST_F(TestLogBarrierSolvers, TestSolve) {
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);
 }
 
-TEST_F(TestLogBarrierSolvers, TestMultipleStepNewton) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+TEST_P(TestLogBarrierSolvers, TestMultipleStepNewton) {
+  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
+  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
   solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, &v_star_pyramid);
@@ -118,9 +123,9 @@ TEST_F(TestLogBarrierSolvers, TestMultipleStepNewton) {
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);
 }
 
-TEST_F(TestLogBarrierSolvers, TestGradientDescent) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+TEST_P(TestLogBarrierSolvers, TestGradientDescent) {
+  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
+  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
   solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, &v_star_pyramid);
@@ -134,6 +139,20 @@ TEST_F(TestLogBarrierSolvers, TestGradientDescent) {
                                        &v_star_icecream);
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);
 }
+
+std::vector<bool> get_test_parameters() {
+  if (drake::solvers::GurobiSolver::is_available() and
+      drake::solvers::MosekSolver::is_available()) {
+    // Test with both free and commercial solvers.
+    return {false, true};
+  }
+  // Test only with free solvers.
+  return {true};
+}
+
+INSTANTIATE_TEST_SUITE_P(LogBarrierSolver, TestLogBarrierSolvers,
+                         testing::ValuesIn(get_test_parameters()));
+
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

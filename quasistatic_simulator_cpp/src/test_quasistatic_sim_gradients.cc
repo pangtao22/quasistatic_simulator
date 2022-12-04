@@ -19,7 +19,7 @@ void SetSmallNumbersToZero(Eigen::MatrixXd &A, const double threshold = 1e-13) {
   A = (threshold < A.array().abs()).select(A, 0.);
 }
 
-class TestQuasistaticSim : public ::testing::TestWithParam<bool> {
+class TestQuasistaticSimGradients : public ::testing::TestWithParam<bool> {
 protected:
   void SetUp() override {
     const string kQModelPath =
@@ -60,7 +60,7 @@ protected:
   VectorXd q0_, u0_;
 };
 
-TEST_P(TestQuasistaticSim, TestDfDu) {
+TEST_P(TestQuasistaticSimGradients, TestDfDu) {
   params_.gradient_mode = GradientMode::kAB;
   params_.forward_mode = ForwardDynamicsMode::kSocpMp;
   q_sim_->CalcDynamics(q0_, u0_, params_);
@@ -101,14 +101,14 @@ TEST_P(TestQuasistaticSim, TestDfDu) {
 std::vector<bool> get_test_parameters() {
   if (drake::solvers::GurobiSolver::is_available() and
       drake::solvers::MosekSolver::is_available()) {
-    // Test with both free and commerical solvers.
+    // Test with both free and commercial solvers.
     return {true, false};
   }
-  // Test only
+  // Test only with free solvers.
   return {true};
 }
 
-INSTANTIATE_TEST_SUITE_P(QuasistaticDynamicsGradient, TestQuasistaticSim,
+INSTANTIATE_TEST_SUITE_P(QuasistaticSimGradients, TestQuasistaticSimGradients,
                          testing::ValuesIn(get_test_parameters()));
 
 int main(int argc, char **argv) {

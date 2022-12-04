@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "log_barrier_solver.h"
+#include "drake/solvers/gurobi_solver.h"
+#include "drake/solvers/scs_solver.h"
 
 using Eigen::Matrix3Xd;
 using Eigen::MatrixXd;
@@ -216,7 +218,7 @@ void QpLogBarrierSolver::SolvePhaseOne(
 
 QpLogBarrierSolver::QpLogBarrierSolver(bool use_free_solver) {
   if (use_free_solver) {
-    solver_ = std::make_unique<drake::solvers::OsqpSolver>();
+    solver_ = std::make_unique<drake::solvers::ScsSolver>();
   } else {
     solver_ = std::make_unique<drake::solvers::GurobiSolver>();
   }
