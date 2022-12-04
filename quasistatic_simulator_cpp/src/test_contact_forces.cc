@@ -5,6 +5,7 @@
 #include "get_model_paths.h"
 #include "quasistatic_parser.h"
 #include "quasistatic_simulator.h"
+#include "test_utilities.h"
 
 using drake::multibody::ModelInstanceIndex;
 using Eigen::MatrixXd;
@@ -15,7 +16,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-class TestContactForces : public ::testing::Test {
+class TestContactForces : public ::testing::TestWithParam<bool> {
 protected:
   void SetUp() override {
     const string kQModelPath =
@@ -27,6 +28,7 @@ protected:
     params_.is_quasi_dynamic = true;
     // So that contact between the small ball and the big ball is ignored.
     params_.contact_detection_tolerance = 0.1;
+    params_.use_free_solvers = GetParam();
 
     const string robot_name("sphere_xyz_actuated");
     const string object_name("sphere_xyz");
@@ -52,7 +54,7 @@ protected:
   VectorXd q0_, u0_;
 };
 
-TEST_F(TestContactForces, TestNormalVsWeight) {
+TEST_P(TestContactForces, TestNormalVsWeight) {
   // Contact force using QP dynamics.
   params_.nd_per_contact = 4;
   params_.forward_mode = ForwardDynamicsMode::kQpMp;
@@ -96,6 +98,10 @@ TEST_F(TestContactForces, TestNormalVsWeight) {
   // The object's contact force should balance its weight.
   EXPECT_LT((f_Obj_W + tau_ext_dict[model_o_]).norm(), 1e-8);
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    ContactForces, TestContactForces,
+    testing::ValuesIn(qsim::test::get_use_free_solvers_values()));
 
 // TODO: test the alignment of sliding direction vs force direction in SOCP.
 

@@ -6,6 +6,7 @@
 
 #include "get_model_paths.h"
 #include "quasistatic_parser.h"
+#include "test_utilities.h"
 
 using drake::multibody::ModelInstanceIndex;
 using Eigen::MatrixXd;
@@ -21,12 +22,13 @@ MatrixXd CreateRandomMatrix(int n_rows, int n_cols, std::mt19937 &gen) {
   return MatrixXd::NullaryExpr(n_rows, n_cols, [&]() { return dis(gen); });
 }
 
-class TestBatchQuasistaticSimulator : public ::testing::Test {
+class TestBatchQuasistaticSimulator : public ::testing::TestWithParam<bool> {
 protected:
   void SetUp() override {
     // Make sure that n_tasks_ is not divisible by hardware_concurrency.
-    n_tasks_ = std::thread::hardware_concurrency() * 10 + 1;
+    n_tasks_ = std::thread::hardware_concurrency() * 2 + 1;
     sim_params_ = {};
+    sim_params_.use_free_solvers = GetParam();
   }
 
   // TODO: simplify these setup functions with QuasistaticParser.
@@ -154,7 +156,7 @@ protected:
   std::unique_ptr<BatchQuasistaticSimulator> q_sim_batch_;
 };
 
-TEST_F(TestBatchQuasistaticSimulator, TestForwardDynamicsPlanarHand) {
+TEST_P(TestBatchQuasistaticSimulator, TestForwardDynamicsPlanarHand) {
   SetUpPlanarHand();
   auto [x_next_batch_parallel, A_batch_parallel, B_batch_parallel,
         is_valid_batch_parallel] =
@@ -178,13 +180,16 @@ TEST_F(TestBatchQuasistaticSimulator, TestForwardDynamicsPlanarHand) {
   EXPECT_EQ(B_batch_serial.size(), 0);
 }
 
-TEST_F(TestBatchQuasistaticSimulator, TestForwardDynamicsAllegroHand) {
+TEST_P(TestBatchQuasistaticSimulator, TestForwardDynamicsAllegroHand) {
   SetUpAllegroHand();
   std::vector<ForwardDynamicsMode> forward_modes_to_test = {
       ForwardDynamicsMode::kQpMp, ForwardDynamicsMode::kSocpMp,
       ForwardDynamicsMode::kLogPyramidMp, ForwardDynamicsMode::kLogPyramidMy,
       ForwardDynamicsMode::kLogIcecream};
   std::vector<double> tol = {1e-6, 1e-6, 1e-6, 1e-5, 1e-5};
+  if (sim_params_.use_free_solvers) {
+    tol = {2e-5, 2e-5, 2e-5, 2e-5, 2e-5};
+  }
 
   int i = 0;
   for (const auto forward_mode : forward_modes_to_test) {
@@ -213,7 +218,7 @@ TEST_F(TestBatchQuasistaticSimulator, TestForwardDynamicsAllegroHand) {
   }
 }
 
-TEST_F(TestBatchQuasistaticSimulator, TestGradientPlanarHand) {
+TEST_P(TestBatchQuasistaticSimulator, TestGradientPlanarHand) {
   SetUpPlanarHand();
   sim_params_.gradient_mode = GradientMode::kAB;
 
@@ -235,10 +240,10 @@ TEST_F(TestBatchQuasistaticSimulator, TestGradientPlanarHand) {
   CompareMatrices(B_batch_parallel, B_batch_serial, 1e-6);
 
   // A.
-  CompareMatrices(A_batch_parallel, A_batch_serial, 2e-5);
+  CompareMatrices(A_batch_parallel, A_batch_serial, 5e-5);
 }
 
-TEST_F(TestBatchQuasistaticSimulator, TestGradientAllegroHand) {
+TEST_P(TestBatchQuasistaticSimulator, TestGradientAllegroHand) {
   SetUpAllegroHand();
   sim_params_.gradient_mode = GradientMode::kAB;
 
@@ -269,7 +274,7 @@ TEST_F(TestBatchQuasistaticSimulator, TestGradientAllegroHand) {
  * The goal is to ensure that the outcomes of these two functions are the
  * same given the same seed for the random number generator.
  */
-TEST_F(TestBatchQuasistaticSimulator, TestBundledBTrj) {
+TEST_P(TestBatchQuasistaticSimulator, TestBundledBTrj) {
   SetUpPlanarHand();
 
   const int T = 50;
@@ -293,11 +298,17 @@ TEST_F(TestBatchQuasistaticSimulator, TestBundledBTrj) {
                                                sim_params_, n_samples, seed);
   auto B_bundled2 = q_sim_batch_->CalcBundledBTrjDirect(
       x_trj.topRows(T), u_trj, 0.1, sim_params_, n_samples, seed);
+
+  const double tol = sim_params_.use_free_solvers? 1e-8 : 1e-10;
   for (int i = 0; i < T; i++) {
     double err = (B_bundled1[i] - B_bundled2[i]).norm();
-    EXPECT_LT(err, 1e-10);
+    EXPECT_LT(err, tol);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    BatchQuasistaticSimulator, TestBatchQuasistaticSimulator,
+    testing::ValuesIn(qsim::test::get_use_free_solvers_values()));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

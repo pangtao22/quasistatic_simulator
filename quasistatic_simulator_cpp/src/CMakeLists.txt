@@ -76,18 +76,21 @@ target_link_libraries(run_allegro_hand_jacobian quasistatic_simulator)
 add_executable(run_allegro_hand_A run_allegro_hand_A.cc)
 target_link_libraries(run_allegro_hand_A quasistatic_simulator)
 
+add_library(test_utilities test_utilities.h test_utilites.cc)
+target_link_libraries(test_utilities drake::drake)
+
 add_executable(test_batch_simulator test_batch_simulator.cc)
-target_link_libraries(test_batch_simulator quasistatic_simulator gtest)
+target_link_libraries(test_batch_simulator quasistatic_simulator gtest test_utilities)
 
 add_executable(test_log_barrier_solver test_log_barrier_solver.cc)
-target_link_libraries(test_log_barrier_solver log_barrier_solver gtest)
+target_link_libraries(test_log_barrier_solver log_barrier_solver gtest test_utilities)
 
 add_executable(test_contact_forces test_contact_forces.cc)
-target_link_libraries(test_contact_forces quasistatic_simulator gtest)
+target_link_libraries(test_contact_forces quasistatic_simulator gtest test_utilities)
 
 add_executable(test_quasistatic_sim_gradients test_quasistatic_sim_gradients.cc)
 target_link_libraries(test_quasistatic_sim_gradients
-        quasistatic_simulator gtest)
+        quasistatic_simulator gtest test_utilities)
 
 add_test(NAME test_batch_simulator COMMAND test_batch_simulator)
 add_test(NAME test_log_barrier_solver COMMAND test_log_barrier_solver)

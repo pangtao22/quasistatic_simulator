@@ -5,6 +5,7 @@
 #include "drake/solvers/mosek_solver.h"
 
 #include "log_barrier_solver.h"
+#include "test_utilities.h"
 
 using drake::AutoDiffXd;
 using Eigen::MatrixXd;
@@ -140,19 +141,9 @@ TEST_P(TestLogBarrierSolvers, TestGradientDescent) {
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);
 }
 
-std::vector<bool> get_test_parameters() {
-  if (drake::solvers::GurobiSolver::is_available() and
-      drake::solvers::MosekSolver::is_available()) {
-    // Test with both free and commercial solvers.
-    return {false, true};
-  }
-  // Test only with free solvers.
-  return {true};
-}
-
-INSTANTIATE_TEST_SUITE_P(LogBarrierSolver, TestLogBarrierSolvers,
-                         testing::ValuesIn(get_test_parameters()));
-
+INSTANTIATE_TEST_SUITE_P(
+    LogBarrierSolver, TestLogBarrierSolvers,
+    testing::ValuesIn(qsim::test::get_use_free_solvers_values()));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

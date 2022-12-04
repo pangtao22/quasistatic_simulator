@@ -5,6 +5,7 @@
 #include "finite_differencing_gradient.h"
 #include "get_model_paths.h"
 #include "quasistatic_parser.h"
+#include "test_utilities.h"
 
 using drake::multibody::ModelInstanceIndex;
 using Eigen::MatrixXd;
@@ -87,8 +88,8 @@ TEST_P(TestQuasistaticSimGradients, TestDfDu) {
   EXPECT_LT((A_analytic_socp - A_numerical).norm(), 18);
   EXPECT_LT((A_analytic_qp - A_numerical).norm(), 16);
   EXPECT_LT((B_analytic_socp - B_analytic_qp).norm(), 1.5);
-  EXPECT_LT((B_analytic_socp - B_numerical).norm(), 1);
-  EXPECT_LT((B_analytic_qp - B_numerical).norm(), 1);
+  EXPECT_LT((B_analytic_socp - B_numerical).norm(), 2);
+  EXPECT_LT((B_analytic_qp - B_numerical).norm(), 2);
 
   cout << "Norm diff A " << (A_analytic_socp - A_analytic_qp).norm() << endl;
   cout << "Norm diff A2 " << (A_analytic_socp - A_numerical).norm() << endl;
@@ -98,18 +99,9 @@ TEST_P(TestQuasistaticSimGradients, TestDfDu) {
   cout << "Norm diff B3 " << (B_analytic_qp - B_numerical).norm() << endl;
 }
 
-std::vector<bool> get_test_parameters() {
-  if (drake::solvers::GurobiSolver::is_available() and
-      drake::solvers::MosekSolver::is_available()) {
-    // Test with both free and commercial solvers.
-    return {true, false};
-  }
-  // Test only with free solvers.
-  return {true};
-}
-
-INSTANTIATE_TEST_SUITE_P(QuasistaticSimGradients, TestQuasistaticSimGradients,
-                         testing::ValuesIn(get_test_parameters()));
+INSTANTIATE_TEST_SUITE_P(
+    QuasistaticSimGradients, TestQuasistaticSimGradients,
+    testing::ValuesIn(qsim::test::get_use_free_solvers_values()));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
