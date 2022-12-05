@@ -1,4 +1,4 @@
-FROM robotlocomotion/drake:focal
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && yes "Y" \
@@ -7,6 +7,9 @@ RUN apt-get update && yes "Y" \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
+ENV DRAKE_URL=https://drake-packages.csail.mit.edu/drake/nightly/drake-latest-focal.tar.gz
+RUN curl -o drake.tar.gz $DRAKE_URL
+RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
 RUN apt-get update \
   && yes "Y" | bash /opt/drake/share/drake/setup/install_prereqs \
   && rm -rf /var/lib/apt/lists/* \
@@ -30,4 +33,4 @@ COPY quasistatic_simulator_cpp/ $QSIM_CPP_PATH/
 RUN /tmp/build_bindings.sh
 
 # put qsim_cpp on the python path.
-ENV PYTHONPATH /quasistatic_simulator_cpp/build/src:$PYTHONPATH
+ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
