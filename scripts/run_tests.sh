@@ -5,4 +5,5 @@ set -euxo pipefail
 python3 /github/workspace/qsim/tests/proof_of_life.py
 
 # run C++ tests
-ctest -V $QSIM_CPP_PATH/build
+cd $QSIM_CPP_PATH/build
+ctest -V .
