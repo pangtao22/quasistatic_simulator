@@ -1,0 +1,11 @@
+directives:
+- add_directives:
+    file: package://quasistatic_simulator/ground.yml
+
+- add_model:
+    name: iiwa
+    file: package://quasistatic_simulator/iiwa14_sphere_collision_push.sdf
+
+- add_weld:
+    parent: world
+    child: iiwa::iiwa_link_0
