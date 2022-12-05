@@ -13,6 +13,11 @@ Some interactive animations generated using the code in this repo can be found i
 
 
 ## Docker
+Remember to check out submodules before building the docker images.
+```
+git submodule update --init --recursive
+```
+
 In the root of this repo, to build, run
 ```
 docker build -t qsim -f focal.dockerfile .
