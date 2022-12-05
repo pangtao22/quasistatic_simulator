@@ -128,6 +128,7 @@ public:
 
   int num_actuated_dofs() const { return n_v_a_; };
   int num_unactuated_dofs() const { return n_v_u_; };
+  int num_dofs() const { return n_v_a_ + n_v_u_; };
 
   Eigen::MatrixXd get_Dq_nextDq() const { return Dq_nextDq_; };
   Eigen::MatrixXd get_Dq_nextDqa_cmd() const { return Dq_nextDqa_cmd_; };

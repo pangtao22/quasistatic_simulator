@@ -1,5 +1,6 @@
 import copy
 import warnings
+from enum import IntEnum
 from typing import List, Union, Dict
 
 import cvxpy as cp
@@ -20,7 +21,6 @@ from pydrake.all import (
     ContactVisualizer,
     StartMeshcat,
 )
-
 from pydrake.multibody.parsing import (
     Parser,
     ProcessModelDirectives,
@@ -35,19 +35,23 @@ from pydrake.multibody.plant import (
 )
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.systems.framework import DiagramBuilder
-from qsim.model_paths import add_package_paths_local
-from robotics_utilities.qp_derivatives.qp_derivatives import (
-    QpDerivativesKktActive,
-)
-
 from qsim_cpp import (
     GradientMode,
     QuasistaticSimParameters,
     ForwardDynamicsMode,
     QpLogBarrierSolver,
 )
+from robotics_utilities.qp_derivatives.qp_derivatives import (
+    QpDerivativesKktActive,
+)
+
+from qsim.model_paths import add_package_paths_local
 from .utils import calc_tangent_vectors
-from .normalization_derivatives import calc_normalization_derivatives
+
+from .meshcat_visualizer_old import MeshcatVisualizer as MeshcatVisualizerPy
+from .meshcat_visualizer_old import (
+    ConnectMeshcatVisualizer as ConnectMeshcatVisualizerPy,
+)
 
 
 class MyContactInfo:
@@ -78,6 +82,17 @@ class MyContactInfo:
         self.dC_W = dC_W
 
 
+class InternalVisualizationType(IntEnum):
+    """
+    We need to keep the python MeshcatVisualizer around, because plotly RRT
+    visualizer does not work with drake's CPP-based MeshcatVisualizer.
+    """
+
+    NoVis = 0
+    Cpp = 1
+    Python = 2
+
+
 class QuasistaticSimulator:
     def __init__(
         self,
@@ -85,7 +100,7 @@ class QuasistaticSimulator:
         robot_stiffness_dict: Dict[str, np.ndarray],
         object_sdf_paths: Dict[str, str],
         sim_params: QuasistaticSimParameters,
-        internal_vis: bool = False,
+        internal_vis: InternalVisualizationType = InternalVisualizationType.NoVis,
     ):
         """
         Assumptions:
@@ -116,7 +131,7 @@ class QuasistaticSimulator:
 
         # visualization.
         self.internal_vis = internal_vis
-        if internal_vis:
+        if internal_vis == InternalVisualizationType.Cpp:
             self.meshcat = StartMeshcat()
             self.viz = MeshcatVisualizer.AddToBuilder(
                 builder, scene_graph, self.meshcat
@@ -125,6 +140,10 @@ class QuasistaticSimulator:
             self.contact_viz = ContactVisualizer.AddToBuilder(
                 builder, plant, self.meshcat
             )
+        elif internal_vis == InternalVisualizationType.Python:
+            self.viz = ConnectMeshcatVisualizerPy(builder, scene_graph)
+            self.viz.load()
+            self.contact_viz = None
 
         diagram = builder.Build()
         self.diagram = diagram
@@ -146,9 +165,12 @@ class QuasistaticSimulator:
             self.context_meshcat = diagram.GetMutableSubsystemContext(
                 self.viz, self.context
             )
-            self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
-                self.contact_viz, self.context
-            )
+            if self.contact_viz is not None:
+                self.context_meshcat_contact = (
+                    diagram.GetMutableSubsystemContext(
+                        self.contact_viz, self.context
+                    )
+                )
 
         self.models_unactuated = object_models
         self.models_actuated = robot_models
@@ -382,16 +404,25 @@ class QuasistaticSimulator:
         }
 
     def draw_current_configuration(self, draw_forces=False):
-        # Body poses
-        self.viz.ForcedPublish(self.context_meshcat)
-
-        # Contact forces
-        if draw_forces:
-            self.contact_viz.GetInputPort("contact_results").FixValue(
-                self.context_meshcat_contact,
-                AbstractValue.Make(self.contact_results),
+        if self.internal_vis == InternalVisualizationType.NoVis:
+            raise RuntimeWarning(
+                "QuasistaticSimulator cannot draw because it does "
+                "not own a MeshcatVisualizer."
             )
-            self.contact_viz.ForcedPublish(self.context_meshcat_contact)
+        elif self.internal_vis == InternalVisualizationType.Python:
+            self.viz.DoPublish(self.context_meshcat, [])
+        else:
+            # CPP meshcat.
+            # Body poses
+            self.viz.ForcedPublish(self.context_meshcat)
+
+            # Contact forces
+            if draw_forces:
+                self.contact_viz.GetInputPort("contact_results").FixValue(
+                    self.context_meshcat_contact,
+                    AbstractValue.Make(self.contact_results),
+                )
+                self.contact_viz.ForcedPublish(self.context_meshcat_contact)
 
     def calc_tau_ext(self, easf_list: List[ExternallyAppliedSpatialForce]):
         """

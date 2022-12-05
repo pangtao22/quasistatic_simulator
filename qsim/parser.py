@@ -19,7 +19,11 @@ from qsim_cpp import (
     GradientMode,
 )
 from .model_paths import package_paths_dict, add_package_paths_local
-from .simulator import QuasistaticSimulator, QuasistaticSimParameters
+from .simulator import (
+    QuasistaticSimulator,
+    QuasistaticSimParameters,
+    InternalVisualizationType,
+)
 from .system import QuasistaticSystem, QuasistaticSystemBackend
 
 
@@ -92,7 +96,9 @@ class QuasistaticParser:
             backend=backend,
         )
 
-    def make_simulator_py(self, internal_vis: bool) -> QuasistaticSimulator:
+    def make_simulator_py(
+        self, internal_vis: InternalVisualizationType
+    ) -> QuasistaticSimulator:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulator(

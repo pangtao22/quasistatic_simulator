@@ -79,10 +79,6 @@ q_dict = {
             0.75276565,
             0.74146232,
             0.83261002,
-            0.63256269,
-            1.02378254,
-            0.64089555,
-            0.82444782,
             -0.1438725,
             0.74696812,
             0.61908827,
@@ -91,6 +87,10 @@ q_dict = {
             0.78533142,
             0.82942863,
             0.90415436,
+            0.63256269,
+            1.02378254,
+            0.64089555,
+            0.82444782,
         ]
     ),
     idx_u: np.array(
@@ -136,8 +136,8 @@ dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
 #%%
 # quaternion derivatives
-dqdu_numerical = dfdu_numerical[-7:-3]
-dqdu_analytic = dfdu_active[-7:-3]
+dqdu_numerical = dfdu_numerical[-7:]
+dqdu_analytic = dfdu_active[-7:]
 
 print("dqdu numerical norm", np.linalg.norm(dqdu_numerical))
 print("dqdu analytic norm", np.linalg.norm(dqdu_analytic))

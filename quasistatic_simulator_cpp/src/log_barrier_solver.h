@@ -1,10 +1,8 @@
 #pragma once
 #include <Eigen/Dense>
 
-#include "drake/solvers/gurobi_solver.h"
-#include "drake/solvers/osqp_solver.h"
-#include "drake/solvers/scs_solver.h"
 #include "drake/solvers/mathematical_program.h"
+#include "drake/solvers/solver_base.h"
 
 class LogBarrierSolver {
 public:

@@ -14,11 +14,8 @@ std::filesystem::path GetQsimModelsPath() {
 
 std::filesystem::path GetRoboticsUtilitiesModelsPath() {
   static auto file_path = path(__FILE__);
-  static auto py_package_path =
-      file_path.parent_path() / path("../../..");
-  static auto robo_util_models_path = py_package_path /
-                                      path("robotics_utilities_pang") /
-                                      path("robotics_utilities/models");
+  static auto robo_util_models_path =
+      file_path.parent_path() / path("../../robotics_utilities/models");
   return robo_util_models_path;
 }
 

@@ -43,7 +43,7 @@ static const std::unordered_set<ForwardDynamicsMode> kPyramidModes{
     ForwardDynamicsMode::kLogPyramidMy};
 
 static const std::unordered_set<ForwardDynamicsMode> kIcecreamModes{
-  ForwardDynamicsMode::kSocpMp, ForwardDynamicsMode::kLogIcecream};
+    ForwardDynamicsMode::kSocpMp, ForwardDynamicsMode::kLogIcecream};
 
 /*
 h: simulation time step in seconds.
