@@ -25,6 +25,7 @@ ENV QSIM_PATH /quasistatic_simulator
 ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
 COPY scripts/build_bindings.sh /tmp/
 COPY models $QSIM_PATH/models/
+COPY robotics_utilities $QSIM_PATH/robotics_utilities
 COPY quasistatic_simulator_cpp/ $QSIM_CPP_PATH/
 RUN /tmp/build_bindings.sh
 
