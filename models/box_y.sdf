@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
   <!-- Note:
-       This file defines the model for a box with two degrees of freedom
+       This file defines the model for a box with one degree of freedom
        (DOFs): a) one DOF for the horizontal motion along the y axis and
-       b) one DOF for the vertical motion along the z axis.
+
        To this end, this model defines a small "ghost body" between
        the box and the world so that we can attach two prismatic joints for
        these two DOFs. The ghost body has negligible mass.
   -->
-  <model name="sphere_y">
+  <model name="box_y">
     <!-- The y slider will have an actuator with a corresponding input port
          in our MultibodyPlant model so that we can apply an external force.
     -->
