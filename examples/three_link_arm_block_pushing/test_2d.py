@@ -2,21 +2,27 @@ import unittest
 from .run_3link_arm_pushing_2d import *
 from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
+from qsim.utils import is_mosek_gurobi_available
+
 
 class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
         self.q_parser = QuasistaticParser(
             os.path.join(models_dir, q_model_path_2d)
         )
-        self.q_parser.set_sim_params(h=h_quasistatic)
+        self.q_parser.set_sim_params(
+            h=h_quasistatic,
+            use_free_solvers=not is_mosek_gurobi_available(),
+        )
 
     def test_python_vs_cpp(self):
+        atol = 1e-3 if self.q_parser.q_sim_params.use_free_solvers else 1e-6
         compare_q_sim_cpp_vs_py(
             test_case=self,
             q_parser=self.q_parser,
             q_a_traj_dict_str={robot_name: q_robot_traj},
             q0_dict_str=q0_dict_str,
-            atol=1e-6,
+            atol=atol,
         )
 
     def test_mbp_vs_quasistatic(self):

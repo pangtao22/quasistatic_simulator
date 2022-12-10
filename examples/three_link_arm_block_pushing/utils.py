@@ -17,6 +17,9 @@ from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
 
+from qsim.utils import is_mosek_gurobi_available
+
+
 # Simulation parameters.
 q_model_path_2d = "q_sys/3_link_arm_2d_box.yml"
 q_model_path_3d = "q_sys/3_link_arm_3d_box.yml"
@@ -61,7 +64,10 @@ def run_mbp_quasistatic_comparison(
     q_parser = QuasistaticParser(
         os.path.join(models_dir, quasistatic_model_path)
     )
-    q_parser.set_sim_params(h=h_quasistatic)
+    q_parser.set_sim_params(
+        h=h_quasistatic,
+        use_free_solvers=not is_mosek_gurobi_available(),
+    )
 
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(

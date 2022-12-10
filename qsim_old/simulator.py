@@ -6,10 +6,8 @@ import meshcat
 
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.gurobi import GurobiSolver
+from pydrake.all import OsqpSolver
 
-#
-# # from problem_definition_pinch import *
-# from q_sim_old.problem_definition_graze import *
 from qsim_old.meshcat_camera_utils import SetOrthographicCameraXY
 
 
@@ -27,8 +25,11 @@ class QuasistaticSimulator:
     def __init__(
         self, problem_definition: Dict, visualize=False, is_quasi_dynamic=False
     ):
-        self.solver = GurobiSolver()
-        assert self.solver.available()
+        solver_grb = GurobiSolver()
+        if solver_grb.available():
+            self.solver = solver_grb
+        else:
+            self.solver = OsqpSolver()
 
         self.n_u = problem_definition["n_u"]
         self.n_a = problem_definition["n_a"]

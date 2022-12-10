@@ -20,6 +20,8 @@ from pydrake.all import (
     MeshcatVisualizer,
     ContactVisualizer,
     StartMeshcat,
+    OsqpSolver,
+    ScsSolver,
 )
 from pydrake.multibody.parsing import (
     Parser,
@@ -46,9 +48,8 @@ from robotics_utilities.qp_derivatives.qp_derivatives import (
 )
 
 from qsim.model_paths import add_package_paths_local
-from .utils import calc_tangent_vectors
+from .utils import calc_tangent_vectors, is_mosek_gurobi_available
 
-from .meshcat_visualizer_old import MeshcatVisualizer as MeshcatVisualizerPy
 from .meshcat_visualizer_old import (
     ConnectMeshcatVisualizer as ConnectMeshcatVisualizerPy,
 )
@@ -233,8 +234,13 @@ class QuasistaticSimulator:
             self.is_3d_floating[model] = False
 
         # solver
-        self.solver_grb = GurobiSolver()
-        self.solver_msk = MosekSolver()
+        if is_mosek_gurobi_available():
+            self.solver_qp = GurobiSolver()
+            self.solver_cone = MosekSolver()
+        else:
+            self.solver_qp = OsqpSolver()
+            self.solver_cone = ScsSolver()
+
         self.solver_qp_log = QpLogBarrierSolver()
         self.options_grb = SolverOptions()
         self.options_grb.SetOption(GurobiSolver.id(), "QCPDual", 1)
@@ -954,7 +960,7 @@ class QuasistaticSimulator:
             A=-J, lb=np.full_like(phi_constraints, -np.inf), ub=e, vars=v
         )
 
-        result = self.solver_grb.Solve(prog, None, self.options_grb)
+        result = self.solver_qp.Solve(prog, None, self.options_grb)
         # self.optimizer_time_log.append(
         #     result.get_solver_details().optimizer_time)
         assert result.is_success()
@@ -1030,7 +1036,7 @@ class QuasistaticSimulator:
                 A=A, b=b, vars=np.hstack([v, [s[i]]])
             )
 
-        result = self.solver_msk.Solve(prog, None, None)
+        result = self.solver_cone.Solve(prog, None, None)
         assert result.is_success()
 
         # extract v_h from vector into a dictionary.
@@ -1259,7 +1265,8 @@ class QuasistaticSimulator:
         #  difference between numerical and analytic derivatives. Find out why.
         self.step_configuration(q_dict, dq_dict, unactuated_mass_scale)
         self.update_mbp_positions(q_dict)
-        self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
+        if hasattr(ContactResults, "AddContactInfo"):
+            self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
 
         # Gradients.
         """

@@ -5,7 +5,7 @@ import cvxpy as cp
 
 from qsim_cpp import SocpDerivatives
 
-from pydrake.all import MathematicalProgram, MosekSolver
+from pydrake.all import MathematicalProgram, MosekSolver, ScsSolver
 
 
 class TestSocpDerivativesCpp(unittest.TestCase):
@@ -75,7 +75,9 @@ class TestSocpDerivativesCpp(unittest.TestCase):
         # Formulate and solve the same cone program with MOSEK.
         n_z = self.n_z
         m = self.m
-        solver_mosek = MosekSolver()
+        solver = MosekSolver()
+        if not solver.enabled():
+            solver = ScsSolver()
         prog = MathematicalProgram()
         z_mp = prog.NewContinuousVariables(n_z, "z")
 
@@ -87,7 +89,7 @@ class TestSocpDerivativesCpp(unittest.TestCase):
         ]
 
         prog.AddLinearCost(self.b_cvx.value, z_mp)
-        result = solver_mosek.Solve(prog, None, None)
+        result = solver.Solve(prog, None, None)
 
         self.assertTrue(result.is_success())
 
@@ -110,7 +112,8 @@ class TestSocpDerivativesCpp(unittest.TestCase):
         )
 
         # DzDb
-        np.testing.assert_allclose(self.DzDb, d_socp.get_DzDb(), atol=1e-5)
+        atol = 1e-4 if isinstance(solver, ScsSolver) else 1e-5
+        np.testing.assert_allclose(self.DzDb, d_socp.get_DzDb(), atol=atol)
 
         # DzDe
         n_c = len(self.J_cvx)
