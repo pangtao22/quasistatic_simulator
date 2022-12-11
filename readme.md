@@ -1,4 +1,4 @@
-# Quasistatic Simulator
+# Quasi-static Simulator
 ![ci_badge](https://github.com/pangtao22/quasistatic_simulator/actions/workflows/ci.yml/badge.svg)
 
 ![](/media/planar_hand.gif) ![](/media/allegro_hand_ball.gif) ![](/media/allegro_hand_door.gif)
