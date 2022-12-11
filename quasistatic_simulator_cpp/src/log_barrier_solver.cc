@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "log_barrier_solver.h"
 #include "drake/solvers/gurobi_solver.h"
 #include "drake/solvers/scs_solver.h"
+#include "log_barrier_solver.h"
 
 using Eigen::Matrix3Xd;
 using Eigen::MatrixXd;
@@ -11,7 +11,11 @@ using Eigen::VectorXd;
 using std::cout;
 using std::endl;
 
-double LogBarrierSolver::BackStepLineSearch(
+LogBarrierSolverBase::LogBarrierSolverBase()
+    : solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
+      solver_grb_(std::make_unique<drake::solvers::ScsSolver>()) {}
+
+double LogBarrierSolverBase::BackStepLineSearch(
     const Eigen::Ref<const Eigen::MatrixXd> &Q,
     const Eigen::Ref<const Eigen::VectorXd> &b,
     const Eigen::Ref<const Eigen::MatrixXd> &G,
@@ -43,11 +47,10 @@ double LogBarrierSolver::BackStepLineSearch(
     throw std::runtime_error(msg.str());
   }
 
-  // cout << "t " << t << endl;
   return t;
 }
 
-void LogBarrierSolver::SolveOneNewtonStep(
+void LogBarrierSolverBase::SolveOneNewtonStep(
     const Eigen::Ref<const Eigen::MatrixXd> &Q,
     const Eigen::Ref<const Eigen::VectorXd> &b,
     const Eigen::Ref<const Eigen::MatrixXd> &G,
@@ -68,11 +71,6 @@ void LogBarrierSolver::SolveOneNewtonStep(
       converged = true;
       break;
     }
-    //    cout << "------------------------------------------" << endl;
-    //    cout << "Iter " << n_iters << endl;
-    //    cout << "H\n" << H << endl;
-    //    cout << "dv: " << dv.transpose() << endl;
-    //    cout << "v: " << v.transpose() << endl;
     double t;
     try {
       t = BackStepLineSearch(Q, b, G, e, *v_star_ptr, dv, Df, kappa);
@@ -94,7 +92,7 @@ void LogBarrierSolver::SolveOneNewtonStep(
   }
 }
 
-void LogBarrierSolver::SolveMultipleNewtonSteps(
+void LogBarrierSolverBase::SolveMultipleNewtonSteps(
     const Eigen::Ref<const Eigen::MatrixXd> &Q,
     const Eigen::Ref<const Eigen::VectorXd> &b,
     const Eigen::Ref<const Eigen::MatrixXd> &G,
@@ -110,7 +108,7 @@ void LogBarrierSolver::SolveMultipleNewtonSteps(
   }
 }
 
-void LogBarrierSolver::SolveGradientDescent(
+void LogBarrierSolverBase::SolveGradientDescent(
     const Eigen::Ref<const Eigen::MatrixXd> &Q,
     const Eigen::Ref<const Eigen::VectorXd> &b,
     const Eigen::Ref<const Eigen::MatrixXd> &G,
@@ -150,14 +148,15 @@ void LogBarrierSolver::SolveGradientDescent(
   }
 }
 
-void LogBarrierSolver::Solve(const Eigen::Ref<const Eigen::MatrixXd> &Q,
-                             const Eigen::Ref<const Eigen::VectorXd> &b,
-                             const Eigen::Ref<const Eigen::MatrixXd> &G,
-                             const Eigen::Ref<const Eigen::VectorXd> &e,
-                             double kappa_max,
-                             Eigen::VectorXd *v_star_ptr) const {
+void LogBarrierSolverBase::Solve(const Eigen::Ref<const Eigen::MatrixXd> &Q,
+                                 const Eigen::Ref<const Eigen::VectorXd> &b,
+                                 const Eigen::Ref<const Eigen::MatrixXd> &G,
+                                 const Eigen::Ref<const Eigen::VectorXd> &e,
+                                 const double kappa_max,
+                                 const bool use_free_solver,
+                                 Eigen::VectorXd *v_star_ptr) const {
   VectorXd v(Q.rows());
-  SolvePhaseOne(G, e, &v);
+  SolvePhaseOne(G, e, use_free_solver, &v);
 
   try {
     SolveOneNewtonStep(Q, b, G, e, kappa_max, &v);
@@ -168,7 +167,7 @@ void LogBarrierSolver::Solve(const Eigen::Ref<const Eigen::MatrixXd> &Q,
   *v_star_ptr = v;
 }
 
-void LogBarrierSolver::GetPhaseOneSolution(
+void LogBarrierSolverBase::GetPhaseOneSolution(
     const drake::solvers::VectorXDecisionVariable &v,
     const drake::solvers::DecisionVariable &s,
     drake::EigenPtr<Eigen::VectorXd> v0_ptr) const {
@@ -187,9 +186,17 @@ void LogBarrierSolver::GetPhaseOneSolution(
   *v0_ptr = mp_result_.GetSolution(v);
 }
 
+drake::solvers::SolverBase *
+LogBarrierSolverBase::get_solver(bool use_free_solver) const {
+  if (use_free_solver) {
+    return solver_scs_.get();
+  }
+  return solver_grb_.get();
+}
+
 void QpLogBarrierSolver::SolvePhaseOne(
     const Eigen::Ref<const Eigen::MatrixXd> &G,
-    const Eigen::Ref<const Eigen::VectorXd> &e,
+    const Eigen::Ref<const Eigen::VectorXd> &e, const bool use_free_solver,
     drake::EigenPtr<Eigen::VectorXd> v0_ptr) const {
   const auto n_f = G.rows();
   const auto n_v = G.cols();
@@ -211,18 +218,11 @@ void QpLogBarrierSolver::SolvePhaseOne(
       v_s);
   prog.AddBoundingBoxConstraint(-1, 1, v);
 
-  solver_->Solve(prog, {}, {}, &mp_result_);
+  get_solver(use_free_solver)->Solve(prog, {}, {}, &mp_result_);
   GetPhaseOneSolution(v, s, v0_ptr);
 }
 
-
-QpLogBarrierSolver::QpLogBarrierSolver(bool use_free_solver) {
-  if (use_free_solver) {
-    solver_ = std::make_unique<drake::solvers::ScsSolver>();
-  } else {
-    solver_ = std::make_unique<drake::solvers::GurobiSolver>();
-  }
-}
+QpLogBarrierSolver::QpLogBarrierSolver() : LogBarrierSolverBase() {}
 
 double
 QpLogBarrierSolver::CalcF(const Eigen::Ref<const Eigen::MatrixXd> &Q,
@@ -262,17 +262,11 @@ void QpLogBarrierSolver::CalcGradientAndHessian(
   }
 }
 
-SocpLogBarrierSolver::SocpLogBarrierSolver(bool use_free_solver) {
-  if (use_free_solver) {
-    solver_ = std::make_unique<drake::solvers::ScsSolver>();
-  } else {
-    solver_ = std::make_unique<drake::solvers::GurobiSolver>();
-  }
-}
+SocpLogBarrierSolver::SocpLogBarrierSolver() : LogBarrierSolverBase() {}
 
 void SocpLogBarrierSolver::SolvePhaseOne(
     const Eigen::Ref<const Eigen::MatrixXd> &G,
-    const Eigen::Ref<const Eigen::VectorXd> &e,
+    const Eigen::Ref<const Eigen::VectorXd> &e, const bool use_free_solver,
     drake::EigenPtr<Eigen::VectorXd> v0_ptr) const {
   const auto n_c = G.rows() / 3;
   const auto n_v = G.cols();
@@ -296,7 +290,7 @@ void SocpLogBarrierSolver::SolvePhaseOne(
 
   prog.AddBoundingBoxConstraint(-1, 1, v);
 
-  solver_->Solve(prog, {}, {}, &mp_result_);
+  get_solver(use_free_solver)->Solve(prog, {}, {}, &mp_result_);
   GetPhaseOneSolution(v, s, v0_ptr);
 }
 

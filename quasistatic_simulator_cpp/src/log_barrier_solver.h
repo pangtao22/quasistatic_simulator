@@ -4,10 +4,12 @@
 #include "drake/solvers/mathematical_program.h"
 #include "drake/solvers/solver_base.h"
 
-class LogBarrierSolver {
+class LogBarrierSolverBase {
 public:
+  LogBarrierSolverBase();
   virtual void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd> &G,
                              const Eigen::Ref<const Eigen::VectorXd> &e,
+                             const bool use_free_solver,
                              drake::EigenPtr<Eigen::VectorXd> v0_ptr) const = 0;
 
   virtual double CalcF(const Eigen::Ref<const Eigen::MatrixXd> &Q,
@@ -33,7 +35,9 @@ public:
   void Solve(const Eigen::Ref<const Eigen::MatrixXd> &Q,
              const Eigen::Ref<const Eigen::VectorXd> &b,
              const Eigen::Ref<const Eigen::MatrixXd> &G,
-             const Eigen::Ref<const Eigen::VectorXd> &e, double kappa_max,
+             const Eigen::Ref<const Eigen::VectorXd> &e,
+             const double kappa_max,
+             const bool use_free_solver,
              Eigen::VectorXd *v_star_ptr) const;
 
   /*
@@ -78,7 +82,10 @@ public:
   const Eigen::LLT<Eigen::MatrixXd> &get_H_llt() const { return H_llt_; };
 
 protected:
-  std::unique_ptr<drake::solvers::SolverBase> solver_;
+  drake::solvers::SolverBase* get_solver(bool use_free_solver) const;
+
+  std::unique_ptr<drake::solvers::SolverBase> solver_grb_;
+  std::unique_ptr<drake::solvers::SolverBase> solver_scs_;
   mutable drake::solvers::MathematicalProgramResult mp_result_;
 
   // Hyperparameters for line search.
@@ -111,11 +118,12 @@ private:
  *  s.t. G * v - e <= s.
  * The QP is feasible if s < 0.
  */
-class QpLogBarrierSolver : public LogBarrierSolver {
+class QpLogBarrierSolver : public LogBarrierSolverBase {
 public:
-  explicit QpLogBarrierSolver(bool use_free_solver = false);
+  QpLogBarrierSolver();
   void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd> &G,
                      const Eigen::Ref<const Eigen::VectorXd> &e,
+                     const bool use_free_solver,
                      drake::EigenPtr<Eigen::VectorXd> v0_ptr) const override;
 
   /*
@@ -157,11 +165,12 @@ public:
  * where sum_log refers to taking the log of every entry in a vector and then
  * summing them; kappa is the log barrier weight.
  */
-class SocpLogBarrierSolver : public LogBarrierSolver {
+class SocpLogBarrierSolver : public LogBarrierSolverBase {
 public:
-  explicit SocpLogBarrierSolver(bool use_free_solver = false);
+  SocpLogBarrierSolver();
   void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd> &G,
                      const Eigen::Ref<const Eigen::VectorXd> &e,
+                     const bool use_free_solver,
                      drake::EigenPtr<Eigen::VectorXd> v0_ptr) const override;
 
   /*
