@@ -3,15 +3,17 @@
 
 ![](/media/planar_hand.gif) ![](/media/allegro_hand_ball.gif) ![](/media/allegro_hand_door.gif)
 
-Implementation of the paper ["A Convex Quasistatic Time-stepping Scheme for Rigid Multibody Systems with Contact and Friction"](http://groups.csail.mit.edu/robotics-center/public_papers/Pang20b.pdf), published at ICRA2021. Still a work in progress, but many (>=8) unit tests are passing using the latest version of [Drake](https://drake.mit.edu). 
+This repo provides an implementation of a differentiable, convex and quasi-static dynamics model which is effective for contact-rich manipulation planning. The dynamics formulation is described in 
+- Section 3 of [Global Planning for Contact-Rich Manipulation via
+Local Smoothing of Quasi-dynamic Contact Models](https://arxiv.org/abs/2206.10787), currently under review.
+- [A Convex Quasistatic Time-stepping Scheme for Rigid Multibody Systems with Contact and Friction](http://groups.csail.mit.edu/robotics-center/public_papers/Pang20b.pdf), ICRA2021.
 
-Some interactive animations generated using the code in this repo can be found in [this slide deck](https://slides.com/pang/deck-28a801).
+Additional interactive animations generated using the code in this repo can be found in [this slide deck](https://slides.com/pang/deck-28a801).
 
 ## Dependencies
 - Drake **built with Gurobi and Mosek**. Free solvers (OSQP + SCS) also work, but SCS is a lot slower than Mosek for solving SOCPs.
-- In addition to what's in `requirements.txt`, here are two repos that I'll need to include as submodules, but now need to be put manually on `PYTHONPATH`:
-  - [iiwa_controller](https://github.com/pangtao22/iiwa_controller) 
-  - [manipulation](https://github.com/RussTedrake/manipulation)
+
+Note that until [this issue](https://github.com/RobotLocomotion/drake-external-examples/issues/216) is resolved, this repo can only be built in debug mode if the official version of Drake is used, which is a lot slower than release mode. A workaround is described in the issue, but requires [a custom branch of drake](https://github.com/pangtao22/drake/tree/my_main).
 
 
 ## Docker
@@ -32,8 +34,6 @@ docker run -v $PWD:"/github/workspace" --entrypoint "/github/workspace/scripts/r
 
 
 ## Running python tests
-The python tests right now depend on [a custom branch of drake](https://github.com/pangtao22/drake/tree/my_main).
-
 In the root of the repo, run 
 ```bash
 pytest .
