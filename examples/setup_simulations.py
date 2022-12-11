@@ -408,4 +408,4 @@ def compare_q_sim_cpp_vs_py(
         q_log = loggers_dict_quasistatic_str[name].data()
 
         test_case.assertEqual(q_log.shape, q_log_cpp.shape)
-        test_case.assertTrue(np.allclose(q_log, q_log_cpp, atol=atol))
+        np.testing.assert_allclose(q_log, q_log_cpp, atol=atol)

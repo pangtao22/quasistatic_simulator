@@ -85,7 +85,7 @@ TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
     H_drake.row(i) = f_value.derivatives()[i].derivatives();
   }
 
-  auto solver_log_socp = SocpLogBarrierSolver(use_free_solver_);
+  auto solver_log_socp = SocpLogBarrierSolver();
   Eigen::VectorXd Df(n_v_);
   Eigen::MatrixXd H(n_v_, n_v_);
   solver_log_socp.CalcGradientAndHessian(
@@ -96,25 +96,26 @@ TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
 }
 
 TEST_P(TestLogBarrierSolvers, TestSolve) {
-  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
-  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
+  auto solver_pyramid = QpLogBarrierSolver();
+  auto solver_icecream = SocpLogBarrierSolver();
   // TODO: also compare with MOSEK.
   VectorXd v_star_pyramid, v_star_icecream;
-  solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_,
+  solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_, 0,
                        &v_star_pyramid);
   solver_icecream.Solve(Q_, -tau_h_, -J_icecream_, phi_icecream_ / mu_ / h_,
-                        kappa_, &v_star_icecream);
+                        kappa_, use_free_solver_, &v_star_icecream);
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);
 }
 
 TEST_P(TestLogBarrierSolvers, TestMultipleStepNewton) {
-  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
-  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
+  auto solver_pyramid = QpLogBarrierSolver();
+  auto solver_icecream = SocpLogBarrierSolver();
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
-  solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, &v_star_pyramid);
+  solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, use_free_solver_,
+                               &v_star_pyramid);
   solver_icecream.SolvePhaseOne(-J_icecream_, phi_icecream_ / mu_ / h_,
-                                &v_star_icecream);
+                                use_free_solver_, &v_star_icecream);
 
   solver_pyramid.SolveMultipleNewtonSteps(
       Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_, &v_star_pyramid);
@@ -125,13 +126,14 @@ TEST_P(TestLogBarrierSolvers, TestMultipleStepNewton) {
 }
 
 TEST_P(TestLogBarrierSolvers, TestGradientDescent) {
-  auto solver_pyramid = QpLogBarrierSolver(use_free_solver_);
-  auto solver_icecream = SocpLogBarrierSolver(use_free_solver_);
+  auto solver_pyramid = QpLogBarrierSolver();
+  auto solver_icecream = SocpLogBarrierSolver();
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
-  solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, &v_star_pyramid);
+  solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, use_free_solver_,
+                               &v_star_pyramid);
   solver_icecream.SolvePhaseOne(-J_icecream_, phi_icecream_ / mu_ / h_,
-                                &v_star_icecream);
+                                use_free_solver_, &v_star_icecream);
 
   solver_pyramid.SolveGradientDescent(
       Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_, &v_star_pyramid);

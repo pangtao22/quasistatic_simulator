@@ -15,6 +15,7 @@ from qsim.simulator import (
     QuasistaticSimParameters,
     ForwardDynamicsMode,
 )
+from qsim.utils import is_mosek_gurobi_available
 
 q_model_path = os.path.join(models_dir, "q_sys", "planar_hand_ball.yml")
 
@@ -71,7 +72,9 @@ class TestPlanarHandBall(unittest.TestCase):
         # Num of time steps to simulate forward.
         self.T = int(round(2 / self.h))
         self.parser = QuasistaticParser(q_model_path)
-        # self.parser.set_sim_params(gravity=[0, 0, -10.])
+        self.parser.set_sim_params(
+            use_free_solvers=not is_mosek_gurobi_available(),
+        )
 
         self.q_sim_py = self.parser.make_simulator_py(False)
         self.q_sim_cpp = self.parser.make_simulator_cpp()
@@ -168,7 +171,7 @@ class TestPlanarHandBall(unittest.TestCase):
         sim_params.gradient_mode = GradientMode.kBOnly
 
         q_dict = {
-            self.idx_o: [0, 0.316, 0],
+            self.idx_o: [0, 0.314, 0],
             self.idx_l: [-0.775, -0.785],
             self.idx_r: [0.775, 0.785],
         }

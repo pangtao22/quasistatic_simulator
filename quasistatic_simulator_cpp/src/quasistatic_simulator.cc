@@ -89,10 +89,8 @@ QuasistaticSimulator::QuasistaticSimulator(
       solver_osqp_(std::make_unique<drake::solvers::OsqpSolver>()),
       solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()),
       solver_msk_(std::make_unique<drake::solvers::MosekSolver>()),
-      solver_log_pyramid_(
-          std::make_unique<QpLogBarrierSolver>(sim_params.use_free_solvers)),
-      solver_log_icecream_(
-          std::make_unique<SocpLogBarrierSolver>(sim_params.use_free_solvers)) {
+      solver_log_pyramid_(std::make_unique<QpLogBarrierSolver>()),
+      solver_log_icecream_(std::make_unique<SocpLogBarrierSolver>()) {
   auto builder = drake::systems::DiagramBuilder<double>();
 
   CreateMbp(&builder, model_directive_path, robot_stiffness_str,
@@ -672,7 +670,8 @@ void QuasistaticSimulator::ForwardLogPyramidInHouse(
   auto &q_dict = *q_dict_ptr;
 
   solver_log_pyramid_->Solve(Q, -tau_h, -J, phi_constraints / params.h,
-                             params.log_barrier_weight, v_star_ptr);
+                             params.log_barrier_weight, params.use_free_solvers,
+                             v_star_ptr);
 
   // Update q_dict.
   UpdateQdictFromV(*v_star_ptr, params, &q_dict);
@@ -702,7 +701,8 @@ void QuasistaticSimulator::ForwardLogIcecream(
   }
 
   solver_log_icecream_->Solve(Q, -tau_h, -J, phi_h_mu,
-                              params.log_barrier_weight, v_star_ptr);
+                              params.log_barrier_weight,
+                              params.use_free_solvers, v_star_ptr);
 
   // Update q_dict.
   UpdateQdictFromV(*v_star_ptr, params, &q_dict);

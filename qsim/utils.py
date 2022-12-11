@@ -1,5 +1,5 @@
 import numpy as np
-from pydrake.all import RotationMatrix
+from pydrake.all import RotationMatrix, GurobiSolver, MosekSolver
 
 
 def get_rotation_matrix_from_normal(normal):
@@ -35,3 +35,9 @@ def calc_tangent_vectors(normal, nd):
 
         dC = (R.dot(dC.T)).T
     return dC
+
+
+def is_mosek_gurobi_available():
+    solver_grb = GurobiSolver()
+    solver_msk = MosekSolver()
+    return solver_grb.available() and solver_msk.available()

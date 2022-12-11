@@ -4,6 +4,8 @@ from examples.iiwa_block_stacking.run_manual_quasistatic import *
 from examples.setup_simulations import run_quasistatic_sim
 from qsim.parser import QuasistaticSystemBackend
 
+from qsim.utils import is_mosek_gurobi_available
+
 
 class TestQuasistaticSystem(unittest.TestCase):
     def test_quasistatic_system(self):
@@ -52,7 +54,9 @@ class TestQuasistaticSystem(unittest.TestCase):
         # Simulation time step.
         h = 0.2
         q_parser = QuasistaticParser(q_model_path)
-        q_parser.set_sim_params(h=h)
+        q_parser.set_sim_params(
+            h=h, use_free_solvers=not is_mosek_gurobi_available()
+        )
 
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(
@@ -69,7 +73,7 @@ class TestQuasistaticSystem(unittest.TestCase):
             h=h, is_visualizing=False
         )
 
-        tolerance = 1e-6
+        tolerance = 1e-3 if q_parser.q_sim_params.use_free_solvers else 1e-6
         duraiton = t_quasistatic[-1]
         for model_name in q0_dict_str.keys():
             q_log_system = loggers_dict_systems_str[model_name].data().T

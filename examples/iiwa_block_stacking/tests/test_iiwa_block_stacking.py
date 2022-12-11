@@ -3,6 +3,8 @@ import unittest
 from examples.iiwa_block_stacking.run_mbp_vs_quasistatic import *
 from examples.setup_simulations import compare_q_sim_cpp_vs_py
 
+from qsim.utils import is_mosek_gurobi_available
+
 
 class TestIiwaBlockStacking(unittest.TestCase):
     def setUp(self) -> None:
@@ -10,13 +12,19 @@ class TestIiwaBlockStacking(unittest.TestCase):
         self.h_quasistatic = 0.1
 
     def test_cpp_vs_python(self):
-        self.q_parser.set_sim_params(h=self.h_quasistatic)
+        self.q_parser.set_sim_params(
+            h=self.h_quasistatic,
+            use_free_solvers=not is_mosek_gurobi_available(),
+        )
+        tolerance = (
+            1e-2 if self.q_parser.q_sim_params.use_free_solvers else 1e-4
+        )
         compare_q_sim_cpp_vs_py(
             test_case=self,
             q_parser=self.q_parser,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
-            atol=1e-4,
+            atol=tolerance,
         )
 
     def test_mbp_vs_quasistatic(self):

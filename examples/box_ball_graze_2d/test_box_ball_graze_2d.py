@@ -10,6 +10,7 @@ from qsim.simulator import (
     GradientMode,
 )
 from qsim.model_paths import models_dir
+from qsim.utils import is_mosek_gurobi_available
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim_old.problem_definition_graze import problem_definition
 from qsim_old.simulator import QuasistaticSimulator as QsimOld
@@ -20,6 +21,9 @@ class TestBoxBallGraze(unittest.TestCase):
         self.h = problem_definition["h"]
         self.parser = QuasistaticParser(
             os.path.join(models_dir, "q_sys", "ball_grazing_2d.yml")
+        )
+        self.parser.set_sim_params(
+            use_free_solvers=not is_mosek_gurobi_available()
         )
 
     def test_old_vs_new(self):
