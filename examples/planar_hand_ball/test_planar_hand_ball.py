@@ -73,7 +73,7 @@ class TestPlanarHandBall(unittest.TestCase):
         self.T = int(round(2 / self.h))
         self.parser = QuasistaticParser(q_model_path)
         self.parser.set_sim_params(
-            use_free_solvers=True  # not is_mosek_gurobi_available(),
+            use_free_solvers=not is_mosek_gurobi_available(),
         )
 
         self.q_sim_py = self.parser.make_simulator_py(False)
@@ -171,7 +171,7 @@ class TestPlanarHandBall(unittest.TestCase):
         sim_params.gradient_mode = GradientMode.kBOnly
 
         q_dict = {
-            self.idx_o: [0, 0.316, 0],
+            self.idx_o: [0, 0.314, 0],
             self.idx_l: [-0.775, -0.785],
             self.idx_r: [0.775, 0.785],
         }
