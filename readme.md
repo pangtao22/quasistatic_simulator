@@ -3,7 +3,7 @@
 
 ![](/media/planar_hand.gif) ![](/media/allegro_hand_ball.gif) ![](/media/allegro_hand_door.gif)
 
-This repo provides an implementation of a differentiable, convex and quasi-static dynamics model which is effective for contact-rich manipulation planning. The dynamics formulation is described in 
+This repo provides an implementation of a **differentiable**, **convex** and **quasi-static** dynamics model which is effective for **contact-rich manipulation planning**. The dynamics formulation is described in 
 - Section 3 of [Global Planning for Contact-Rich Manipulation via
 Local Smoothing of Quasi-dynamic Contact Models](https://arxiv.org/abs/2206.10787), currently under review.
 - [A Convex Quasistatic Time-stepping Scheme for Rigid Multibody Systems with Contact and Friction](http://groups.csail.mit.edu/robotics-center/public_papers/Pang20b.pdf), ICRA2021.
