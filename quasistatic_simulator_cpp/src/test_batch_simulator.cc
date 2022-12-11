@@ -188,7 +188,7 @@ TEST_P(TestBatchQuasistaticSimulator, TestForwardDynamicsAllegroHand) {
       ForwardDynamicsMode::kLogIcecream};
   std::vector<double> tol = {1e-6, 1e-6, 1e-6, 1e-5, 1e-5};
   if (sim_params_.use_free_solvers) {
-    tol = {2e-5, 2e-5, 2e-5, 2e-5, 2e-5};
+    tol = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
   }
 
   int i = 0;
