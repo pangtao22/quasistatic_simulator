@@ -100,8 +100,8 @@ TEST_P(TestLogBarrierSolvers, TestSolve) {
   auto solver_icecream = SocpLogBarrierSolver();
   // TODO: also compare with MOSEK.
   VectorXd v_star_pyramid, v_star_icecream;
-  solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_, 0,
-                       &v_star_pyramid);
+  solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_,
+                       use_free_solver_, &v_star_pyramid);
   solver_icecream.Solve(Q_, -tau_h_, -J_icecream_, phi_icecream_ / mu_ / h_,
                         kappa_, use_free_solver_, &v_star_icecream);
   EXPECT_LT((v_star_pyramid - v_star_icecream).norm(), 1e-5);

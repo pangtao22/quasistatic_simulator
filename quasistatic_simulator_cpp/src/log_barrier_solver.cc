@@ -13,7 +13,7 @@ using std::endl;
 
 LogBarrierSolverBase::LogBarrierSolverBase()
     : solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
-      solver_grb_(std::make_unique<drake::solvers::ScsSolver>()) {}
+      solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()) {}
 
 double LogBarrierSolverBase::BackStepLineSearch(
     const Eigen::Ref<const Eigen::MatrixXd> &Q,
