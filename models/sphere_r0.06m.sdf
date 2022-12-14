@@ -3,14 +3,14 @@
   <model name="sphere_r0.1m">
     <link name="sphere">
       <inertial>
-        <mass>1.0</mass>
+        <mass>0.05</mass>
         <inertia>
-          <ixx>0.001</ixx>
+          <ixx>5e-5</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.001</iyy>
+          <iyy>5e-5</iyy>
           <iyz>0</iyz>
-          <izz>0.001</izz>
+          <izz>5e-5</izz>
         </inertia>
       </inertial>
 
