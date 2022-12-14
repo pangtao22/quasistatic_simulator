@@ -7,7 +7,7 @@ directives:
       name: ground_world_offset
       X_PF:
         base_frame: world
-        translation: [ 0, 0, -0.5]
+        translation: [ 0, 0, -0.50001]
 
   - add_weld:
       parent: ground_world_offset
