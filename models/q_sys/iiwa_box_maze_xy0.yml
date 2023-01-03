@@ -1,0 +1,17 @@
+model_directive: package://quasistatic_simulator/iiwa_sphere_collision_maze0.yml
+robots:
+  -
+    name: iiwa
+    Kp: [800, 600, 600, 600, 400, 200, 200]
+
+objects:
+  -
+    name: box
+    file: package://quasistatic_simulator/box_for_maze_xy_rotation.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, -9.8]
+  nd_per_contact: 4
+  contact_detection_tolerance: 0.2
+  is_quasi_dynamic: True
+  unactuated_mass_scale: 5
