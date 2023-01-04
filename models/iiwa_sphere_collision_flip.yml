@@ -10,7 +10,7 @@ directives:
     name: wall_frame
     X_PF:
         base_frame: ground
-        translation: [1.5, 0, 0]
+        translation: [1.0, 0, 0]
         rotation: !Rpy {deg: [0, 0, 90]}
 
 - add_weld:
@@ -19,7 +19,7 @@ directives:
 
 - add_model:
     name: iiwa
-    file: package://quasistatic_simulator/iiwa14_sphere_collision_push.sdf
+    file: package://quasistatic_simulator/iiwa14_sphere_collision_flip.sdf
 
 - add_weld:
     parent: world
