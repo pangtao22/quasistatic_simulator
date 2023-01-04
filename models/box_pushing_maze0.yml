@@ -1,0 +1,20 @@
+directives:
+
+- add_model:
+    name: wall
+    file: package://quasistatic_simulator/wall_2_0.2_0.3.sdf
+
+- add_frame:
+    name: wall_frame
+    X_PF:
+        base_frame: world
+        translation: [-0.5, 0.7, 0]
+        rotation: !Rpy {deg: [0, 90, 0]}
+
+- add_weld:
+    parent: wall_frame
+    child: wall::wall
+
+- add_model:
+    name: hand
+    file: package://quasistatic_simulator/sphere_yz_actuated.sdf
