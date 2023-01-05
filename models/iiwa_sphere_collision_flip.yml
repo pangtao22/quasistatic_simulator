@@ -9,8 +9,8 @@ directives:
 - add_frame:
     name: wall_frame
     X_PF:
-        base_frame: ground
-        translation: [1.0, 0, 0]
+        base_frame: world
+        translation: [1.025, 0, 0]
         rotation: !Rpy {deg: [0, 0, 90]}
 
 - add_weld:

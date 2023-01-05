@@ -5,7 +5,7 @@
   <pose> 0 0 0 0 0 0</pose>
 
   <visual name='visual'>
-    <pose frame=''> 0 0 0.5 0 0 0 </pose>
+    <pose frame=''> 0 0 0 0 0 0 </pose>
     <geometry>
       <box>
        <size>1.0 0.05 1.0</size>
@@ -27,8 +27,8 @@
     <surface>
       <friction>
       <ode>
-        <mu>0.5</mu>
-        <mu2>0.5</mu2>
+        <mu>0.1</mu>
+        <mu2>0.1</mu2>
       </ode>
       </friction>
     </surface>
