@@ -10,7 +10,7 @@ directives:
     name: wall_frame
     X_PF:
         base_frame: world
-        translation: [0.75, 0, 0]
+        translation: [0.67, 0, 0]
         rotation: !Rpy {deg: [0, 0, 90]}
 
 - add_weld:
