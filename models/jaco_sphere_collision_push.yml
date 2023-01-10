@@ -1,0 +1,11 @@
+directives:
+- add_directives:
+    file: package://quasistatic_simulator/ground.yml
+
+- add_model:
+    name: jaco
+    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.urdf
+
+- add_weld:
+    parent: world
+    child: jaco::base
