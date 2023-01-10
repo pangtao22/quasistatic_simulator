@@ -1,13 +1,13 @@
-model_directive: package://quasistatic_simulator/iiwa_sphere_collision_flip.yml
+model_directive: package://quasistatic_simulator/jaco_sphere_collision_push.yml
 robots:
   -
-    name: iiwa
+    name: jaco
     Kp: [800, 600, 600, 600, 400, 200, 200]
 
 objects:
   -
     name: box
-    file: package://quasistatic_simulator/box_intel_nuc_high_mu.sdf
+    file: package://quasistatic_simulator/box_10cm_xy_rotation.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, -9.8]
