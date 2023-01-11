@@ -1,0 +1,31 @@
+directives:
+- add_directives:
+    file: package://quasistatic_simulator/ground.yml
+
+- add_model:
+    name: jaco_left
+    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.urdf
+
+- add_model:
+    name: jaco_right
+    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.urdf
+
+- add_frame:
+    name: world_left_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0.406, 0]
+
+- add_frame:
+    name: world_right_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, -0.406, 0]
+
+- add_weld:
+    parent: world_left_arm_offset
+    child: jaco_left::base
+
+- add_weld:
+    parent: world_right_arm_offset
+    child: jaco_right::base
