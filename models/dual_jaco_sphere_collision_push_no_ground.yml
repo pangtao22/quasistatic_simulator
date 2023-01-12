@@ -1,11 +1,11 @@
 directives:
 - add_model:
     name: jaco_left
-    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.urdf
+    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.sdf
 
 - add_model:
     name: jaco_right
-    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.urdf
+    file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.sdf
 
 - add_frame:
     name: world_left_arm_offset

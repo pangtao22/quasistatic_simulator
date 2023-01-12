@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="box_intel_nuc">
-
-    <!-- This is a model of an empty Intel NUC box. -->
-
+  <model name="box_to_push">
     <!-- The model for a solid box of uniform density. -->
     <link name="box">
       <inertial>
