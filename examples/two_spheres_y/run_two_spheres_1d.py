@@ -1,14 +1,16 @@
 import copy
 
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
-from qsim.simulator import GradientMode
+from qsim.simulator import GradientMode, InternalVisualizationType
 from sim_setup import *
 
 # %% Run simulation.
 q_parser = QuasistaticParser(os.path.join(models_dir, q_model_path))
 
 q_sim = q_parser.make_simulator_cpp()
-q_sim_py = q_parser.make_simulator_py(internal_vis=True)
+q_sim_py = q_parser.make_simulator_py(
+    internal_vis=InternalVisualizationType.Python
+)
 
 #%%
 plant = q_sim.get_plant()
