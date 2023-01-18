@@ -12,6 +12,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from matplotlib import cm
 from pydrake.all import RigidTransform, RollPitchYaw, RotationMatrix
+import meshcat
 
 from dash_common import (
     set_orthographic_camera_yz,
@@ -40,6 +41,21 @@ idx_a = plant.GetModelInstanceByName(robot_name)
 idx_u = plant.GetModelInstanceByName(object_name)
 idx_a_into_q = q_sim.get_q_a_indices_into_q()
 idx_u_into_q = q_sim.get_q_u_indices_into_q()
+
+#%% update colors and shapes
+# box
+meshcat_vis["drake/plant/sphere_y/sphere"].set_object(
+    meshcat.geometry.Box([0.2, 0.2, 0.2]),
+    meshcat.geometry.MeshLambertMaterial(color=0xF9F7F5, opacity=1),
+)
+
+# ball
+ball_path = "drake/plant/sphere_y_actuated/sphere"
+meshcat_vis[ball_path].delete()
+meshcat_vis[ball_path].set_object(
+    meshcat.geometry.Sphere(0.1),
+    meshcat.geometry.MeshLambertMaterial(color=0xA31F34, opacity=1),
+)
 
 
 #%% points at which dynamics is evaluated.
@@ -168,4 +184,4 @@ def q_a_slider_callback(u_value, kappa_value_log):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False, port=8051)
