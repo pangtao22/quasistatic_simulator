@@ -1,4 +1,4 @@
-model_directive: package://quasistatic_simulator/iiwa_sphere_collision_maze0.yml
+model_directive: package://quasistatic_simulator/iiwa_sphere_collision_maze0_no_ground.yml
 robots:
   -
     name: iiwa
@@ -10,7 +10,7 @@ objects:
     file: package://quasistatic_simulator/box_for_maze_xy_rotation.sdf
 
 quasistatic_sim_params:
-  gravity: [0, 0, -9.8]
+  gravity: [0, 0, 0]
   nd_per_contact: 4
   contact_detection_tolerance: 0.2
   is_quasi_dynamic: True
