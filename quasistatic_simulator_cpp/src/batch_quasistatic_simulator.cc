@@ -2,6 +2,7 @@
 #include <queue>
 #include <spdlog/spdlog.h>
 #include <stack>
+#include <thread>
 
 #include "batch_quasistatic_simulator.h"
 #include "quasistatic_simulator.h"
