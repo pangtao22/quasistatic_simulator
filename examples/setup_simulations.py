@@ -18,12 +18,20 @@ from pydrake.all import (
     ContactVisualizer,
     StartMeshcat,
     Meshcat,
+    DiscreteContactSolver,
+    InverseDynamicsController,
 )
 from qsim.parser import QuasistaticParser
 from qsim.system import *
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
+
+# This is an experimental feature pending Drake PR #17674.
+try:
+    from pydrake.all import PdControllerGains
+except ImportError:
+    PdControllerGains = None
 
 
 class LoadApplier(LeafSystem):
@@ -123,7 +131,7 @@ def run_quasistatic_sim(
     is_visualizing: bool,
     real_time_rate: float,
     meshcat: Meshcat = None,
-    **kwargs
+    **kwargs,
 ):
     h = q_parser.get_param_attribute("h")
     builder = DiagramBuilder()
@@ -221,9 +229,18 @@ def run_mbp_sim(
     is_visualizing: bool,
     real_time_rate: float,
     meshcat: Meshcat = None,
-    **kwargs
+    mbp_solver: DiscreteContactSolver = DiscreteContactSolver.kTamsi,
+    robot_damping_dict: Dict[str, np.ndarray] = None,
+    **kwargs,
 ):
     """
+    robot_controller_dict is keyed by the model instance name of the robots.
+    There are three kinds of controllers:
+    1. RobotInternalController: an impedance controller implemented by me.
+    2. PidController: drake's PID controller.
+    3. InverseDynamicsController: it is only used for gravity compensation.
+        PD control is implemented implicitly as part of MBP. Note that
+        implicit PD controller is an experimental feature in drake PR #17674.
     kwargs is used to handle externally applied spatial forces. Currently
         only supports applying one force (no torque) at the origin of the body
         frame of one body. To apply such forces, kwargs need to have
@@ -245,6 +262,7 @@ def run_mbp_sim(
         object_sdf_paths=object_sdf_paths,
         time_step=h,  # Only useful for MBP simulations.
         gravity=gravity,
+        mbp_solver=mbp_solver,
     )
 
     # controller.
@@ -298,6 +316,12 @@ def run_mbp_sim(
             builder.Connect(
                 mux.get_output_port(), controller.get_input_port_desired_state()
             )
+        elif isinstance(controller, InverseDynamicsController):
+            joint_indices = plant.GetJointIndices(robot_model)
+            joint = plant.get_mutable_joint(joint_indices[0])
+            actuator = plant.GetJointActuatorByName(joint.name())
+            actuator.set_controller_gains(PdControllerGains(
+                p=1, d=1))
 
     # externally applied spatial force.
     if "F_WB_traj" in kwargs.keys():
@@ -371,6 +395,13 @@ def run_mbp_sim(
         meshcat_vis.PublishRecording()
 
     loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
+
+    # diagram structure visualization.
+    from graphviz import Source
+
+    src = Source(diagram.GetGraphvizString())
+    src.render("system_view.gz", view=False)
+
     return create_dict_keyed_by_string(plant, loggers_dict)
 
 

@@ -8,7 +8,7 @@ from examples.setup_simulations import (
     run_quasistatic_sim,
     shift_q_traj_to_start_at_minus_h,
 )
-from pydrake.all import PiecewisePolynomial
+from pydrake.all import PiecewisePolynomial, DiscreteContactSolver
 from qsim.model_paths import models_dir
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
@@ -44,16 +44,6 @@ def run_comparison(is_visualizing=False, real_time_rate=0.0):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(h=h_quasistatic)
 
-    # Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_parser=q_parser,
-        backend=QuasistaticSystemBackend.PYTHON,
-        q_a_traj_dict_str={robot_name: q_iiwa_traj},
-        q0_dict_str=q0_dict_str,
-        is_visualizing=is_visualizing,
-        real_time_rate=real_time_rate,
-    )
-
     # MBP
     # create controller system for robot.
     gravity = q_parser.get_param_attribute("gravity")
@@ -73,6 +63,17 @@ def run_comparison(is_visualizing=False, real_time_rate=0.0):
         robot_controller_dict=robot_controller_dict,
         h=h_mbp,
         gravity=gravity,
+        is_visualizing=is_visualizing,
+        real_time_rate=real_time_rate,
+        mbp_solver=DiscreteContactSolver.kSap,
+    )
+
+    # Quasistatic
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_parser=q_parser,
+        backend=QuasistaticSystemBackend.CPP,
+        q_a_traj_dict_str={robot_name: q_iiwa_traj},
+        q0_dict_str=q0_dict_str,
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
     )

@@ -22,6 +22,7 @@ from pydrake.all import (
     StartMeshcat,
     OsqpSolver,
     ScsSolver,
+    DiscreteContactSolver,
 )
 from pydrake.multibody.parsing import (
     Parser,
@@ -128,6 +129,7 @@ class QuasistaticSimulator:
             object_sdf_paths=object_sdf_paths,
             time_step=1e-3,  # Only useful for MBP simulations.
             gravity=sim_params.gravity,
+            mbp_solver=DiscreteContactSolver.kTamsi,
         )
 
         # visualization.
@@ -1633,6 +1635,7 @@ class QuasistaticSimulator:
         object_sdf_paths: Dict[str, str],
         time_step: float,
         gravity: np.ndarray,
+        mbp_solver: DiscreteContactSolver,
     ):
         """
         Add plant and scene_graph constructed from a model_directive to builder.
@@ -1671,6 +1674,9 @@ class QuasistaticSimulator:
 
         # gravity
         plant.mutable_gravity_field().set_gravity_vector(gravity)
+
+        # Discrete-time Solver.
+        plant.set_discrete_contact_solver(mbp_solver)
         plant.Finalize()
 
         return plant, scene_graph, robot_models, object_models
