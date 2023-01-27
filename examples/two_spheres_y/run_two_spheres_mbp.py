@@ -1,30 +1,25 @@
 import numpy as np
-from pydrake.all import LeafSystem, BasicVector
+import matplotlib.pyplot as plt
+from pydrake.all import (
+    DiagramBuilder,
+    PidController,
+    StartMeshcat,
+    MeshcatVisualizer,
+    LogVectorOutput,
+    Simulator_,
+    AutoDiffXd,
+    InitializeAutoDiff,
+    ExtractValue,
+    ExtractGradient,
+)
 import tqdm
 
 from sim_setup import *
+from qsim.simulator import QuasistaticSimulator
+from qsim.parser import QuasistaticParser
 
-
-class SimpleTrajectorySource(LeafSystem):
-    def __init__(self, q_traj: PiecewisePolynomial):
-        super().__init__()
-        self.q_traj = q_traj
-
-        self.x_output_port = self.DeclareVectorOutputPort(
-            "x", BasicVector(q_traj.rows() * 2), self.calc_x
-        )
-
-        self.t_start = 0.0
-
-    def calc_x(self, context, output):
-        t = context.get_time() - self.t_start
-        q = self.q_traj.value(t).ravel()
-        v = self.q_traj.derivative(1).value(t).ravel()
-        output.SetFromVector(np.hstack([q, v]))
-
-    def set_t_start(self, t_start_new: float):
-        self.t_start = t_start_new
-
+# %%
+q_parser = QuasistaticParser(q_model_path)
 
 builder = DiagramBuilder()
 (
@@ -32,98 +27,113 @@ builder = DiagramBuilder()
     scene_graph,
     robot_models,
     object_models,
-) = create_plant_with_robots_and_objects(
+) = QuasistaticSimulator.create_plant_with_robots_and_objects(
     builder=builder,
-    model_directive_path=model_directive_path,
-    robot_names=[name for name in robot_stiffness_dict.keys()],
-    object_sdf_paths=object_sdf_dict,
-    time_step=4e-2,  # Only useful for MBP simulations.
-    gravity=quasistatic_sim_params.gravity,
+    model_directive_path=q_parser.model_directive_path,
+    robot_names=[robot_name],
+    object_sdf_paths=q_parser.object_sdf_paths,
+    time_step=1e-3,  # Only useful for MBP simulations.
+    gravity=q_parser.get_gravity(),
 )
+plant.set_name("MBP")
 
 # robot trajectory source
 robot_model = plant.GetModelInstanceByName(robot_name)
-q_a_traj = q_a_traj_dict_str[robot_name]
-
-shift_q_traj_to_start_at_minus_h(q_a_traj, h)
-traj_source_qv = SimpleTrajectorySource(q_a_traj)
-builder.AddSystem(traj_source_qv)
+object_model = plant.GetModelInstanceByName(object_name)
 
 # controller, critically damped PID for ball with mass = 1kg.
+Kp = q_parser.robot_stiffness_dict[robot_name]
 pid = PidController(Kp, np.zeros(1), 2 * np.sqrt(Kp))
 builder.AddSystem(pid)
 builder.Connect(
     pid.get_output_port_control(), plant.get_actuation_input_port(robot_model)
 )
+pid.set_name("PID")
 
 builder.Connect(
     plant.get_state_output_port(robot_model),
     pid.get_input_port_estimated_state(),
 )
 
-# PID also needs velocity reference.
-builder.Connect(
-    traj_source_qv.get_output_port(0), pid.get_input_port_desired_state()
-)
-
 # visulization
-meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)
+meshcat = StartMeshcat()
+meshcat_vis = MeshcatVisualizer.AddToBuilder(builder, scene_graph, meshcat)
+meshcat_vis.set_name("meshcat_vis")
 
 # logs.
 loggers_dict = dict()
 for model in robot_models.union(object_models):
-    logger = LogOutput(plant.get_state_output_port(model), builder)
+    logger = LogVectorOutput(plant.get_state_output_port(model), builder)
     loggers_dict[model] = logger
 
 diagram = builder.Build()
 
+# %% simulation.
+diagram_ad = diagram.ToAutoDiffXd()
+plant_ad = diagram_ad.GetSubsystemByName("MBP")
+pid_ad = diagram_ad.GetSubsystemByName("PID")
+meshcat_vis_ad = diagram_ad.GetSubsystemByName("meshcat_vis")
+loggers_ad_dict = {
+    model: diagram_ad.GetSubsystemByName(logger.get_name())
+    for model, logger in loggers_dict.items()
+}
 
-#%% simulation.
 n_targets = 1
 q_a_targets = np.linspace(0.7, 0.9, n_targets)
 q_finals = np.zeros((n_targets, 2))
 
-q0 = np.zeros(2)  # [qa_0, qu_0]
-q0[0] = qa_knots[0]
-q0[1] = qu0
+q0 = np.zeros(2)  # [qu_0, qa_0]
+q0[1] = 0.0
+q0[0] = 0.5
 
 for i in tqdm.tqdm(range(n_targets)):
-    context = diagram.CreateDefaultContext()
-    sim = Simulator(diagram, context)
+    context = diagram_ad.CreateDefaultContext()
+    sim = Simulator_[AutoDiffXd](diagram_ad, context)
 
     # initial condition.
-    context_plant = plant.GetMyContextFromRoot(context)
-    plant.SetPositions(context_plant, q0)
+    context_plant = plant_ad.GetMyContextFromRoot(context)
+    plant_ad.SetPositions(context_plant, q0)
 
     # Set new qa_traj.
     qa_knots[1] = q_a_targets[i]
-    qa_traj = PiecewisePolynomial.FirstOrderHold(t_knots, qa_knots.T)
-    traj_source_qv.q_traj = qa_traj
+    qv_desired = np.zeros(2)
+    qv_desired[0] = q_a_targets[i]
+    context_pid = pid_ad.GetMyContextFromRoot(context)
+    pid_ad.GetInputPort(pid.get_input_port_desired_state().get_name()).FixValue(
+        context_pid, InitializeAutoDiff(qv_desired)
+    )
 
     sim.set_target_realtime_rate(1)
-    sim.AdvanceTo(q_a_traj.end_time())
+    meshcat_vis_ad.DeleteRecording()
+    meshcat_vis_ad.StartRecording()
+    sim.AdvanceTo(4.0)
+    meshcat_vis_ad.StopRecording()
+    meshcat_vis_ad.PublishRecording()
 
-    # extract final state
-    q_finals[i] = plant.GetPositions(context_plant)
+    # Find logs.
+    log_robot = loggers_ad_dict[robot_model].FindLog(context)
+    log_object = loggers_ad_dict[object_model].FindLog(context)
+
+    # %%
+    t = ExtractValue(log_robot.sample_times())
+    x_robot = log_robot.data()
+    x_object = log_object.data()
+
+    plt.figure()
+    plt.plot(t, ExtractValue(x_object[0]), label="object")
+    plt.plot(t, ExtractValue(x_robot[0]), label="robot")
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+    #%%
+    plt.figure()
+    Dq_object_Du = ExtractGradient(x_object[0])
+    plt.plot(t, ExtractValue(x_object[0]), label="q_u")
+    plt.plot(t, Dq_object_Du[:, 0], label="Dq_uDu")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
 
 # %%
-object_model = plant.GetModelInstanceByName(object_name)
-logger_robot = loggers_dict[robot_model]
-logger_object = loggers_dict[object_model]
-
-t = logger_robot.sample_times()
-x_robot = logger_robot.data()
-x_object = logger_object.data()
-
-plt.figure()
-plt.plot(t, x_object[0] - x_robot[0] - 0.2)
-# plt.ylim([-0.02, 0.02])
-plt.grid()
-plt.show()
-
-
-#%%
-plt.figure()
-plt.plot(q_finals[:, 0], q_finals[:, 1])
-plt.show()

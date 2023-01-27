@@ -17,7 +17,7 @@ duration = T * h
 robot_name = "sphere_y_actuated"
 object_name = "sphere_y"
 
-# trajectory and initial contidionts.
+# trajectory and initial conditions.
 nq_a = 1
 
 qa_knots = np.zeros((2, nq_a))

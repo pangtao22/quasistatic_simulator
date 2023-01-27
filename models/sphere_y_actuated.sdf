@@ -8,7 +8,7 @@
        the box and the world so that we can attach two prismatic joints for
        these two DOFs. The ghost body has negligible mass.
   -->
-  <model name="sphere_yz">
+  <model name="sphere_y">
     <!-- The y slider will have an actuator with a corresponding input port
          in our MultibodyPlant model so that we can apply an external force.
     -->

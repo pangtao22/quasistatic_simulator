@@ -23,7 +23,7 @@
           <effort>0</effort>
         </limit>
         <dynamics>
-          <damping>50</damping>
+          <damping>50.0</damping>
         </dynamics>
       </axis>
     </joint>
