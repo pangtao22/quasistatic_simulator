@@ -281,7 +281,8 @@ def run_mbp_sim(
         # robot trajectory source
         shift_q_traj_to_start_at_minus_h(q_a_traj, h)
         controller = robot_controller_dict[robot_name]
-        builder.AddSystem(controller)
+        if isinstance(controller, LeafSystem):
+            builder.AddSystem(controller)
 
         if isinstance(controller, RobotInternalController):
             traj_source_q = TrajectorySource(q_a_traj)
@@ -430,10 +431,10 @@ def run_mbp_sim(
     loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
 
     # diagram structure visualization.
-    from graphviz import Source
-
-    src = Source(diagram.GetGraphvizString())
-    src.render("system_view.gz", view=False)
+    # from graphviz import Source
+    #
+    # src = Source(diagram.GetGraphvizString())
+    # src.render("system_view.gz", view=False)
 
     return create_dict_keyed_by_string(plant, loggers_dict)
 

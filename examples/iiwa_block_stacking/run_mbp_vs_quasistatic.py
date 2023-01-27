@@ -31,7 +31,7 @@ def run_comparison(
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(
         h=h_quasistatic,
-        use_free_solvers=True,
+        use_free_solvers=False,
     )
     meshcat = None
     if is_visualizing:
@@ -89,6 +89,7 @@ def run_comparison(
         robot_damping_dict=robot_damping_dict,
     )
 
+    input("quasi-static?")
     # Quasistatic
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
@@ -130,7 +131,7 @@ def compare_all_models(
 
 
 if __name__ == "__main__":
-    h_mbp = 1e-2
+    h_mbp = 5.8e-3
     h_quasistatic = 0.1
 
     loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = run_comparison(

@@ -11,12 +11,13 @@ from pydrake.all import (
     InitializeAutoDiff,
     ExtractValue,
     ExtractGradient,
+    DiscreteContactSolver
 )
 import tqdm
 
 from sim_setup import *
-from qsim.simulator import QuasistaticSimulator
 from qsim.parser import QuasistaticParser
+from qsim.mbp_builder import create_plant_with_robots_and_objects
 
 # %%
 q_parser = QuasistaticParser(q_model_path)
@@ -27,13 +28,14 @@ builder = DiagramBuilder()
     scene_graph,
     robot_models,
     object_models,
-) = QuasistaticSimulator.create_plant_with_robots_and_objects(
+) = create_plant_with_robots_and_objects(
     builder=builder,
     model_directive_path=q_parser.model_directive_path,
     robot_names=[robot_name],
     object_sdf_paths=q_parser.object_sdf_paths,
     time_step=1e-3,  # Only useful for MBP simulations.
     gravity=q_parser.get_gravity(),
+    mbp_solver=DiscreteContactSolver.kSap
 )
 plant.set_name("MBP")
 
