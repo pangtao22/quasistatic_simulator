@@ -24,17 +24,12 @@ from pydrake.all import (
     ScsSolver,
     DiscreteContactSolver,
 )
-from pydrake.multibody.parsing import (
-    Parser,
-    ProcessModelDirectives,
-    LoadModelDirectives,
-)
+
 from pydrake.multibody.plant import (
     PointPairContactInfo,
     ContactResults,
     CalcContactFrictionFromSurfaceProperties,
     MultibodyPlant,
-    AddMultibodyPlantSceneGraph,
 )
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.systems.framework import DiagramBuilder
@@ -48,9 +43,8 @@ from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktActive,
 )
 
-from qsim.model_paths import add_package_paths_local
 from .utils import calc_tangent_vectors, is_mosek_gurobi_available
-
+from .mbp_builder import create_plant_with_robots_and_objects
 from .meshcat_visualizer_old import (
     ConnectMeshcatVisualizer as ConnectMeshcatVisualizerPy,
 )
@@ -122,7 +116,7 @@ class QuasistaticSimulator:
             scene_graph,
             robot_models,
             object_models,
-        ) = self.create_plant_with_robots_and_objects(
+        ) = create_plant_with_robots_and_objects(
             builder=builder,
             model_directive_path=model_directive_path,
             robot_names=[name for name in robot_stiffness_dict.keys()],
@@ -1626,57 +1620,3 @@ class QuasistaticSimulator:
 
         for model in self.models_actuated:
             q_dict[model] += dq_dict[model]
-
-    @staticmethod
-    def create_plant_with_robots_and_objects(
-        builder: DiagramBuilder,
-        model_directive_path: str,
-        robot_names: List[str],
-        object_sdf_paths: Dict[str, str],
-        time_step: float,
-        gravity: np.ndarray,
-        mbp_solver: DiscreteContactSolver,
-    ):
-        """
-        Add plant and scene_graph constructed from a model_directive to builder.
-        :param builder:
-        :param model_directive_path:
-        :param robot_names: names in this list must be consistent with the
-            corresponding model directive .yml file.
-        :param object_names:
-        :param time_step:
-        :param gravity:
-        :return:
-        """
-
-        # MultibodyPlant
-        plant = MultibodyPlant(time_step)
-        _, scene_graph = AddMultibodyPlantSceneGraph(builder, plant=plant)
-        parser = Parser(plant=plant, scene_graph=scene_graph)
-        add_package_paths_local(parser)
-
-        # Objects
-        # It is important that object_models and robot_models are ordered.
-        object_models = set()
-        for name, sdf_path in object_sdf_paths.items():
-            object_models.add(
-                parser.AddModelFromFile(sdf_path, model_name=name)
-            )
-
-        # Robots
-        ProcessModelDirectives(
-            LoadModelDirectives(model_directive_path), plant, parser
-        )
-        robot_models = set()
-        for name in robot_names:
-            robot_model = plant.GetModelInstanceByName(name)
-            robot_models.add(robot_model)
-
-        # gravity
-        plant.mutable_gravity_field().set_gravity_vector(gravity)
-
-        # Discrete-time Solver.
-        plant.set_discrete_contact_solver(mbp_solver)
-        plant.Finalize()
-
-        return plant, scene_graph, robot_models, object_models

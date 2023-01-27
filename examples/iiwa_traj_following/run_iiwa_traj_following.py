@@ -8,7 +8,12 @@ from examples.setup_simulations import (
     run_quasistatic_sim,
     shift_q_traj_to_start_at_minus_h,
 )
-from pydrake.all import PiecewisePolynomial, DiscreteContactSolver
+from pydrake.all import (
+    PiecewisePolynomial,
+    DiscreteContactSolver,
+    InverseDynamics,
+)
+
 from qsim.model_paths import models_dir
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
@@ -22,8 +27,8 @@ q_model_path = os.path.join(models_dir, "q_sys", "iiwa.yml")
 
 # Simulation parameters.
 robot_name = "iiwa"
-h_quasistatic = 0.2
-h_mbp = 1e-4
+h_quasistatic = 0.4
+h_mbp = 0.4
 
 # Robot joint trajectory.
 nq_a = 7
@@ -40,7 +45,12 @@ q_iiwa_traj = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
 q0_dict_str = {robot_name: qa_knots[0]}
 
 
-def run_comparison(is_visualizing=False, real_time_rate=0.0):
+def run_comparison(
+    is_visualizing=False,
+    real_time_rate=0.0,
+    use_implicit_pd_controller: bool = False,
+    robot_damping: np.ndarray = None,
+):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(h=h_quasistatic)
 
@@ -48,12 +58,23 @@ def run_comparison(is_visualizing=False, real_time_rate=0.0):
     # create controller system for robot.
     gravity = q_parser.get_param_attribute("gravity")
     plant_robot, _ = create_iiwa_controller_plant(gravity)
-    controller_robot = RobotInternalController(
-        plant_robot=plant_robot,
-        joint_stiffness=q_parser.robot_stiffness_dict[robot_name],
-        controller_mode="impedance",
-    )
+    if use_implicit_pd_controller:
+        controller_robot = InverseDynamics(
+            plant_robot,
+            InverseDynamics.InverseDynamicsMode.kGravityCompensation,
+        )
+    else:
+        controller_robot = RobotInternalController(
+            plant_robot=plant_robot,
+            joint_stiffness=q_parser.robot_stiffness_dict[robot_name],
+            controller_mode="impedance",
+        )
+
     robot_controller_dict = {robot_name: controller_robot}
+    robot_damping_dict = (
+        {robot_name: robot_damping} if robot_damping is not None else None
+    )
+
     loggers_dict_mbp_str = run_mbp_sim(
         model_directive_path=q_parser.model_directive_path,
         object_sdf_paths=dict(),
@@ -66,6 +87,8 @@ def run_comparison(is_visualizing=False, real_time_rate=0.0):
         is_visualizing=is_visualizing,
         real_time_rate=real_time_rate,
         mbp_solver=DiscreteContactSolver.kSap,
+        use_implicit_pd_controller=use_implicit_pd_controller,
+        robot_damping_dict=robot_damping_dict,
     )
 
     # Quasistatic
@@ -89,12 +112,18 @@ def run_comparison(is_visualizing=False, real_time_rate=0.0):
 
 
 if __name__ == "__main__":
+    robot_damping = np.array([100, 100, 100, 100, 1, 1, 1.0])
     (
         q_iiwa_log_mbp,
         t_mbp,
         q_iiwa_log_quasistatic,
         t_quasistatic,
-    ) = run_comparison(is_visualizing=True, real_time_rate=1.0)
+    ) = run_comparison(
+        is_visualizing=True,
+        real_time_rate=0.0,
+        use_implicit_pd_controller=True,
+        robot_damping=robot_damping,
+    )
 
     # %% Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)

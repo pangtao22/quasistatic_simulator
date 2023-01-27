@@ -19,13 +19,14 @@ from pydrake.all import (
     StartMeshcat,
     Meshcat,
     DiscreteContactSolver,
-    InverseDynamicsController,
+    InverseDynamics,
 )
-from qsim.parser import QuasistaticParser
-from qsim.system import *
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
+from qsim.parser import QuasistaticParser
+from qsim.system import *
+from qsim.mbp_builder import create_plant_with_robots_and_objects
 
 # This is an experimental feature pending Drake PR #17674.
 try:
@@ -230,7 +231,7 @@ def run_mbp_sim(
     real_time_rate: float,
     meshcat: Meshcat = None,
     mbp_solver: DiscreteContactSolver = DiscreteContactSolver.kTamsi,
-    robot_damping_dict: Dict[str, np.ndarray] = None,
+    use_implicit_pd_controller: bool = False,
     **kwargs,
 ):
     """
@@ -241,13 +242,17 @@ def run_mbp_sim(
     3. InverseDynamicsController: it is only used for gravity compensation.
         PD control is implemented implicitly as part of MBP. Note that
         implicit PD controller is an experimental feature in drake PR #17674.
-    kwargs is used to handle externally applied spatial forces. Currently
+    kwargs is used to handle
+     (1) externally applied spatial forces. Currently
         only supports applying one force (no torque) at the origin of the body
         frame of one body. To apply such forces, kwargs need to have
             - F_WB_traj: trajectory of the force, and
             - body_name: the body to which the force is applied.
-
+     (2) robot_damping_dict: Dict[str, np.ndarray]
     """
+    robot_damping_dict = (
+        kwargs["robot_damping_dict"] if "robot_damping_dict" in kwargs else None
+    )
 
     builder = DiagramBuilder()
     (
@@ -255,7 +260,7 @@ def run_mbp_sim(
         scene_graph,
         robot_models,
         object_models,
-    ) = QuasistaticSimulator.create_plant_with_robots_and_objects(
+    ) = create_plant_with_robots_and_objects(
         builder=builder,
         model_directive_path=model_directive_path,
         robot_names=[name for name in robot_stiffness_dict.keys()],
@@ -263,6 +268,9 @@ def run_mbp_sim(
         time_step=h,  # Only useful for MBP simulations.
         gravity=gravity,
         mbp_solver=mbp_solver,
+        add_robot_pd_controller=use_implicit_pd_controller,
+        robot_stiffness_dict=robot_stiffness_dict,
+        robot_damping_dict=robot_damping_dict,
     )
 
     # controller.
@@ -272,13 +280,13 @@ def run_mbp_sim(
 
         # robot trajectory source
         shift_q_traj_to_start_at_minus_h(q_a_traj, h)
-        traj_source_q = TrajectorySource(q_a_traj)
-        builder.AddSystem(traj_source_q)
-
         controller = robot_controller_dict[robot_name]
         builder.AddSystem(controller)
 
         if isinstance(controller, RobotInternalController):
+            traj_source_q = TrajectorySource(q_a_traj)
+            builder.AddSystem(traj_source_q)
+
             builder.Connect(
                 controller.GetOutputPort("joint_torques"),
                 plant.get_actuation_input_port(robot_model),
@@ -292,6 +300,11 @@ def run_mbp_sim(
                 controller.joint_angle_commanded_input_port,
             )
         elif isinstance(controller, PidController):
+            traj_source_q_v = TrajectorySource(
+                q_a_traj, output_derivative_order=1
+            )
+            builder.AddSystem(traj_source_q_v)
+
             builder.Connect(
                 controller.get_output_port_control(),
                 plant.get_actuation_input_port(robot_model),
@@ -301,30 +314,38 @@ def run_mbp_sim(
                 controller.get_input_port_estimated_state(),
             )
 
-            # PID also needs velocity reference.
-            v_a_traj = q_a_traj.derivative(1)
-            n_q = plant.num_positions(robot_model)
-            n_v = plant.num_velocities(robot_model)
-            mux = builder.AddSystem(Multiplexer([n_q, n_v]))
-            traj_source_v = builder.AddSystem(TrajectorySource(v_a_traj))
             builder.Connect(
-                traj_source_q.get_output_port(), mux.get_input_port(0)
+                traj_source_q_v.get_output_port(),
+                controller.get_input_port_desired_state(),
             )
+        elif isinstance(controller, InverseDynamics):
+            traj_source_q_v = TrajectorySource(
+                q_a_traj, output_derivative_order=1
+            )
+            builder.AddSystem(traj_source_q_v)
+
+            # InverseDynamics should be in gravity compensation mode.
+            assert controller.is_pure_gravity_compensation()
+            # controller.get_input_port_estimated_state() is not bound.
             builder.Connect(
-                traj_source_v.get_output_port(), mux.get_input_port(1)
+                plant.get_state_output_port(robot_model),
+                controller.GetInputPort("u0"),
             )
+            # controller.get_output_port_force() is not bound.
             builder.Connect(
-                mux.get_output_port(), controller.get_input_port_desired_state()
+                controller.GetOutputPort("y0"),
+                plant.get_actuation_input_port(robot_model),
             )
-        elif isinstance(controller, InverseDynamicsController):
-            joint_indices = plant.GetJointIndices(robot_model)
-            joint = plant.get_mutable_joint(joint_indices[0])
-            actuator = plant.GetJointActuatorByName(joint.name())
-            actuator.set_controller_gains(PdControllerGains(
-                p=1, d=1))
+
+            builder.Connect(
+                traj_source_q_v.get_output_port(),
+                plant.get_desired_state_input_port(robot_model),
+            )
+        else:
+            raise RuntimeError("Wrong robot controller type.")
 
     # externally applied spatial force.
-    if "F_WB_traj" in kwargs.keys():
+    if "F_WB_traj" in kwargs:
         input_port = plant.get_applied_spatial_force_input_port()
         body_idx = plant.GetBodyByName(kwargs["body_name"]).index()
         add_externally_applied_generalized_force(
