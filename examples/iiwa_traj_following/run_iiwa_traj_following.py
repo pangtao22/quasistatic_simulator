@@ -67,6 +67,7 @@ def run_comparison(
         controller_robot = RobotInternalController(
             plant_robot=plant_robot,
             joint_stiffness=q_parser.robot_stiffness_dict[robot_name],
+            joint_damping=robot_damping,
             controller_mode="impedance",
         )
 

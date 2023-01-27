@@ -27,19 +27,6 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     if is_visualizing:
         meshcat = StartMeshcat()
 
-    # Quasistatic
-    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
-        q_parser=q_parser,
-        backend=QuasistaticSystemBackend.CPP,
-        q_a_traj_dict_str=q_a_traj_dict_str,
-        q0_dict_str=q0_dict_str,
-        is_visualizing=is_visualizing,
-        real_time_rate=0.0,
-        meshcat=meshcat,
-    )
-
-    q_sys.q_sim.print_solver_info_for_default_params()
-
     gravity = q_parser.get_gravity()
 
     # MBP
@@ -74,6 +61,19 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
         real_time_rate=0,
         meshcat=meshcat,
     )
+
+    # Quasistatic
+    loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
+        q_parser=q_parser,
+        backend=QuasistaticSystemBackend.CPP,
+        q_a_traj_dict_str=q_a_traj_dict_str,
+        q0_dict_str=q0_dict_str,
+        is_visualizing=is_visualizing,
+        real_time_rate=0.0,
+        meshcat=meshcat,
+    )
+
+    q_sys.q_sim.print_solver_info_for_default_params()
 
     return loggers_dict_mbp_str, loggers_dict_quasistatic_str, q_sys.plant
 
