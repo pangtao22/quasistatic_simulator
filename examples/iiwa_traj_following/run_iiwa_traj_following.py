@@ -49,10 +49,11 @@ def run_comparison(
     is_visualizing=False,
     real_time_rate=0.0,
     use_implicit_pd_controller: bool = False,
-    robot_damping: np.ndarray = None,
 ):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(h=h_quasistatic)
+
+    robot_damping = np.array([100, 100, 100, 100, 1, 1, 1.0])
 
     # MBP
     # create controller system for robot.
@@ -72,9 +73,7 @@ def run_comparison(
         )
 
     robot_controller_dict = {robot_name: controller_robot}
-    robot_damping_dict = (
-        {robot_name: robot_damping} if robot_damping is not None else None
-    )
+    robot_damping_dict = {robot_name: robot_damping}
 
     loggers_dict_mbp_str = run_mbp_sim(
         model_directive_path=q_parser.model_directive_path,
@@ -113,7 +112,6 @@ def run_comparison(
 
 
 if __name__ == "__main__":
-    robot_damping = np.array([100, 100, 100, 100, 1, 1, 1.0])
     (
         q_iiwa_log_mbp,
         t_mbp,
@@ -123,7 +121,6 @@ if __name__ == "__main__":
         is_visualizing=True,
         real_time_rate=0.0,
         use_implicit_pd_controller=True,
-        robot_damping=robot_damping,
     )
 
     # %% Making plots.

@@ -10,14 +10,24 @@ from examples.setup_simulations import (
     run_mbp_sim,
     shift_q_traj_to_start_at_minus_h,
 )
-from pydrake.all import PidController, StartMeshcat
+from pydrake.all import (
+    PidController,
+    StartMeshcat,
+    InverseDynamics,
+    DiscreteContactSolver,
+)
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
 
 
-def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
+def run_comparison(
+    h_mbp: float,
+    h_quasistatic: float,
+    is_visualizing: bool,
+    use_implicit_pd_controller: bool = False,
+):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(
         h=h_quasistatic,
@@ -29,24 +39,38 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
 
     gravity = q_parser.get_gravity()
 
+    iiwa_damping = np.array([100, 100, 100, 100, 1, 1, 1.0])
+    schunk_damping = np.ones(2) * 20
+
     # MBP
     plant_robot, _ = create_iiwa_controller_plant(
         gravity, add_schunk_inertia=True
     )
-    controller_iiwa = RobotInternalController(
-        plant_robot=plant_robot,
-        joint_stiffness=q_parser.robot_stiffness_dict[iiwa_name],
-        controller_mode="impedance",
-    )
-    # damping calculated for critical of a 2nd order system with the finger's
-    # mass.
-    controller_schunk = PidController(
-        q_parser.robot_stiffness_dict[schunk_name], np.zeros(2), np.ones(2) * 20
-    )
+
+    if use_implicit_pd_controller:
+        controller_iiwa = InverseDynamics(
+            plant_robot,
+            InverseDynamics.InverseDynamicsMode.kGravityCompensation,
+        )
+        # Do not do gravity compensation for the Schunk gripper.
+        controller_schunk = None
+    else:
+        controller_iiwa = RobotInternalController(
+            plant_robot=plant_robot,
+            joint_stiffness=q_parser.robot_stiffness_dict[iiwa_name],
+            joint_damping=iiwa_damping,
+            controller_mode="impedance",
+        )
+        controller_schunk = PidController(
+            q_parser.robot_stiffness_dict[schunk_name],
+            np.zeros(2),
+            schunk_damping,
+        )
     robot_controller_dict = {
         iiwa_name: controller_iiwa,
         schunk_name: controller_schunk,
     }
+    robot_damping_dict = {iiwa_name: iiwa_damping, schunk_name: schunk_damping}
 
     loggers_dict_mbp_str = run_mbp_sim(
         model_directive_path=q_parser.model_directive_path,
@@ -60,6 +84,9 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
         is_visualizing=is_visualizing,
         real_time_rate=0,
         meshcat=meshcat,
+        mbp_solver=DiscreteContactSolver.kSap,
+        use_implicit_pd_controller=use_implicit_pd_controller,
+        robot_damping_dict=robot_damping_dict,
     )
 
     # Quasistatic
@@ -103,11 +130,14 @@ def compare_all_models(
 
 
 if __name__ == "__main__":
-    h_mbp = 1e-3
+    h_mbp = 1e-2
     h_quasistatic = 0.1
 
     loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = run_comparison(
-        h_mbp=h_mbp, h_quasistatic=h_quasistatic, is_visualizing=True
+        h_mbp=h_mbp,
+        h_quasistatic=h_quasistatic,
+        is_visualizing=True,
+        use_implicit_pd_controller=True,
     )
 
     error_dict = compare_all_models(

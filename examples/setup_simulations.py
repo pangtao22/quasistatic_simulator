@@ -319,6 +319,8 @@ def run_mbp_sim(
                 controller.get_input_port_desired_state(),
             )
         elif isinstance(controller, InverseDynamics):
+            # When using implicit PD controller with gravity compensation.
+
             traj_source_q_v = TrajectorySource(
                 q_a_traj, output_derivative_order=1
             )
@@ -337,6 +339,16 @@ def run_mbp_sim(
                 plant.get_actuation_input_port(robot_model),
             )
 
+            builder.Connect(
+                traj_source_q_v.get_output_port(),
+                plant.get_desired_state_input_port(robot_model),
+            )
+        elif controller is None:
+            # When using implicit PD controller without gravity compensation.
+            traj_source_q_v = TrajectorySource(
+                q_a_traj, output_derivative_order=1
+            )
+            builder.AddSystem(traj_source_q_v)
             builder.Connect(
                 traj_source_q_v.get_output_port(),
                 plant.get_desired_state_input_port(robot_model),
