@@ -14,7 +14,7 @@
     <!-- The model for a solid box of uniform density. -->
     <link name="box">
       <inertial>
-        <mass>5.0</mass>
+        <mass>0.5</mass>
         <inertia>
           <ixx>4.1e-4</ixx>
           <ixy>0</ixy>

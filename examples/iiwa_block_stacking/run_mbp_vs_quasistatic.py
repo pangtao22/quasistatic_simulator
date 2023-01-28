@@ -131,7 +131,7 @@ def compare_all_models(
 
 
 if __name__ == "__main__":
-    h_mbp = 5.8e-3
+    h_mbp = 2e-2
     h_quasistatic = 0.1
 
     loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = run_comparison(
