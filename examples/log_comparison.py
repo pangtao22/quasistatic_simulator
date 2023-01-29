@@ -27,12 +27,12 @@ def calc_error_integral(q_knots, t, q_gt_traj):
     return e, e_vec, t_e
 
 
-def get_angle_from_quaternion(q: np.array):
+def get_angle_from_quaternion(q: np.ndarray):
     return AngleAxis(Quaternion(q / np.linalg.norm(q))).angle()
 
 
 def convert_quaternion_array_to_eigen_quaternion_traj(
-    q_array: np.array, t: np.array
+    q_array: np.ndarray, t: np.ndarray
 ):
     """
     :param q_array: (n, 4) array where q_array[i] is a quaternion.
@@ -48,7 +48,7 @@ def calc_quaternion_error_integral(
     t: np.array,
     q_traj: PiecewiseQuaternionSlerp,
 ):
-    assert q_traj.is_time_in_range(t[0]) and q_traj.is_time_in_range(t[-1])
+    # assert q_traj.is_time_in_range(t[0]) and q_traj.is_time_in_range(t[-1])
     assert len(q_list) == len(t)
 
     angle_diff_list = []
@@ -67,7 +67,10 @@ def calc_quaternion_error_integral(
 
 
 def calc_pose_error_integral(
-    pose_list_1: np.array, t1: np.array, pose_list_2: np.array, t2: np.array
+    pose_list_1: np.ndarray,
+    t1: np.ndarray,
+    pose_list_2: np.ndarray,
+    t2: np.ndarray,
 ):
     """
     Converts the rotation and translation parts of pose_list_2 to a

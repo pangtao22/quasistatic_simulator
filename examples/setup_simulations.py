@@ -430,7 +430,7 @@ def run_mbp_sim(
 
     loggers_dict = get_logs_from_sim(log_sinks_dict, sim)
 
-    # diagram structure visualization.
+    # Diagram structure visualization.
     # from graphviz import Source
     #
     # src = Source(diagram.GetGraphvizString())

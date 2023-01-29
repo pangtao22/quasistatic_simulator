@@ -1,3 +1,5 @@
+import pickle
+
 import matplotlib.pyplot as plt
 from examples.iiwa_block_stacking.simulation_parameters import *
 from examples.log_comparison import (
@@ -90,7 +92,7 @@ def run_comparison(
     )
 
     input("quasi-static?")
-    # Quasistatic
+    # Quasi-static
     loggers_dict_quasistatic_str, q_sys = run_quasistatic_sim(
         q_parser=q_parser,
         backend=QuasistaticSystemBackend.CPP,
@@ -131,12 +133,11 @@ def compare_all_models(
 
 
 if __name__ == "__main__":
-    h_mbp = 2e-2
-    h_quasistatic = 0.1
+    h = 0.001
 
     loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = run_comparison(
-        h_mbp=h_mbp,
-        h_quasistatic=h_quasistatic,
+        h_mbp=h,
+        h_quasistatic=h,
         is_visualizing=True,
         use_implicit_pd_controller=True,
     )
@@ -145,6 +146,23 @@ if __name__ == "__main__":
         plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str
     )
     print(error_dict)
+    #%%
+    # save box0 log for comparison.
+    with open(f"./data/q_u_box0_h_{h}.pkl", "wb") as f:
+        pickle.dump(
+            dict(
+                h=h,
+                q_u_box0_mbp=loggers_dict_mbp_str["box0"].data(),
+                t_mbp=loggers_dict_mbp_str["box0"].sample_times(),
+                q_u_box0_quasi_static=loggers_dict_quasistatic_str[
+                    "box0"
+                ].data(),
+                t_quasi_static=loggers_dict_quasistatic_str[
+                    "box0"
+                ].sample_times(),
+            ),
+            f,
+        )
 
     # %% IIWA joint angles plot.
     q_iiwa_log_mbp = loggers_dict_mbp_str[iiwa_name].data()[:7].T
