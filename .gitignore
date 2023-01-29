@@ -11,6 +11,7 @@ build
 .coverage
 *.html
 *.pyc
+*.pkl
 .cache
 cmake_build_debug
 cmake_build_release
