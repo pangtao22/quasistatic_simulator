@@ -25,14 +25,51 @@
         </inertia>
       </inertial>
 
-      <visual name="box_visual">
+      <visual name="box_visual_0">
+        <pose> -0.015 -0.015 0 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.059 0.059 0.059</size>
+            <size>0.03 0.03 0.06</size>
           </box>
         </geometry>
         <material>
-          <diffuse>1.0 0. 0. 1.0</diffuse>
+          <diffuse>0.64 0.12 0.20 1.0</diffuse>
+        </material>
+      </visual>
+
+      <visual name="box_visual_1">
+        <pose> -0.015 0.015 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.64 0.12 0.20 1.0</diffuse>
+        </material>
+      </visual>
+
+      <visual name="box_visual_2">
+        <pose> 0.015 -0.015 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.64 0.12 0.20 1.0</diffuse>
+        </material>
+      </visual>
+
+      <visual name="box_visual_3">
+        <pose> 0.015 0.015 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.54 0.55 0.55 1.0</diffuse>
         </material>
       </visual>
 

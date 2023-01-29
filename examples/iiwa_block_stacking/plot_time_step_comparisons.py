@@ -126,7 +126,7 @@ for i, ax in enumerate(axes):
     if i < len(axes) - 1:
         plt.setp(ax.get_xticklabels(), visible=False)
 axes[-1].set_xlabel("t [s]")
-axes[2].legend(loc="lower right", ncol=2)
+axes[-1].legend(loc="lower right", ncol=2)
 plt.tight_layout()
 plt.savefig("box0_pose.pdf", bbox_inches="tight", pad_inches=0.01)
 plt.show()
