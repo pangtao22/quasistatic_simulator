@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,8 +28,9 @@ q_model_path = os.path.join(models_dir, "q_sys", "iiwa.yml")
 
 # Simulation parameters.
 robot_name = "iiwa"
-h_quasistatic = 0.4
-h_mbp = 0.4
+h = 0.1
+h_quasistatic = h
+h_mbp = h
 
 # Robot joint trajectory.
 nq_a = 7
@@ -122,6 +124,19 @@ if __name__ == "__main__":
         real_time_rate=0.0,
         use_implicit_pd_controller=True,
     )
+
+    # save log
+    with open(f"./data/q_iiwa_h_{h}.pkl", "wb") as f:
+        pickle.dump(
+            dict(
+                h=h,
+                q_iiwa_mbp=q_iiwa_log_mbp,
+                t_mbp=t_mbp,
+                q_iiwa_quasi_static=q_iiwa_log_quasistatic,
+                t_quasi_static=t_quasistatic,
+            ),
+            f,
+        )
 
     # %% Making plots.
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)

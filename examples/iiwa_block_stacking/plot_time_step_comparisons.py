@@ -16,7 +16,7 @@ from pydrake.common.eigen_geometry import Quaternion, AngleAxis
 
 #%% Load data
 # time_steps = [0.001, 0.01, 0.1, 0.2, 0.4]
-time_steps = [5e-5, 0.001, 0.01, 0.1, 0.5]
+time_steps = [5e-5, 0.0001, 0.001, 0.01, 0.1, 0.5]
 
 
 q_u_box0_dict_list = []
@@ -70,7 +70,7 @@ axes[0].scatter(time_steps, e_angle_quasi_static_list, label="Quasi-static")
 axes[1].scatter(time_steps[1:], e_xyz_mbp_list[1:], label="MBP")
 axes[1].scatter(time_steps, e_xyz_quasi_static_list, label="Quasi-static")
 
-a = r"$\Delta(q^\mathrm{u}_\mathrm{QS}, q^\mathrm{u}_\mathrm{MBP})$"
+a = r"$\Delta(q^\mathrm{u}_\mathrm{QS/MBP}, q^\mathrm{u}_\mathrm{GT})$"
 axes_labels = [a + ", angular [rad]", a + ", translational [m]"]
 for ax, ax_label in zip(axes, axes_labels):
     ax.set_xscale("log")
