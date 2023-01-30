@@ -10,7 +10,7 @@ robots:
 objects:
   -
     name: box
-    file: package://quasistatic_simulator/box_15cm_xy_rotation.sdf
+    file: package://quasistatic_simulator/box_intel_nuc_xy_rotation.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, 0]
