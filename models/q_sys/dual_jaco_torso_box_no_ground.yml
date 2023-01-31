@@ -1,0 +1,20 @@
+model_directive: package://quasistatic_simulator/dual_jaco_torso_sphere_collision_push_no_ground.yml
+robots:
+  -
+    name: jaco_left
+    Kp: [800, 600, 600, 600, 400, 200, 200]
+  -
+    name: jaco_right
+    Kp: [800, 600, 600, 600, 400, 200, 200]
+
+objects:
+  -
+    name: box
+    file: package://quasistatic_simulator/box_30_40_40cm.sdf
+
+quasistatic_sim_params:
+  gravity: [0, 0, 0]
+  nd_per_contact: 4
+  contact_detection_tolerance: 0.2
+  is_quasi_dynamic: True
+  unactuated_mass_scale: 5
