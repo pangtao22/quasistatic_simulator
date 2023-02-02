@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="jaco_bubble_picoflexx_paw">
+    <link name="gripper">
+    <!-- <link name="jaco_bubble_fist_body"> -->
+      <pose>0.0 0.0 0 0 0 0</pose>
+      <inertial>
+        <!-- Inertial values are approximate and calculated for a
+        cylinder of radius 35mm, height 110mm and mass 200gms -->
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.025</mass>
+        <inertia>
+          <ixx>0.000197</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000197</iyy>
+          <iyz>0</iyz>
+          <izz>0.0000153</izz>
+        </inertia>
+      </inertial>
+      <visual name="base_visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>jaco_bubble_picoflexx_paw.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.3 0.3 1</ambient>
+          <diffuse>0.7 0.7 0.7 0.5</diffuse>
+          <specular>0.001 0.001 0.001 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+
+      <!-- <visual name="wrist_visual">
+        <pose>-0.05 0.065 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </visual>
+      <collision name="wrist_collision">
+        <pose>-0.05 0.065 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </collision> -->
+
+      <!-- <visual name="boards_visual">
+        <pose>-0.015 0.11 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </visual>
+      <collision name="boards_collision">
+        <pose>-0.015 0.11 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </collision> -->
+
+      <!-- <visual name="tip_visual">
+        <pose>-0.1 0.125 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </visual>
+      <collision name="tip_collision">
+        <pose>-0.1 0.125 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.01</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </collision> -->
+
+      <visual name="bubble_visual">
+        <pose>-0.09 0.095 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.0415</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </visual>
+      <collision name="bubble_collision">
+        <pose>-0.09 0.095 0 0 0 0</pose>pose&gt;
+        <geometry>
+          <sphere>
+            <radius>0.0415</radius>
+          </sphere>
+        </geometry>geometry&gt;
+      </collision>
+    </link>
+    <!-- <joint name="adapter_joint" type="fixed">
+      <child>jaco_bubble_fist_body</child>
+      <parent>gripper</parent>
+    </joint> -->
+    <frame name="bubble_base_center">
+      <pose relative_to="gripper">-0.1 0.09 0 1.5707 0 1.91986</pose>
+    </frame>
+    <frame name="picoflexx_camera_center">
+      <pose relative_to="gripper">-0.04685 0.06678 0 1.5707 0 4.45059</pose>
+    </frame>
+    <frame name="grasp_frame">
+      <pose relative_to="bubble_base_center">0 0 0 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>
