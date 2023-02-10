@@ -7,17 +7,18 @@ rc("font", **{"family": "sans-serif", "sans-serif": ["Helvetica"]})
 rc("text", usetex=True)
 from qsim_old.problem_definition_pinch import *
 
-q_log = np.load("q_log.npy")
+q_log = np.load("q_log_lcp.npy")
 q_log_anitescu = np.load("q_log_anitescu.npy")
-qa_cmd_log = np.load("q_cmd_log.npy")
+qa_cmd_log = np.load("qa_cmd_log.npy")
+n_steps = len(qa_cmd_log)
 t_sim1 = np.arange(n_steps + 1) * h
-
+t_contact_mode_change = [0.03, 0.13, 0.23]  # copied from run_quasistatic_sim.py
 #%%
 fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=200)
 
 labels = [r"$x_l$, LCP", r"$y_l$, LCP"]
-labels_anitescu = [r"$x_l$, QP", r"$y_l$, QP"]
-cmd_labels = [r"$\bar{x}_l$", r"$\bar{y}_l$"]
+labels_anitescu = [r"$x_l$, CQDC", r"$y_l$, CQDC"]
+cmd_labels = [r"$u_l$", r"$u_y$"]
 idx = [0, 2]
 for i, ax in enumerate(axes):
     color = "red"

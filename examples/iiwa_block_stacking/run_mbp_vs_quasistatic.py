@@ -17,11 +17,22 @@ from pydrake.all import (
     StartMeshcat,
     InverseDynamics,
     DiscreteContactSolver,
+    Meshcat,
 )
 from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
+
+
+def set_meshcat_camera(meshcat: Meshcat):
+    meshcat.SetTransform(
+        "/Cameras/default",
+        RigidTransform(RollPitchYaw(0, 0, 0), [1, 1, 0.8]),
+    )
+    meshcat.SetProperty(
+        "/Cameras/default/rotated/<object>", "position", [0, 0, 0]
+    )
 
 
 def run_comparison(
@@ -38,6 +49,7 @@ def run_comparison(
     meshcat = None
     if is_visualizing:
         meshcat = StartMeshcat()
+        set_meshcat_camera(meshcat)
 
     gravity = q_parser.get_gravity()
 
@@ -133,7 +145,7 @@ def compare_all_models(
 
 
 if __name__ == "__main__":
-    h = 0.01
+    h = 0.0005
 
     loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant = run_comparison(
         h_mbp=h,

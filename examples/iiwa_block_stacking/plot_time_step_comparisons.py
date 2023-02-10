@@ -16,7 +16,7 @@ from pydrake.common.eigen_geometry import Quaternion, AngleAxis
 
 #%% Load data
 # time_steps = [0.001, 0.01, 0.1, 0.2, 0.4]
-time_steps = [5e-5, 0.0001, 0.001, 0.01, 0.1, 0.5]
+time_steps = [5e-5, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
 
 
 q_u_box0_dict_list = []
@@ -64,13 +64,13 @@ e_xyz_mbp_list /= T
 e_xyz_quasi_static_list /= T
 
 #%%
-_, axes = plt.subplots(1, 2, figsize=(12, 3), dpi=600)
-axes[0].scatter(time_steps[1:], e_angle_mbp_list[1:], label="MBP")
-axes[0].scatter(time_steps, e_angle_quasi_static_list, label="Quasi-static")
-axes[1].scatter(time_steps[1:], e_xyz_mbp_list[1:], label="MBP")
-axes[1].scatter(time_steps, e_xyz_quasi_static_list, label="Quasi-static")
+_, axes = plt.subplots(2, 1, figsize=(6, 6), dpi=600)
+axes[0].scatter(time_steps[1:], e_angle_mbp_list[1:], label="SAP")
+axes[0].scatter(time_steps, e_angle_quasi_static_list, label="CQDC")
+axes[1].scatter(time_steps[1:], e_xyz_mbp_list[1:], label="SAP")
+axes[1].scatter(time_steps, e_xyz_quasi_static_list, label="CQDC")
 
-a = r"$\Delta(q^\mathrm{u}_\mathrm{QS/MBP}, q^\mathrm{u}_\mathrm{GT})$"
+a = r"$\Delta(q^\mathrm{u}_\mathrm{CQDC/SAP}, q^\mathrm{u}_\mathrm{GT})$"
 axes_labels = [a + ", angular [rad]", a + ", translational [m]"]
 for ax, ax_label in zip(axes, axes_labels):
     ax.set_xscale("log")
@@ -86,7 +86,7 @@ plt.show()
 
 
 #%% Pose of box0
-fig, axes = plt.subplots(4, 1, figsize=(5, 6.2), dpi=300)
+fig, axes = plt.subplots(4, 1, figsize=(6, 7), dpi=300)
 
 y_labels = [r"$x$ [m]", r"$y$ [m]", r"$z$ [m]", r"angle [rad]", r"roll [rad]"]
 

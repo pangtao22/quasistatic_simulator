@@ -61,13 +61,10 @@ e_quasi_static /= T
 
 #%%
 plt.figure(figsize=(6, 3), dpi=300)
-plt.scatter(time_steps, e_mbp, label="MBP")
-plt.scatter(time_steps, e_quasi_static, label="Quasi-static")
+plt.scatter(time_steps, e_mbp, label="SAP")
+plt.scatter(time_steps, e_quasi_static, label="CQDC")
 
-label = (
-    r"$\Delta(q^\mathrm{u}_\mathrm{QS/MBP}, q^\mathrm{u}_\mathrm{GT})$ ["
-    r"rad]"
-)
+label = r"$\Delta(q_\mathrm{CQDC/SAP}, q_\mathrm{ref})$ [rad]"
 
 plt.xscale("log")
 plt.yscale("log")
