@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="jaco_nub">
+    <link name="gripper"/>
+    <link name="jaco_nub_body">
+      <pose relative_to="gripper">0.0 0.0 0 0 0 0</pose>
+      <inertial>
+        <!-- Bogus inertial values. -->
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <visual name="nub_mesh">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>jaco_nub.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.1 0.1 0.1 0.5</diffuse>
+        </material>
+      </visual>
+      <visual name='nub_tip_visual'>
+        <pose>0 0 -0.055 0 -0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.03275</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+        </material>
+      </visual>
+      <collision name='nub_tip_contact'>
+        <pose>0 0 -0.055 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.03275</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>1.0</mu>
+            <mu2>1.0</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+    </link>
+    <joint name="adapter_joint" type="fixed">
+      <child>jaco_nub_body</child>
+      <parent>gripper</parent>
+    </joint>
+  </model>
+</sdf>

@@ -402,59 +402,7 @@ Later edited by hand to:
           <izz>1</izz>
         </inertia>
       </inertial>
-
-      <visual name="paw_visual">
-        <pose>0 0 0 -1.507 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>jaco_bubble_picoflexx_paw.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <ambient>0.3 0.3 0.3 1</ambient>
-          <diffuse>0.3 0.3 0.3 0.5</diffuse>
-          <specular>0.001 0.001 0.001 1</specular>
-          <emissive>0 0 0 1</emissive>
-        </material>
-      </visual>
-      <visual name="bubble_sphere_visual">
-        <pose>-0.09 0.006 -0.095 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.0415</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.9 0.9 0.9 0.7</diffuse>
-        </material>
-      </visual>
-      <collision name="bubble_sphere_collision">
-        <pose>-0.09 0.006 -0.095 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.0415</radius>
-          </sphere>
-        </geometry>
-        <surface>
-          <friction>
-          <ode>
-            <mu>1.0</mu>
-            <mu2>1.0</mu2>
-          </ode>
-          </friction>
-        </surface>
-      </collision>
-      
     </link>
-
-    <frame name="paw_base_frame" attached_to="j2s7s300_link_7">
-      <pose relative_to="j2s7s300_link_7">0 0 0 -1.5707 0 0</pose>
-    </frame>
-    <frame name="grasp_frame" attached_to="j2s7s300_link_7">
-      <pose relative_to="paw_base_frame">-0.1 0.09 0 1.5707 0 1.91986</pose>
-    </frame>
-
     <joint name='j2s7s300_joint_7' type='revolute'>
       <child>j2s7s300_link_7</child>
       <parent>j2s7s300_link_6</parent>
@@ -475,5 +423,77 @@ Later edited by hand to:
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+
+    <link name="paw_link">
+      <pose relative_to="j2s7s300_link_7">0 0 0 -1.507 0 2.0944</pose>
+      <inertial>
+        <!-- Bogus inertial values -->
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <visual name="paw_mesh">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>jaco_bubble_picoflexx_paw.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.3 0.3 1</ambient>
+          <diffuse>0.3 0.3 0.3 0.5</diffuse>
+          <specular>0.001 0.001 0.001 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <visual name="bubble_sphere_visual">
+        <pose>-0.088 0.09 0 1.5707 0 1.91986</pose>
+        <geometry>
+          <sphere>
+            <radius>0.0415</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0.9 0.9 0.9 0.7</diffuse>
+        </material>
+      </visual>
+      <collision name="bubble_sphere_collision">
+        <pose>-0.088 0.09 0 1.5707 0 1.91986</pose>
+        <geometry>
+          <sphere>
+            <radius>0.0415</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+          <ode>
+            <mu>1.0</mu>
+            <mu2>1.0</mu2>
+          </ode>
+          </friction>
+        </surface>
+      </collision>
+    </link>
+
+    <joint name='paw_joint' type='fixed'>
+      <child>paw_link</child>
+      <parent>j2s7s300_link_7</parent>
+    </joint>
+
+    <frame name="paw_base_frame" attached_to="paw_link">
+      <pose relative_to="paw_link">-0.088 0.09 0 1.5707 0 1.91986</pose>
+    </frame>
+    <frame name="grasp_frame" attached_to="paw_link">
+      <pose relative_to="paw_base_frame">0 0 0 0 0 0</pose>
+    </frame>
+
   </model>
 </sdf>

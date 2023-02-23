@@ -11,13 +11,15 @@ directives:
     name: world_left_arm_offset
     X_PF:
         base_frame: world
-        translation: [0, 0.406, 0]
+        translation: [0, 0.27, 0.11]
+        rotation: !Rpy {deg: [0, 0, 90]}
 
 - add_frame:
     name: world_right_arm_offset
     X_PF:
         base_frame: world
-        translation: [0, -0.406, 0]
+        translation: [0, -0.27, 0.11]
+        rotation: !Rpy {deg: [0, 0, 90]}
 
 - add_weld:
     parent: world_left_arm_offset

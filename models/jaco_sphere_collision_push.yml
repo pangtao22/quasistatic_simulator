@@ -6,6 +6,13 @@ directives:
     name: jaco
     file: package://quasistatic_simulator/j2s7s300_arm_sphere_collision_v2.sdf
 
+- add_frame:
+    name: world_arm_offset
+    X_PF:
+        base_frame: world
+        translation: [0, 0, 0.11]
+        rotation: !Rpy {deg: [0, 0, 90]}
+
 - add_weld:
-    parent: world
+    parent: world_arm_offset
     child: jaco::base
