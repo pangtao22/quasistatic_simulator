@@ -43,7 +43,12 @@ If on Apple Silicon Macs, run
 docker run -v $PWD:"/github/workspace" --platform=linux/amd64 --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
 ```
 It is also very slow, even slower than building the image and then running 
-the test in CI. It also segfaults in the C++ tests. Not worth it. 
+the test in CI.
+
+---
+If following the dockerfile and the scripts therein to build locally, it is 
+recommended to set `-DCMAKE_BUILD_TYPE=Release`. Building in release mode 
+seems to trigger segfaults inside containers. 
 
 ## Running python tests
 In the root of the repo, run 
