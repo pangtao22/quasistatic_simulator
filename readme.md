@@ -17,21 +17,38 @@ Note that until [this issue](https://github.com/RobotLocomotion/drake-external-e
 
 
 ## Docker
-Remember to check out submodules before building the docker images.
+1. Remember to check out submodules before building the docker images.
 ```
 git submodule update --init --recursive
 ```
 
-In the root of this repo, to build, run
+2. In the root of this repo, to build, run
 ```
 docker build -t qsim -f focal.dockerfile .
 ```
 
-To run the github "build and test" action locally, run
+If on Apple Silicon Macs, run
+```
+docker buildx build --platform=linux/amd64 -t qsim -f focal.dockerfile .
+```
+Beware that compiling is slow! It took M2 Max more than 20 minutes to build the 
+image. 
+
+3. To run the github "build and test" action locally, run
 ```
 docker run -v $PWD:"/github/workspace" --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
 ```
+If on Apple Silicon Macs, run
+```
+docker run -v $PWD:"/github/workspace" --platform=linux/amd64 --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
+```
+It is also very slow, even slower than building the image and then running 
+the test in CI.
 
+---
+If following the dockerfile and the scripts therein to build locally, it is 
+recommended to set `-DCMAKE_BUILD_TYPE=Release`. Building in release mode 
+seems to trigger segfaults inside containers. 
 
 ## Running python tests
 In the root of the repo, run 
