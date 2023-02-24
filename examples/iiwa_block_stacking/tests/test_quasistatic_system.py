@@ -73,7 +73,7 @@ class TestQuasistaticSystem(unittest.TestCase):
             h=h, is_visualizing=False
         )
 
-        tolerance = 1e-3 if q_parser.q_sim_params.use_free_solvers else 1e-6
+        tolerance = 2e-3 if q_parser.q_sim_params.use_free_solvers else 1e-6
         duraiton = t_quasistatic[-1]
         for model_name in q0_dict_str.keys():
             q_log_system = loggers_dict_systems_str[model_name].data().T

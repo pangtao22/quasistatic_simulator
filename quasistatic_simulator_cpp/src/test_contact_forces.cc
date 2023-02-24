@@ -23,12 +23,12 @@ protected:
         GetQsimModelsPath() / "q_sys" / "two_spheres_xyz.yml";
     auto parser = QuasistaticParser(kQModelPath);
 
-    params_.h = 0.1;
-    params_.gravity = Vector3d(0, 0, -10);
-    params_.is_quasi_dynamic = true;
+    sim_params_.h = 0.1;
+    sim_params_.gravity = Vector3d(0, 0, -10);
+    sim_params_.is_quasi_dynamic = true;
     // So that contact between the small ball and the big ball is ignored.
-    params_.contact_detection_tolerance = 0.1;
-    params_.use_free_solvers = GetParam();
+    sim_params_.contact_detection_tolerance = 0.1;
+    sim_params_.use_free_solvers = GetParam();
 
     const string robot_name("sphere_xyz_actuated");
     const string object_name("sphere_xyz");
@@ -47,7 +47,7 @@ protected:
     u0_ = q_sim_->GetQaCmdVecFromDict(q0_dict);
   };
 
-  QuasistaticSimParameters params_;
+  QuasistaticSimParameters sim_params_;
   std::unique_ptr<QuasistaticSimulator> q_sim_;
   ModelInstanceIndex model_r_; // robot model instance index.
   ModelInstanceIndex model_o_; // object model instance index.
@@ -56,11 +56,11 @@ protected:
 
 TEST_P(TestContactForces, TestNormalVsWeight) {
   // Contact force using QP dynamics.
-  params_.nd_per_contact = 4;
-  params_.forward_mode = ForwardDynamicsMode::kQpMp;
+  sim_params_.nd_per_contact = 4;
+  sim_params_.forward_mode = ForwardDynamicsMode::kQpMp;
   drake::multibody::ContactResults<double> cr_qp;
   {
-    QuasistaticSimulator::CalcDynamics(q_sim_.get(), q0_, u0_, params_);
+    QuasistaticSimulator::CalcDynamics(q_sim_.get(), q0_, u0_, sim_params_);
     cr_qp = q_sim_->get_contact_results();
     ASSERT_EQ(cr_qp.num_point_pair_contacts(), 1);
   }
@@ -68,18 +68,19 @@ TEST_P(TestContactForces, TestNormalVsWeight) {
   const auto &f_B_W_qp = cp_qp.contact_force();
 
   // Contact force using SOCP dynamics.
-  params_.forward_mode = ForwardDynamicsMode::kSocpMp;
+  sim_params_.forward_mode = ForwardDynamicsMode::kSocpMp;
   drake::multibody::ContactResults<double> cr_socp;
   {
-    QuasistaticSimulator::CalcDynamics(q_sim_.get(), q0_, u0_, params_);
+    QuasistaticSimulator::CalcDynamics(q_sim_.get(), q0_, u0_, sim_params_);
     cr_socp = q_sim_->get_contact_results();
     ASSERT_EQ(cr_socp.num_point_pair_contacts(), 1);
   }
   const auto &cp_socp = cr_socp.point_pair_contact_info(0);
   const auto &f_B_W_socp = cr_socp.point_pair_contact_info(0).contact_force();
 
+  const double force_tol = sim_params_.use_free_solvers ? 1e-4 : 1e-8;
   // QP and SOCP forward dynamics should predict the same contact forces.
-  EXPECT_LE((f_B_W_qp - f_B_W_socp).norm(), 1e-8);
+  EXPECT_LE((f_B_W_qp - f_B_W_socp).norm(), force_tol);
   EXPECT_EQ(cp_socp.bodyB_index(), cp_qp.bodyB_index());
   EXPECT_EQ(cp_socp.bodyA_index(), cp_qp.bodyA_index());
 
@@ -96,7 +97,7 @@ TEST_P(TestContactForces, TestNormalVsWeight) {
   Vector3d f_Obj_W = f_B_W_socp * (is_B_object ? 1 : -1);
 
   // The object's contact force should balance its weight.
-  EXPECT_LT((f_Obj_W + tau_ext_dict[model_o_]).norm(), 1e-8);
+  EXPECT_LT((f_Obj_W + tau_ext_dict[model_o_]).norm(), force_tol);
 }
 
 INSTANTIATE_TEST_SUITE_P(

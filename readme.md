@@ -42,7 +42,8 @@ If on Apple Silicon Macs, run
 ```
 docker run -v $PWD:"/github/workspace" --platform=linux/amd64 --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
 ```
-It is also very slow, even slower than CI.
+It is also very slow, even slower than building the image and then running 
+the test in CI. It also segfaults in the C++ tests. Not worth it. 
 
 ## Running python tests
 In the root of the repo, run 
