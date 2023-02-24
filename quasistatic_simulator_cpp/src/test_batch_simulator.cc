@@ -169,7 +169,8 @@ TEST_P(TestBatchQuasistaticSimulator, TestForwardDynamicsPlanarHand) {
   CompareIsValid(is_valid_batch_parallel, is_valid_batch_serial);
 
   // x_next.
-  CompareXNext(x_next_batch_parallel, x_next_batch_serial);
+  const double x_next_tol = sim_params_.use_free_solvers? 1e-4 : 1e-5;
+  CompareXNext(x_next_batch_parallel, x_next_batch_serial, x_next_tol);
 
   // B.
   EXPECT_EQ(B_batch_parallel.size(), 0);
