@@ -12,5 +12,5 @@ build
 *.html
 *.pyc
 .cache
-cmake_build_debug
-cmake_build_release
+cmake-build-debug
+cmake-build-release
