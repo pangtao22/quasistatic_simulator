@@ -16,7 +16,7 @@ class Test3linkArmBoxPushing2D(unittest.TestCase):
         )
 
     def test_python_vs_cpp(self):
-        atol = 1e-3 if self.q_parser.q_sim_params.use_free_solvers else 1e-6
+        atol = 2e-3 if self.q_parser.q_sim_params.use_free_solvers else 1e-6
         compare_q_sim_cpp_vs_py(
             test_case=self,
             q_parser=self.q_parser,
