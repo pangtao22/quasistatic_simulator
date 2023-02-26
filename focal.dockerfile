@@ -11,7 +11,7 @@ RUN apt-get update \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
-ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.12.0/drake-20230112-focal.tar.gz
+ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.11.0/drake-20221214-focal.tar.gz
 RUN curl -fSL -o drake.tar.gz $DRAKE_URL
 RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
 RUN apt-get update \
