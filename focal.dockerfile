@@ -11,7 +11,6 @@ RUN apt-get update \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
-# https://github.com/RobotLocomotion/drake/releases/download/v1.12.0/drake-20230112-focal.tar.gz
 ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.12.0/drake-20230112-focal.tar.gz
 RUN curl -fSL -o drake.tar.gz $DRAKE_URL
 RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
@@ -30,6 +29,7 @@ ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
 COPY scripts/build_bindings.sh /tmp/
 COPY models $QSIM_PATH/models/
 COPY robotics_utilities $QSIM_PATH/robotics_utilities
+COPY qsim $QSIM_PATH/qsim
 COPY quasistatic_simulator_cpp/ $QSIM_CPP_PATH/
 RUN /tmp/build_bindings.sh
 
@@ -39,4 +39,5 @@ RUN python3 -m pip install -r /tmp/requirements.txt
 
 # put qsim_cpp on the python path.
 ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
+ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
 ENV PYTHONPATH /opt/drake/lib/python3.8/site-packages:$PYTHONPATH
