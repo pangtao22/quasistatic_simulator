@@ -1,10 +1,13 @@
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && yes "Y" \
-      | apt-get install --no-install-recommends curl apt-transport-https sudo \
+EXPOSE 7000-7099/tcp
+EXPOSE 8888/tcp
+
+RUN apt-get update \
+      && apt-get install --no-install-recommends curl apt-transport-https sudo \
       ca-certificates libgtest-dev libgflags-dev python3.8-dev python3-pip \
-      git \
+      git python-is-python3 \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
@@ -13,7 +16,7 @@ ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.12.0
 RUN curl -fSL -o drake.tar.gz $DRAKE_URL
 RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
 RUN apt-get update \
-  && yes "Y" | bash /opt/drake/share/drake/setup/install_prereqs \
+  && bash /opt/drake/share/drake/setup/install_prereqs \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean all
 
