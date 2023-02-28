@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="box_intel_nuc">
+
+    <!-- This is a model of an empty Intel NUC box. -->
+
+    <!-- The model for a solid box of uniform density. -->
+    <link name="box">
+      <inertial>
+        <mass>1.45</mass>
+        <inertia>
+          <ixx>0.00848008333333333</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.012947533333333332</iyy>
+          <iyz>0</iyz>
+          <izz>0.01394175</izz>
+        </inertia>
+      </inertial>
+
+      <visual name="box_visual">
+        <geometry>
+          <box>
+            <size>0.276 0.198 0.176</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.9 0.9 0.9 0.9</diffuse>
+        </material>
+      </visual>
+
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.276 0.198 0.176</size>
+          </box>
+        </geometry>
+        <drake:proximity_properties>
+          <drake:rigid_hydroelastic/>
+          <drake:hunt_crossley_dissipation>1.25</drake:hunt_crossley_dissipation>
+          <drake:mesh_resolution_hint>0.01</drake:mesh_resolution_hint>
+          <drake:mu_dynamic>0.5</drake:mu_dynamic>
+          <drake:mu_static>0.5</drake:mu_static>
+        </drake:proximity_properties>
+      </collision>
+
+    </link>
+  </model>
+</sdf>
