@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="jug_5_gallon">
+    <!-- This is a model of an empty 5 gallon water jug. -->
+    <!-- The model for a jug of uniform density. -->
+    <link name="jug">
+      <inertial>
+        <mass>0.8</mass>
+        <inertia>
+          <ixx>0.00848008333333333</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.012947533333333332</iyy>
+          <iyz>0</iyz>
+          <izz>0.01394175</izz>
+        </inertia>
+      </inertial>
+        <visual name="jug_visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>jug_water_5_gallon.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.4 0.4 0.4 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name="jug_collision">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.135</radius>
+            <length>0.40</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.5</mu>
+              <mu2>0.5</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <collision name="jug_top_collision">
+        <pose>0 0 0.201 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.03</radius>
+            <length>0.065</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.5</mu>
+              <mu2>0.5</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+    </link>
+  </model>
+</sdf>
