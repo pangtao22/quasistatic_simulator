@@ -8,6 +8,7 @@
 #include "qp_derivatives.h"
 #include "quasistatic_simulator.h"
 #include "socp_derivatives.h"
+#include "finite_differencing_gradient.h"
 
 namespace py = pybind11;
 
@@ -136,6 +137,14 @@ PYBIND11_MODULE(qsim_cpp, m) {
              &Class::get_num_max_parallel_executions)
         .def("set_num_max_parallel_executions",
              &Class::set_num_max_parallel_executions);
+  }
+
+  {
+    using Class = FiniteDiffGradientCalculator;
+    py::class_<Class>(m, "FiniteDiffGradientCalculator")
+        .def(py::init<QuasistaticSimulator &>(), py::arg("q_sim"))
+        .def("calc_A", &Class::CalcA)
+        .def("calc_B", &Class::CalcB);
   }
 
   {
