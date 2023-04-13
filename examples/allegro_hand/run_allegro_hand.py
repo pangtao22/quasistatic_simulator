@@ -13,6 +13,7 @@ from qsim.parser import (
 )
 from qsim.simulator import ForwardDynamicsMode
 from qsim.model_paths import models_dir
+from qsim_cpp import FiniteDiffGradientCalculator
 
 # %% sim setup
 q_model_path = os.path.join(models_dir, "q_sys", "allegro_hand_and_sphere.yml")
@@ -111,7 +112,7 @@ qa_cmd_dict = {idx_a: q_dict[idx_a] + 0.05}
 # analytical gradient
 sim_params = copy.deepcopy(q_sim.sim_params)
 sim_params.forward_mode = ForwardDynamicsMode.kQpMp
-sim_params.gradient_mode = GradientMode.kBOnly
+sim_params.gradient_mode = GradientMode.kAB
 sim_params.h = h
 
 q_sim.update_mbp_positions(q_dict)
@@ -134,7 +135,7 @@ q_sim_cpp.step(
 )
 dfdu_active_cpp = q_sim_cpp.get_Dq_nextDqa_cmd()
 
-#%%
+# %%
 # quaternion derivatives
 dqdu_numerical = dfdu_numerical[-7:]
 dqdu_analytic = dfdu_active[-7:]
@@ -149,3 +150,17 @@ diff = dfdu_numerical - dfdu_active
 print("dfdu numerical norm", np.linalg.norm(dfdu_numerical))
 print("dfdu analytic norm", np.linalg.norm(dfdu_active))
 print("max abs diff norm", np.max(abs(diff)))
+
+
+# %%
+fd_gradient_calculator = FiniteDiffGradientCalculator(q_sim_cpp)
+
+# %%
+q_nominal = q_sim_cpp.get_q_vec_from_dict(q_dict)
+u_nominal = q_sim_cpp.get_q_a_cmd_vec_from_dict(qa_cmd_dict)
+sim_params.gravity = np.zeros(3)
+A_numerical = fd_gradient_calculator.calc_A(
+    q_nominal, u_nominal, 1e-4, sim_params
+)
+
+A_analytic = q_sim_cpp.get_Dq_nextDq()
