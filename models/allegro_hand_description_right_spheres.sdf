@@ -99,11 +99,11 @@
       <parent>hand_root</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.087156 0.996195</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -163,11 +163,11 @@
       <parent>link_0</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -227,11 +227,11 @@
       <parent>link_1</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -292,11 +292,11 @@
       <parent>link_2</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -343,11 +343,11 @@
       <parent>hand_root</parent>
       <axis>
         <xyz expressed_in="__model__">0 0 1</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -408,11 +408,11 @@
       <parent>link_4</parent>
       <axis>
         <xyz expressed_in="__model__">0 1 0</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -473,11 +473,11 @@
       <parent>link_5</parent>
       <axis>
         <xyz expressed_in="__model__">0 1 0</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -539,11 +539,11 @@
       <parent>link_6</parent>
       <axis>
         <xyz expressed_in="__model__">0 1 0</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -590,11 +590,11 @@
       <parent>hand_root</parent>
       <axis>
         <xyz expressed_in="__model__">0 -0.087156 0.996195</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -655,11 +655,11 @@
       <parent>link_8</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -720,11 +720,11 @@
       <parent>link_9</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -786,11 +786,11 @@
       <parent>link_10</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -837,11 +837,11 @@
       <parent>hand_root</parent>
       <axis>
         <xyz expressed_in="__model__">0 -0.087156 -0.996195</xyz>
-        <limit>
+<!--         <limit>
           <lower>0.263</lower>
           <upper>1.396</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -887,11 +887,11 @@
       <parent>link_12</parent>
       <axis>
         <xyz expressed_in="__model__">0 0.996195 -0.087156</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.105</lower>
           <upper>1.163</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -943,11 +943,11 @@
       <parent>link_13</parent>
       <axis>
         <xyz expressed_in="__model__">1 0 0</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.189</lower>
           <upper>1.644</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>
@@ -1017,11 +1017,11 @@
       <parent>link_14</parent>
       <axis>
         <xyz expressed_in="__model__">1 0 0</xyz>
-        <limit>
+<!--         <limit>
           <lower>-0.162</lower>
           <upper>1.719</upper>
           <effort>0.7</effort>
-        </limit>
+        </limit> -->
         <dynamics>
           <damping>1.5e-2</damping>
         </dynamics>

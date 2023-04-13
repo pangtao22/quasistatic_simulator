@@ -13,7 +13,7 @@ objects:
     file: package://quasistatic_simulator/cylinder.sdf
 
 quasistatic_sim_params:
-  gravity: [0, 0, 0]
+  gravity: [0, 0, -9.8]
   nd_per_contact: 4
   contact_detection_tolerance: 0.2
   is_quasi_dynamic: True
