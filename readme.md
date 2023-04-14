@@ -48,7 +48,7 @@ the test in CI.
 ---
 If following the dockerfile and the scripts therein to build locally, it is 
 recommended to set `-DCMAKE_BUILD_TYPE=Release`. Building in release mode 
-seems to trigger segfaults inside containers. 
+seems to trigger segfaults inside containers.   
 
 ## Running python tests
 In the root of the repo, run 
