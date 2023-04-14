@@ -1,5 +1,5 @@
 # Quasi-static Simulator
-![ci_badge](https://github.com/pangtao22/quasistatic_simulator/actions/workflows/ci.yml/badge.svg)
+[![ci_badge](https://github.com/pangtao22/quasistatic_simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/pangtao22/quasistatic_simulator/actions)
 
 ![](/media/planar_hand.gif) ![](/media/allegro_hand_ball.gif) ![](/media/allegro_hand_door.gif)
 
@@ -24,12 +24,12 @@ git submodule update --init --recursive
 
 2. In the root of this repo, to build, run
 ```
-docker build -t qsim -f focal.dockerfile .
+docker build -t qsim -f ./setup/focal.dockerfile .
 ```
 
 If on Apple Silicon Macs, run
 ```
-docker buildx build --platform=linux/amd64 -t qsim -f focal.dockerfile .
+docker buildx build --platform=linux/amd64 -t qsim -f ./setup/focal.dockerfile .
 ```
 Beware that compiling is slow! It took M2 Max more than 20 minutes to build the 
 image. 

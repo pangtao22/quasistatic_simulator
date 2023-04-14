@@ -1,0 +1,5 @@
+.pytest_cache
+/quasistatic_simulator_cpp/.idea
+/quasistatic_simulator_cpp/.vscode
+/quasistatic_simulator_cpp/cmake*
+
