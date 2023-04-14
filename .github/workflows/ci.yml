@@ -33,6 +33,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -41,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./docker/ros/Dockerfile_essentials
+          file: ./setup/focal.dockerfile
           push: true
           tags: ${{ env.IMAGE_NAME }}
           cache-from: type=gha
