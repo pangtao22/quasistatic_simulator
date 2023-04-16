@@ -26,7 +26,7 @@ jobs:
           filters: |
             setup:
               - 'setup/**'
-      - run: echo "::set-output name=image_tag::pr-${{ github.event.pull_request.number }}"
+      - run: echo "image_tag=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_OUTPUT
 
   build_and_push:
     runs-on: ubuntu-latest
@@ -77,9 +77,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: >
-        ${{ needs.detect_changes.outputs.image_name }}:
-        ${{ needs.detect_changes.outputs.image_tag }}
+      image: ${{ needs.detect_changes.outputs.image_name }}:${{ needs.detect_changes.outputs.image_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
