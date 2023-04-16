@@ -17,7 +17,7 @@ jobs:
     outputs:
       has_changes: ${{ steps.changes.outputs.setup }}
       image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      image_tag: ${{ steps.image_tag_pr.image_tag }}${{ steps.image_tag_main.image_tag }}
+      image_tag: ${{ steps.image_tag_pr.outputs.image_tag }}${{ steps.image_tag_main.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
