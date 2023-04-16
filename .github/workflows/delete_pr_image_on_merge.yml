@@ -5,23 +5,18 @@ on:
     types:
       - closed
 
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: pangtao22/quasistatic_simulator
-
 jobs:
   if_merged:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Delete image
-        uses: bots-house/ghcr-delete-image-action@v1.1.0
+      - name: Prune
+        uses: vlaurin/action-ghcr-prune@v0.5.0
         with:
-          # NOTE: at now only orgs is supported
-#          owner: bots-house
-#          name: some-web-service
-          # NOTE: using Personal Access Token
-          token: ${{ secrets.PAT }}
-          tag: pr-${{github.event.pull_request.number}}
+          token: ${{ secrets.YOUR_TOKEN }}
+          user: pangtao22
+          container: pangtao22/quasistatic_simulator
+          dry-run: true # Dry-run first, then change to `false`
+          prune-tags-regexes: |
+            ^pr-
+          prune-untagged: true
