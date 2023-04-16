@@ -52,7 +52,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: needs.detect_changes.outputs.image_name
+          images: ${{ needs.detect_changes.outputs.image_name }}
 
       - name: Build and push Docker image
         id: build-and-push
