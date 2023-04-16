@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 # copy stuff
-cp build_bindings.sh /tmp/
+cp setup/build_bindings.sh /tmp/
 cp -r models $QSIM_PATH
 cp -r robotics_utilities $QSIM_PATH
 cp -r qsim $QSIM_PATH

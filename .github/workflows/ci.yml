@@ -17,6 +17,8 @@ jobs:
     outputs:
       has_changes: ${{ steps.changes.outputs.setup }}
       image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      # Only one of the two steps has a non-empty output. So image_tag is
+      #  either main or pr-{pr number}.
       image_tag: ${{ steps.image_tag_pr.outputs.image_tag }}${{ steps.image_tag_main.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v3
@@ -88,5 +90,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Build qsim_cpp
+        run: ./setup/build_bindings.sh
+
 
 
