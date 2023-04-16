@@ -1,9 +1,11 @@
-name: Cleanup PR Images
+name: Build Push Prune
 
 on:
   pull_request_target:
     types:
       - closed
+  schedule:
+    - cron: "0 6 * * *"  # 6am everyday.
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -29,8 +31,6 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ steps.get-container-name.outputs.container-name }}
           dry-run: false # Dry-run first, then change to `false`
-          keep-younger-than: 1 # days
+          keep-younger-than: 3 # days
           keep-last: 2
           prune-untagged: true
-          prune-tags-regexes: |
-            ^pr-

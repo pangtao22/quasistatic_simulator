@@ -24,12 +24,18 @@ EXPOSE 8888/tcp
 #RUN /tmp/install_eigen3.4.sh
 #
 ## Install additional python dependencies
-#COPY requirements.txt /tmp/requirements.txt
+#COPY ./setup/requirements.txt /tmp/requirements.txt
 #RUN python3 -m pip install -r /tmp/requirements.txt
 
 ## Build QuasistaticSimulatorCpp and its python bindings.
-#ENV QSIM_PATH /quasistatic_simulator
-#ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
+ENV QSIM_PATH /quasistatic_simulator
+ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
+
+# put qsim_cpp on the python path.
+ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
+ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
+ENV PYTHONPATH /opt/drake/lib/python3.8/site-packages:$PYTHONPATH
+
 #COPY build_bindings.sh /tmp/
 #COPY models $QSIM_PATH/models/
 #COPY robotics_utilities $QSIM_PATH/robotics_utilities
@@ -37,7 +43,4 @@ EXPOSE 8888/tcp
 #COPY quasistatic_simulator_cpp $QSIM_CPP_PATH/
 #RUN /tmp/build_bindings.sh
 #
-## put qsim_cpp on the python path.
-#ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
-#ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
-#ENV PYTHONPATH /opt/drake/lib/python3.8/site-packages:$PYTHONPATH
+
