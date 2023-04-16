@@ -29,6 +29,6 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           dry-run: true # Dry-run first, then change to `false`
-          prune-tags-regexes: |
-            ^pr-
+          keep-younger-than: 7 # days
+          keep-last: 2
           prune-untagged: true
