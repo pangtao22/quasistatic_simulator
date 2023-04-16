@@ -14,6 +14,10 @@ env:
 jobs:
   detect_changes:
     runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.changes.outputs.setup }}
+      image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      image_tag: ${{ steps.changes.image_tag_pr.image_tag }}${{ steps.changes.image_tag_main.image_tag }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -23,15 +27,13 @@ jobs:
             setup:
               - 'setup/**'
       - name: Set image_tag true
+        id: image_tag_pr
         if: ${{ steps.changes.outputs.setup }}
         run: echo "image_tag=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_OUTPUT
       - name: Set image_tag false
+        id: image_tag_main
         if: ${{ !steps.changes.outputs.setup }}
         run: echo "image_tag=main"  >> $GITHUB_OUTPUT
-      - name: Set has_changes
-        run: echo "has_changes=${{ steps.changes.outputs.setup }}" >> $GITHUB_OUTPUT
-      - name: Set image_name
-        run: echo "image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
   build_and_push:
     runs-on: ubuntu-latest
