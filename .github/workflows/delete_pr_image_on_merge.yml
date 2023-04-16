@@ -1,0 +1,27 @@
+name: Cleanup PR Images
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: pangtao22/quasistatic_simulator
+
+jobs:
+  if_merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete image
+        uses: bots-house/ghcr-delete-image-action@v1.1.0
+        with:
+          # NOTE: at now only orgs is supported
+#          owner: bots-house
+#          name: some-web-service
+          # NOTE: using Personal Access Token
+          token: ${{ secrets.PAT }}
+          tag: pr-${{github.event.pull_request.number}}

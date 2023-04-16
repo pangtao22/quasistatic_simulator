@@ -4,5 +4,5 @@ description: 'runs tests on ubuntu 20.04.'
 
 runs:
   using: 'docker'
-  image: '../../focal.dockerfile'
+  image: '../../base.dockerfile'
   entrypoint: './scripts/run_tests.sh'

@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+  # By default, this workflow is not triggered when a PR is merged.
   pull_request:
   schedule:
     - cron: "0 6 * * *"  # 6am everyday.
@@ -23,7 +24,6 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          base: ${{ github.ref }}
           filters: |
             setup:
               - 'setup/**'
@@ -59,9 +59,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./setup/focal.dockerfile
+          file: ./setup/base.dockerfile
           push: true
-#          tags: ${{ steps.meta.outputs.tags }}
-#          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
