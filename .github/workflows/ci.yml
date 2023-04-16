@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_changes: ${{ steps.changes.outputs.setup }}
-      image_tag: main
       image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +25,11 @@ jobs:
           filters: |
             setup:
               - 'setup/**'
-      - run: echo "::set-output name=image_tag::pr-${{ github.event.pull_request.number }}"
+      - name: Set outputs
+        if: ${{ steps.changes.outputs.setup }}
+        run: echo "image_tag=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_OUTPUT
+        else:
+        run: echo "image_tag=main"  >> $GITHUB_OUTPUT
 
   build_and_push:
     runs-on: ubuntu-latest
