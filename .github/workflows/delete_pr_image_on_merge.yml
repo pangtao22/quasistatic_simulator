@@ -15,7 +15,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: ${{ github.actor }}
-          container: pangtao22/quasistatic_simulator
+          container: ghcr.io/pangtao22/quasistatic_simulator
           dry-run: true # Dry-run first, then change to `false`
           prune-tags-regexes: |
             ^pr-
