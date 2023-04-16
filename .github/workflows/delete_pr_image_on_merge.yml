@@ -13,8 +13,8 @@ jobs:
       - name: Prune
         uses: vlaurin/action-ghcr-prune@v0.5.0
         with:
-          token: ${{ secrets.YOUR_TOKEN }}
-          user: pangtao22
+          token: ${{ secrets.GITHUB_TOKEN }}
+          user: ${{ github.actor }}
           container: pangtao22/quasistatic_simulator
           dry-run: true # Dry-run first, then change to `false`
           prune-tags-regexes: |
