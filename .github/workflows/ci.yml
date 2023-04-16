@@ -25,10 +25,11 @@ jobs:
           filters: |
             setup:
               - 'setup/**'
-      - name: Set outputs
+      - name: Set image_tag true
         if: ${{ steps.changes.outputs.setup }}
         run: echo "image_tag=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_OUTPUT
-        else:
+      - name: Set image_tag false
+        if: ${{ !steps.changes.outputs.setup }}
         run: echo "image_tag=main"  >> $GITHUB_OUTPUT
 
   build_and_push:
