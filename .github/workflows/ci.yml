@@ -24,7 +24,7 @@ jobs:
       image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       # Only one of the two steps has a non-empty output. So image_tag is
       #  either main or pr-{pr number}.
-      image_tag: $IMAGE_TAG
+      image_tag: ${{ IMAGE_TAG }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
