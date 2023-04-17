@@ -33,12 +33,12 @@ jobs:
         # pr_** |       T       |    T
         # main  |       T       |    F
         # main  |       F       |    T
-        # main  |       F       |    T
+        # main  |       F       |    F
       - name: Set image_tag main
         run: echo "IMAGE_TAG=main" >> $GITHUB_ENV
       - name: Set image_tag PR
         if: ${{ steps.changes.outputs.setup == 'true' && github.event_name == 'pull_request' }}
-        run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_ENV
+        run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
   build_and_push:
     runs-on: ubuntu-latest
