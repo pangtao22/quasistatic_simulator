@@ -1,6 +1,7 @@
 #include "quasistatic_simulator.h"
 #include <list>
 #include <tuple>
+#include <thread>
 
 class BatchQuasistaticSimulator {
 public:
