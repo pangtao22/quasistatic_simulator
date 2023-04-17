@@ -1,5 +1,6 @@
 .pytest_cache
+.idea
 /quasistatic_simulator_cpp/.idea
 /quasistatic_simulator_cpp/.vscode
 /quasistatic_simulator_cpp/cmake*
-
+/quasistatic_simulator_cpp/build

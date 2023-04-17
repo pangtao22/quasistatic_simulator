@@ -24,23 +24,23 @@ git submodule update --init --recursive
 
 2. In the root of this repo, to build, run
 ```
-docker build -t qsim -f ./setup/focal.dockerfile .
+docker build -t qsim -f ./setup/qsim.dockerfile .
 ```
 
 If on Apple Silicon Macs, run
 ```
-docker buildx build --platform=linux/amd64 -t qsim -f ./setup/focal.dockerfile .
+docker buildx build --platform=linux/amd64 -t qsim -f ./setup/qsim.dockerfile .
 ```
 Beware that compiling is slow! It took M2 Max more than 20 minutes to build the 
 image. 
 
 3. To run the github "build and test" action locally, run
 ```
-docker run -v $PWD:"/github/workspace" --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
+docker run -v $PWD:"/workdir" --workdir="/workdir" --entrypoint "/workdir/setup/run_tests.sh" qsim
 ```
 If on Apple Silicon Macs, run
 ```
-docker run -v $PWD:"/github/workspace" --platform=linux/amd64 --entrypoint "/github/workspace/scripts/run_tests.sh" qsim
+docker run -v $PWD:"/workdir" --workdir="/workdir" --platform=linux/amd64 --entrypoint "/workdir/setup/run_tests.sh" qsim
 ```
 It is also very slow, even slower than building the image and then running 
 the test in CI.

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-cd /github/workspace
+#cd /github/workspace
+pwd
 pytest .
 
-cd $QSIM_CPP_PATH/build
+pushd $QSIM_CPP_PATH/build
 ctest -V .
+popd
+
+
