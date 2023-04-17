@@ -30,11 +30,11 @@ jobs:
               - 'setup/**'
       - name: Set image_tag true
         id: image_tag_pr
-        if: ${{ steps.changes.outputs.setup }}
+        if: ${{ steps.changes.outputs.setup == 'true' }}
         run: echo "image_tag=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_OUTPUT
       - name: Set image_tag false
         id: image_tag_main
-        if: ${{ !steps.changes.outputs.setup }}
+        if: ${{ steps.changes.outputs.setup == 'false' }}
         run: echo "image_tag=main"  >> $GITHUB_OUTPUT
 
   build_and_push:
@@ -43,6 +43,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        if: needs.detect_changes.outputs.has_changes == 'true'
+        with:
+          submodules: recursive
 
       - name: Set up Docker Buildx
         # We cannot just skip the job, becuase build_and_test would not run

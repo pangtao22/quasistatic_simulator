@@ -49,7 +49,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Base Docker image
-        id: build-and-push
+        id: build-and-push-base
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -92,5 +92,5 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
-          keep-younger-than: 3 # days
+          keep-younger-than: 7 # days
           prune-untagged: true
