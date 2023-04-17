@@ -22,7 +22,7 @@ jobs:
       image_name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       # Only one of the two steps has a non-empty output. So image_tag is
       #  either main or pr-{pr number}.
-      image_tag: ${{ env.IMAGE_TAG }}
+      image_tag: ${{ steps.changes.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -41,10 +41,8 @@ jobs:
       - name: Set image_tag PR
         if: ${{ steps.changes.outputs.setup == 'true' }} && ${{ github.event_name == 'pull_request' }}
         run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}"  >> GITHUB_ENV
-#      - name: Set image_tag false
-#        id: image_tag_main
-#        if: ${{ steps.changes.outputs.setup == 'false' }}
-#        run: echo "image_tag=main"  >> $GITHUB_OUTPUT
+      - name: Set image_tag output
+        run: echo "image_tag=$IMAGE_TAG"  >> $GITHUB_OUTPUT
 
   build_and_push:
     runs-on: ubuntu-latest
