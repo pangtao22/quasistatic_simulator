@@ -65,6 +65,8 @@ jobs:
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v4
+        # We cannot just skip the job, becuase build_and_test would not run
+        #  if this job was skipped.
         if: false # needs.detect_changes.outputs.has_changes == 'true'
         with:
           context: .
