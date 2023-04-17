@@ -2,7 +2,7 @@ add_executable(run_planar_hand_ball run_planar_hand_ball.cc)
 target_link_libraries(run_planar_hand_ball quasistatic_simulator)
 target_include_directories(run_planar_hand_ball PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
-add_executable(run_3link_arm_3d run_3link_arm_3d.cc run_two_spheres_yz.cc)
+add_executable(run_3link_arm_3d run_3link_arm_3d.cc)
 target_link_libraries(run_3link_arm_3d quasistatic_simulator)
 target_include_directories(run_3link_arm_3d PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
