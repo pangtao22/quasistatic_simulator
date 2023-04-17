@@ -103,9 +103,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-#      - name: Copy resources
-#        run: ./setup/copy_resources.sh
-#      - name: Build qsim_cpp
-#        run: ./setup/build_bindings.sh
-#      - name: Run tests
-#        run: ./setup/run_tests.sh
+      - name: Copy resources
+        run: ./setup/copy_resources.sh
+      - name: Build qsim_cpp
+        run: ./setup/build_bindings.sh
+      - name: Run tests
+        run: ./setup/run_tests.sh

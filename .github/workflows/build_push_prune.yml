@@ -83,7 +83,6 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.BASE_IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
-          keep-last: 10
           prune-untagged: true
       - name: Prune
         uses: vlaurin/action-ghcr-prune@v0.5.0
@@ -92,5 +91,4 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
-          keep-younger-than: 7 # days
           prune-untagged: true
