@@ -11,25 +11,19 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
+  BASE_IMAGE_NAME: pangtao22/quasistatic_simulator_base
   IMAGE_NAME: pangtao22/quasistatic_simulator
 
 jobs:
-  if_merged:
-    if: github.event.pull_request.merged == true
+  prune:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Name
-        id: get-container-name
-        run: echo "::set-output name=container-name::$(echo ${GITHUB_REPOSITORY#*/})"
-        shell: bash
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-      - name: Prune
+      - name: Prune base
         uses: vlaurin/action-ghcr-prune@v0.5.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: ${{ github.actor }}
-          container: ${{ steps.get-container-name.outputs.container-name }}
+          container: ${{ env.BASE_IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
           keep-younger-than: 3 # days
           keep-last: 2
