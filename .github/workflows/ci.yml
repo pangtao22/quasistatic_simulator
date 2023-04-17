@@ -37,14 +37,14 @@ jobs:
         # main  |       F       |    T
         # main  |       F       |    T
       - name: Set image_tag main
-        run: echo "IMAGE_TAG=main" >> GITHUB_ENV
+        run: echo "IMAGE_TAG=main" >> $GITHUB_ENV
       - name: Set image_tag PR
         if: ${{ steps.changes.outputs.setup == 'true' }} && ${{ github.event_name == 'pull_request' }}
-        run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}"  >> GITHUB_ENV
+        run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}"  >> $GITHUB_ENV
       - name: Set image_tag output
         id: image_tag_output
         run: |
-          echo "${{ env.IMAGE_TAG }}"
+          echo $IMAGE_TAG
           echo $IMAGE_NAME
           echo "image_tag=$IMAGE_TAG"  >> $GITHUB_OUTPUT
 
