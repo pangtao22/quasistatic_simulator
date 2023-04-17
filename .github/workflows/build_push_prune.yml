@@ -11,6 +11,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
+  ACCOUNT: pangtao22
   BASE_IMAGE_NAME: quasistatic_simulator_base
   IMAGE_NAME: quasistatic_simulator
 
@@ -39,13 +40,13 @@ jobs:
         id: meta_base
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.ACCOUNT }}/${{ env.BASE_IMAGE_NAME }}
 
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.ACCOUNT }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Base Docker image
         id: build-and-push-base
