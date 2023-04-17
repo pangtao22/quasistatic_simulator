@@ -92,5 +92,5 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
-          keep-younger-than: 3 # days
+          keep-younger-than: 7 # days
           prune-untagged: true
