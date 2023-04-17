@@ -36,11 +36,3 @@ ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
 ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
 ENV PYTHONPATH /opt/drake/lib/python3.8/site-packages:$PYTHONPATH
 
-#COPY build_bindings.sh /tmp/
-#COPY models $QSIM_PATH/models/
-#COPY robotics_utilities $QSIM_PATH/robotics_utilities
-#COPY qsim $QSIM_PATH/qsim
-#COPY quasistatic_simulator_cpp $QSIM_CPP_PATH/
-#RUN /tmp/build_bindings.sh
-#
-
