@@ -3,8 +3,6 @@ set -euxo pipefail
 
 # copy stuff
 mkdir $QSIM_PATH
-mkdir $QSIM_CPP_PATH
-cp setup/build_bindings.sh /tmp/
 cp -r models $QSIM_PATH
 cp -r robotics_utilities $QSIM_PATH
 cp -r qsim $QSIM_PATH
