@@ -1,9 +1,9 @@
 name: Build Push Prune
 
 on:
-  pull_request_target:
-    types:
-      - closed
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 6 * * *"  # 6am everyday.
 
@@ -78,7 +78,6 @@ jobs:
     steps:
       - name: Prune base
         uses: vlaurin/action-ghcr-prune@v0.5.0
-        if: github.event.pull_request.merged == true
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: ${{ github.actor }}
