@@ -2,6 +2,9 @@ name: CI-focal
 on:
   # By default, this workflow is not triggered when a PR is merged.
   pull_request:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 6 * * *"  # 6am everyday.
 
