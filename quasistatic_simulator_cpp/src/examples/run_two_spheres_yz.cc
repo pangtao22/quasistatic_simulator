@@ -39,10 +39,10 @@ int main() {
 
   auto& sg = q_sim->get_mutable_scene_graph();
   q_sim->UpdateMbpPositions(q0_dict);
-
+//
   auto& query_object = q_sim->get_query_object();
   auto sdps = query_object.ComputeSignedDistancePairwiseClosestPoints(
-      100
+      std::numeric_limits<double>::infinity()
       );
   cout << "num collision pairs " << sdps.size() << endl;
   auto& sdp = sdps[0];
@@ -63,8 +63,8 @@ int main() {
   plant.SetPositions(&context_plant, q0);
   auto& query_object_new = sg.get_query_output_port().Eval<drake::geometry::QueryObject<double>>(
       context_sg);
-  sdps = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
-  sdp = sdps[0];
+  auto sdps_new = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
+  sdp = sdps_new[0];
   cout << "what about the distance now? " << sdp.distance << endl;
 
 //
