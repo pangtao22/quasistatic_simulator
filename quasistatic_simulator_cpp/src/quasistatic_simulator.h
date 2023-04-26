@@ -114,12 +114,24 @@ public:
     return *sg_;
   }
 
+  drake::geometry::SceneGraph<double> &get_mutable_scene_graph() const {
+    return *sg_;
+  }
+
+  drake::systems::Diagram<double> &get_mutable_diagram() const {
+    return *diagram_;
+  }
+
   const drake::multibody::ContactResults<double> &get_contact_results() const {
     return contact_results_;
   }
 
   drake::multibody::ContactResults<double> GetContactResultsCopy() const {
     return contact_results_;
+  }
+
+  drake::systems::Context<double>& get_mutable_scene_graph_context() const {
+    return *context_sg_;
   }
 
   void update_sim_params(const QuasistaticSimParameters &new_params) {

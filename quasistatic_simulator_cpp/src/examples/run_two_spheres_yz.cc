@@ -2,6 +2,8 @@
 #include "quasistatic_parser.h"
 #include "quasistatic_simulator.h"
 
+#include <drake/geometry/shape_specification.h>
+
 using Eigen::Vector2d;
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
@@ -29,18 +31,49 @@ int main() {
   auto idx_u = plant.GetModelInstanceByName(object_name);
 
   Vector2d q_a0(0, 0);
-  Vector2d q_u0(0.3, 0.1);
+  Vector2d q_u0(0.3, 0);
 
   ModelInstanceIndexToVecMap q0_dict = {{idx_a, q_a0}, {idx_u, q_u0}};
   auto q0 = q_sim->GetQVecFromDict(q0_dict);
   Vector2d u0(0.1, 0);
 
-  auto q_next = q_sim->CalcDynamics(q0, u0, sim_params);
-  auto A = q_sim->get_Dq_nextDq();
-  auto B = q_sim->get_Dq_nextDqa_cmd();
+  auto& sg = q_sim->get_mutable_scene_graph();
+  q_sim->UpdateMbpPositions(q0_dict);
 
-  cout << "A\n" << A << endl;
-  cout << "B\n" << B << endl;
+  auto& query_object = q_sim->get_query_object();
+  auto sdps = query_object.ComputeSignedDistancePairwiseClosestPoints(
+      100
+      );
+  cout << "num collision pairs " << sdps.size() << endl;
+  auto& sdp = sdps[0];
+  cout << "ok here's the distance " << sdp.distance << endl;
+
+  // Okay let's try domain randomization.
+  auto& diagram = q_sim->get_mutable_diagram();
+  auto context = diagram.CreateDefaultContext();
+  auto& context_sg = sg.GetMyMutableContextFromRoot(context.get());
+  auto& context_plant = plant.GetMyMutableContextFromRoot(context.get());
+  sg.ChangeShape(
+      &context_sg,
+      plant.get_source_id().value(),
+      sdp.id_B,
+      drake::geometry::Sphere(0.11)
+      );
+
+  plant.SetPositions(&context_plant, q0);
+  auto& query_object_new = sg.get_query_output_port().Eval<drake::geometry::QueryObject<double>>(
+      context_sg);
+  sdps = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
+  sdp = sdps[0];
+  cout << "what about the distance now? " << sdp.distance << endl;
+
+//
+  auto q_next = q_sim->CalcDynamics(q0, u0, sim_params);
+//  auto A = q_sim->get_Dq_nextDq();
+//  auto B = q_sim->get_Dq_nextDqa_cmd();
+//
+//  cout << "A\n" << A << endl;
+//  cout << "B\n" << B << endl;
 
   return 0;
 }
