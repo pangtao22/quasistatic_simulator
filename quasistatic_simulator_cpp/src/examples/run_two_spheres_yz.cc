@@ -49,7 +49,7 @@ int main() {
   cout << "ok here's the distance " << sdp.distance << endl;
 
   // Okay let's try domain randomization.
-  auto& diagram = q_sim->get_mutable_diagram();
+  auto& diagram = q_sim->get_diagram();
   auto context = diagram.CreateDefaultContext();
   auto& context_sg = sg.GetMyMutableContextFromRoot(context.get());
   auto& context_plant = plant.GetMyMutableContextFromRoot(context.get());
@@ -63,8 +63,8 @@ int main() {
   plant.SetPositions(&context_plant, q0);
   auto& query_object_new = sg.get_query_output_port().Eval<drake::geometry::QueryObject<double>>(
       context_sg);
-  auto sdps_new = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
-  sdp = sdps_new[0];
+  sdps = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
+  sdp = sdps[0];
   cout << "what about the distance now? " << sdp.distance << endl;
 
 //

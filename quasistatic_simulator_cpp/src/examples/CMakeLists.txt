@@ -21,3 +21,7 @@ target_include_directories(run_allegro_hand_A PUBLIC ${PROJECT_SOURCE_DIR}/src)
 add_executable(run_two_spheres_yz run_two_spheres_yz.cc)
 target_link_libraries(run_two_spheres_yz quasistatic_simulator)
 target_include_directories(run_two_spheres_yz PUBLIC ${PROJECT_SOURCE_DIR}/src)
+
+add_executable(run_compute_signed_distance_pair run_compute_signed_distance_pair.cc)
+target_link_libraries(run_compute_signed_distance_pair quasistatic_simulator)
+target_include_directories(run_compute_signed_distance_pair PUBLIC ${PROJECT_SOURCE_DIR}/src)

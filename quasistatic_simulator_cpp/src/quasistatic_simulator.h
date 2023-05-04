@@ -118,6 +118,10 @@ public:
     return *sg_;
   }
 
+  const drake::systems::Diagram<double> &get_diagram() const {
+    return *diagram_;
+  }
+
   drake::systems::Diagram<double> &get_mutable_diagram() const {
     return *diagram_;
   }
