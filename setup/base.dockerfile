@@ -7,7 +7,7 @@ EXPOSE 8888/tcp
 RUN apt-get update \
       && apt-get install --no-install-recommends -qy curl apt-transport-https \
       sudo ca-certificates libgtest-dev libgflags-dev python3.10-dev  \
-      python3-pip git python-is-python3 \
+      python3-pip git python-is-python3 libyaml-cpp-dev \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
