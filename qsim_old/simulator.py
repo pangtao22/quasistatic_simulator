@@ -4,8 +4,7 @@ from typing import Dict
 import numpy as np
 import meshcat
 
-from pydrake.solvers import mathematicalprogram as mp
-from pydrake.solvers.gurobi import GurobiSolver
+from pydrake.solvers import MathematicalProgram, GurobiSolver
 from pydrake.all import OsqpSolver
 
 from qsim_old.meshcat_camera_utils import SetOrthographicCameraXY
@@ -280,7 +279,7 @@ class QuasistaticSimulator:
         phi_l = self.calc_phi(q)
         dq_a_cmd = q_a_cmd - q[self.n_u :]
 
-        prog = mp.MathematicalProgram()
+        prog = MathematicalProgram()
         v_u = prog.NewContinuousVariables(self.n_u, "dq_u")
         v_a = prog.NewContinuousVariables(self.n_a, "dq_a")
 

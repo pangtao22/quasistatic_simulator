@@ -35,7 +35,7 @@ from pydrake.multibody.plant import (
     MultibodyPlant,
     AddMultibodyPlantSceneGraph,
 )
-from pydrake.solvers import mathematicalprogram as mp
+from pydrake.solvers import MathematicalProgram
 from pydrake.systems.framework import DiagramBuilder
 from qsim_cpp import (
     GradientMode,
@@ -531,7 +531,7 @@ class QuasistaticSimulator:
                 context=self.context_plant,
                 with_respect_to=JacobianWrtVariable.kV,
                 frame_B=body.body_frame(),
-                p_BP=easf.p_BoBq_B,
+                p_BoBp_B=easf.p_BoBq_B,
                 frame_A=self.plant.world_frame(),
                 frame_E=self.plant.world_frame(),
             )
@@ -950,7 +950,7 @@ class QuasistaticSimulator:
         gradient_mode: GradientMode,
         **kwargs,
     ):
-        prog = mp.MathematicalProgram()
+        prog = MathematicalProgram()
         # generalized velocity times time step.
         v = prog.NewContinuousVariables(self.n_v, "v")
 
@@ -1017,7 +1017,7 @@ class QuasistaticSimulator:
         m = len(phi_constraints)
         n_v = self.n_v
 
-        prog = mp.MathematicalProgram()
+        prog = MathematicalProgram()
         v = prog.NewContinuousVariables(n_v, "v")
         s = prog.NewContinuousVariables(m, "s")
 

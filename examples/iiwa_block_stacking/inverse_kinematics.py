@@ -7,7 +7,8 @@ from pydrake.all import (
     PiecewiseQuaternionSlerp,
     PiecewisePolynomial,
 )
-from pydrake.solvers import mathematicalprogram as mp
+from pydrake.solvers import MathematicalProgram as mp
+from pydrake.solvers import Solve
 
 
 def calc_iwa_trajectory_for_point_tracking(
@@ -70,7 +71,7 @@ def calc_iwa_trajectory_for_point_tracking(
             prog.SetInitialGuess(q_variables, q_initial_guess)
         else:
             prog.SetInitialGuess(q_variables, q_knots[i - 1])
-        result = mp.Solve(prog)
+        result = Solve(prog)
         print(i, ": ", result.get_solution_result())
         q_knots[i] = result.GetSolution(q_variables)
 

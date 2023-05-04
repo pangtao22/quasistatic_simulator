@@ -135,7 +135,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/base_link.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/base_link.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -168,7 +168,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -232,7 +232,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -296,7 +296,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -352,7 +352,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -364,7 +364,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -409,7 +409,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_12.0_right.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_12.0_right.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -459,7 +459,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_13.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_13.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -515,7 +515,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_14.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_14.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -580,7 +580,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_15.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -592,7 +592,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_15.0_tip.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_15.0_tip.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -637,7 +637,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -701,7 +701,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -766,7 +766,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -823,7 +823,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -836,7 +836,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -881,7 +881,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_0.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_0.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -946,7 +946,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_1.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_1.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -1011,7 +1011,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_2.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_2.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -1068,7 +1068,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0.obj</uri>
           </mesh>
         </geometry>
         <material>
@@ -1081,7 +1081,7 @@
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
-            <uri>package://drake/manipulation/models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
+            <uri>package://drake_models/allegro_hand_description/meshes/link_3.0_tip.obj</uri>
           </mesh>
         </geometry>
       </visual>
