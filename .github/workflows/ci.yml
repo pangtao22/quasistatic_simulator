@@ -1,4 +1,4 @@
-name: CI-focal
+name: CI-stable
 on:
   # By default, this workflow is not triggered when a PR is merged.
   pull_request:
