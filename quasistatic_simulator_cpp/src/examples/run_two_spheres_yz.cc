@@ -45,7 +45,7 @@ int main() {
       std::numeric_limits<double>::infinity()
       );
   cout << "num collision pairs " << sdps.size() << endl;
-  auto& sdp = sdps[0];
+  auto sdp = sdps[0];
   cout << "ok here's the distance " << sdp.distance << endl;
 
   // Okay let's try domain randomization.
@@ -66,6 +66,11 @@ int main() {
   sdps = query_object_new.ComputeSignedDistancePairwiseClosestPoints(100);
   sdp = sdps[0];
   cout << "what about the distance now? " << sdp.distance << endl;
+
+  sdps = query_object.ComputeSignedDistancePairwiseClosestPoints(
+      std::numeric_limits<double>::infinity()
+  );
+  cout << "check old distance again " << sdps[0].distance << endl;
 
 //
   auto q_next = q_sim->CalcDynamics(q0, u0, sim_params);

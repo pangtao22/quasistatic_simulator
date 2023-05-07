@@ -43,6 +43,9 @@ from qsim_cpp import (
     ForwardDynamicsMode,
     QpLogBarrierSolver,
 )
+
+# TODO: deprecate robotics_utilities.qp_derivatives. Tests can be done
+#  against diffcp.
 from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktActive,
 )
