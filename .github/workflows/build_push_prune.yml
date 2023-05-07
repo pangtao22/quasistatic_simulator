@@ -84,6 +84,7 @@ jobs:
           container: ${{ env.BASE_IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
           prune-untagged: true
+          keep-younger-than: 7
       - name: Prune
         uses: vlaurin/action-ghcr-prune@v0.5.0
         with:
@@ -92,3 +93,4 @@ jobs:
           container: ${{ env.IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
           prune-untagged: true
+          keep-younger-than: 7
