@@ -68,6 +68,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # My packages.
 find_package(pybind11 CONFIG REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(GTest REQUIRED)
 
 add_subdirectory(src)
-add_subdirectory(third_party)
