@@ -147,7 +147,12 @@ PYBIND11_MODULE(qsim_cpp, m) {
   {
     using Class = FiniteDiffGradientCalculator;
     py::class_<Class>(m, "FiniteDiffGradientCalculator")
-        .def(py::init<QuasistaticSimulator&>(), py::arg("q_sim"))
+        .def(py::init([](QuasistaticSimulator* q_sim) {
+               return std::make_unique<Class>(q_sim);
+             }),
+             py::arg("q_sim"), py::keep_alive<1, 2>()
+             // Keep alive,reference: "self" keeps "q_sim" alive.
+             )
         .def("calc_A", &Class::CalcA)
         .def("calc_B", &Class::CalcB);
   }
