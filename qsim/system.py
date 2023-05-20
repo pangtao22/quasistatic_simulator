@@ -126,9 +126,7 @@ class QuasistaticSystem(LeafSystem):
         query_object_abstract_value.set_value(self.q_sim.get_query_object())
 
     def copy_contact_results_out(self, context, contact_results_abstract_value):
-        contact_results_abstract_value.set_value(
-            self.q_sim.get_contact_results()
-        )
+        contact_results_abstract_value.set_value(self.q_sim.get_contact_results())
 
     def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
         self.q_sim.update_mbp_positions(q0_dict)

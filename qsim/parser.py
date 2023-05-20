@@ -37,9 +37,7 @@ class QuasistaticParser:
         # robots
         robot_stiffness_dict = {}
         for robot in config["robots"]:
-            robot_stiffness_dict[robot["name"]] = np.array(
-                robot["Kp"], dtype=float
-            )
+            robot_stiffness_dict[robot["name"]] = np.array(robot["Kp"], dtype=float)
         self.robot_stiffness_dict = robot_stiffness_dict
 
         # objects

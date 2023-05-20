@@ -62,9 +62,7 @@ builder.Connect(
 )
 
 # PID also needs velocity reference.
-builder.Connect(
-    traj_source_qv.get_output_port(0), pid.get_input_port_desired_state()
-)
+builder.Connect(traj_source_qv.get_output_port(0), pid.get_input_port_desired_state())
 
 # visulization
 meshcat_vis = ConnectMeshcatVisualizer(builder, scene_graph)

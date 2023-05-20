@@ -43,9 +43,7 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     gravity = q_parser.get_gravity()
 
     # MBP
-    plant_robot, _ = create_iiwa_controller_plant(
-        gravity, add_schunk_inertia=True
-    )
+    plant_robot, _ = create_iiwa_controller_plant(gravity, add_schunk_inertia=True)
     controller_iiwa = RobotInternalController(
         plant_robot=plant_robot,
         joint_stiffness=q_parser.robot_stiffness_dict[iiwa_name],
@@ -78,9 +76,7 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     return loggers_dict_mbp_str, loggers_dict_quasistatic_str, q_sys.plant
 
 
-def compare_all_models(
-    plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str
-):
+def compare_all_models(plant, loggers_dict_mbp_str, loggers_dict_quasistatic_str):
     error_dict = dict()
     for model_name in q0_dict_str.keys():
         model = plant.GetModelInstanceByName(model_name)
@@ -118,9 +114,7 @@ if __name__ == "__main__":
     # %% IIWA joint angles plot.
     q_iiwa_log_mbp = loggers_dict_mbp_str[iiwa_name].data()[:7].T
     t_mbp = loggers_dict_mbp_str[iiwa_name].sample_times()
-    q_iiwa_mbp_traj = PiecewisePolynomial.FirstOrderHold(
-        t_mbp, q_iiwa_log_mbp.T
-    )
+    q_iiwa_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp, q_iiwa_log_mbp.T)
 
     q_iiwa_log_qs = loggers_dict_quasistatic_str[iiwa_name].data()[:7].T
     t_qs = loggers_dict_quasistatic_str[iiwa_name].sample_times()
@@ -164,9 +158,7 @@ if __name__ == "__main__":
         e_xyz_box,
         e_vec_xyz_box,
         t_xyz_box,
-    ) = calc_pose_error_integral(
-        q_box_log_quasistatic, t_qs, q_box_log_mbp, t_mbp
-    )
+    ) = calc_pose_error_integral(q_box_log_quasistatic, t_qs, q_box_log_mbp, t_mbp)
 
     print("box angle integral error", e_angle_box)
     print("box position integral error", e_xyz_box)
@@ -182,9 +174,7 @@ if __name__ == "__main__":
     box_angle_quasistatic = [
         get_angle_from_quaternion(q_i) for q_i in q_box_log_quasistatic[:, :4]
     ]
-    box_angle_mbp = [
-        get_angle_from_quaternion(q_i) for q_i in q_box_log_mbp[:, :4]
-    ]
+    box_angle_mbp = [get_angle_from_quaternion(q_i) for q_i in q_box_log_mbp[:, :4]]
     plt.plot(t_mbp, box_angle_mbp, label="mbp")
     plt.plot(t_qs, box_angle_quasistatic, label="quasistatic")
     plt.legend()

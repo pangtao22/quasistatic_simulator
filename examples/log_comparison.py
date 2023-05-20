@@ -31,9 +31,7 @@ def get_angle_from_quaternion(q: np.array):
     return AngleAxis(Quaternion(q / np.linalg.norm(q))).angle()
 
 
-def convert_quaternion_array_to_eigen_quaternion_traj(
-    q_array: np.array, t: np.array
-):
+def convert_quaternion_array_to_eigen_quaternion_traj(q_array: np.array, t: np.array):
     """
     :param q_array: (n, 4) array where q_array[i] is a quaternion.
     :param t: (n,) array of times.
@@ -60,9 +58,7 @@ def calc_quaternion_error_integral(
 
     angle_diff_list = np.array(angle_diff_list)
 
-    zero_traj = PiecewisePolynomial.ZeroOrderHold(
-        [t[0], t[-1]], np.array([[0, 0.0]])
-    )
+    zero_traj = PiecewisePolynomial.ZeroOrderHold([t[0], t[-1]], np.array([[0, 0.0]]))
     return calc_error_integral(angle_diff_list, t, zero_traj)
 
 

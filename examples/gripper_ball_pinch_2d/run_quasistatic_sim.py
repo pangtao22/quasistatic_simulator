@@ -12,9 +12,7 @@ from qsim_old.problem_definition_pinch import problem_definition
 from plotting import PlotForceDistance, PlotLeftFingerPosition
 
 # %%
-q_sim = QuasistaticSimulator(
-    problem_definition, is_quasi_dynamic=True, visualize=True
-)
+q_sim = QuasistaticSimulator(problem_definition, is_quasi_dynamic=True, visualize=True)
 
 # %% new "impedance robot" formulation, which I think is correct.
 # define actuated trajectory
@@ -67,7 +65,7 @@ lambda_f_log = np.array(lambda_f_log)
 
 # %% compute data for plots
 """
-lambda_n_log[i] is the impulse over [h*i, h*(i+1)]  
+lambda_n_log[i] is the impulse over [h*i, h*(i+1)]
 """
 n_c = problem_definition["n_c"]
 calc_phi = problem_definition["calc_phi"]

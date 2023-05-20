@@ -61,9 +61,7 @@ def run_mbp_quasistatic_comparison(
     is_visualizing=False,
     real_time_rate=0.0,
 ):
-    q_parser = QuasistaticParser(
-        os.path.join(models_dir, quasistatic_model_path)
-    )
+    q_parser = QuasistaticParser(os.path.join(models_dir, quasistatic_model_path))
     q_parser.set_sim_params(
         h=h_quasistatic,
         use_free_solvers=not is_mosek_gurobi_available(),

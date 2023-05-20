@@ -33,9 +33,7 @@ class TestSocpDerivativesCpp(unittest.TestCase):
         z = cp.Variable(n_z)
         s = [J_cvx[i] @ z + e_cvx[i] for i in range(n_c)]
 
-        constraints = [
-            cp.constraints.second_order.SOC(s_i[0], s_i[1:]) for s_i in s
-        ]
+        constraints = [cp.constraints.second_order.SOC(s_i[0], s_i[1:]) for s_i in s]
 
         prob = cp.Problem(cp.Minimize(b_cvx @ z), constraints)
 
@@ -56,9 +54,7 @@ class TestSocpDerivativesCpp(unittest.TestCase):
 
             for i_c in range(n_c):
                 DzDe[i_c, i] = e_cvx[i_c].gradient
-                DzDvecJ[i_c, i] = np.concatenate(
-                    J_cvx[i_c].gradient.transpose()
-                )
+                DzDvecJ[i_c, i] = np.concatenate(J_cvx[i_c].gradient.transpose())
 
         self.DzDb = DzDb
         self.DzDe = DzDe
@@ -132,14 +128,10 @@ class TestSocpDerivativesCpp(unittest.TestCase):
 
             for j in range(n_z):
                 idx = j * n_z * m + i * m
-                DzDvecGi[:, m * j : m * j + m] = DzDvecG_active[
-                    :, idx : idx + m
-                ]
+                DzDvecGi[:, m * j : m * j + m] = DzDvecG_active[:, idx : idx + m]
 
             DzDvecG.append(DzDvecGi)
 
         for i in range(n_active):
             idx = lambda_star_active_indices[i]
-            np.testing.assert_allclose(
-                self.DzDvecJ[idx], -DzDvecG[i], atol=1e-4
-            )
+            np.testing.assert_allclose(self.DzDvecJ[idx], -DzDvecG[i], atol=1e-4)

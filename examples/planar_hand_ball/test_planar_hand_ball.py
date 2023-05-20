@@ -27,9 +27,7 @@ def simulate(
     sim_params: QuasistaticSimParameters,
 ):
     q_dict = {model: np.array(q_model) for model, q_model in q0_dict.items()}
-    q_dict_log = [
-        {model: np.array(q_model) for model, q_model in q_dict.items()}
-    ]
+    q_dict_log = [{model: np.array(q_model) for model, q_model in q_dict.items()}]
     Dq_nextDq_log = []
     Dq_nextDqa_cmd_log = []
     sim.update_mbp_positions(q_dict)
@@ -60,8 +58,7 @@ def compare_q_dict_logs(
             test_case.assertLess(
                 err,
                 tol,
-                f"Large error at t = {t}, "
-                f"{q_dict[model]} vs {q_dict_cpp[model]}",
+                f"Large error at t = {t}, " f"{q_dict[model]} vs {q_dict_cpp[model]}",
             )
         t += 1
 
@@ -84,9 +81,7 @@ class TestPlanarHandBall(unittest.TestCase):
         robot_r_name = "arm_right"
         object_name = "sphere"
 
-        name_to_model_dict = (
-            self.q_sim_py.get_model_instance_name_to_index_map()
-        )
+        name_to_model_dict = self.q_sim_py.get_model_instance_name_to_index_map()
         self.idx_l = name_to_model_dict[robot_l_name]
         self.idx_r = name_to_model_dict[robot_r_name]
         self.idx_o = name_to_model_dict[object_name]
@@ -147,14 +142,10 @@ class TestPlanarHandBall(unittest.TestCase):
         sim_params.gradient_mode = GradientMode.kNone
         sim_params.log_barrier_weight = 100
 
-        q_dict_log_cvx, _, _ = simulate(
-            self.q_sim_py, self.q0_dict, self.T, sim_params
-        )
+        q_dict_log_cvx, _, _ = simulate(self.q_sim_py, self.q0_dict, self.T, sim_params)
 
         sim_params.forward_mode = ForwardDynamicsMode.kLogPyramidMp
-        q_dict_log_mp, _, _ = simulate(
-            self.q_sim_py, self.q0_dict, self.T, sim_params
-        )
+        q_dict_log_mp, _, _ = simulate(self.q_sim_py, self.q0_dict, self.T, sim_params)
         compare_q_dict_logs(
             test_case=self,
             q_sim=self.q_sim_py,

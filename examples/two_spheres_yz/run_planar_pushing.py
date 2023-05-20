@@ -51,9 +51,7 @@ sim_params.forward_mode = ForwardDynamicsMode.kSocpMp
 # %%
 q_sim.update_mbp_positions(q0_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
-q_sim.step(
-    q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, sim_params=sim_params
-)
+q_sim.step(q_a_cmd_dict=q_a_cmd_dict, tau_ext_dict=tau_ext_dict, sim_params=sim_params)
 q_next = q_sim.get_q_vec_from_dict(q_sim.get_mbp_positions())
 A = q_sim.get_Dq_nextDq()
 B = q_sim.get_Dq_nextDqa_cmd()
@@ -62,9 +60,5 @@ B = q_sim.get_Dq_nextDqa_cmd()
 fd_gradient_calculator = FiniteDiffGradientCalculator(q_sim)
 q_nominal = q_sim.get_q_vec_from_dict(q0_dict)
 u_nominal = q_sim.get_q_a_cmd_vec_from_dict(q_a_cmd_dict)
-A_numerical = fd_gradient_calculator.calc_A(
-    q_nominal, u_nominal, 1e-3, sim_params
-)
-B_numerical = fd_gradient_calculator.calc_B(
-    q_nominal, u_nominal, 1e-3, sim_params
-)
+A_numerical = fd_gradient_calculator.calc_A(q_nominal, u_nominal, 1e-3, sim_params)
+B_numerical = fd_gradient_calculator.calc_B(q_nominal, u_nominal, 1e-3, sim_params)

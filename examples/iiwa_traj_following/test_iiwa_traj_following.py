@@ -8,9 +8,7 @@ from qsim.utils import is_mosek_gurobi_available
 class TestIiwaTrajectoryFollowing(unittest.TestCase):
     def test_cpp_vs_python(self):
         q_parser = QuasistaticParser(q_model_path)
-        q_parser.set_sim_params(
-            h=0.1, use_free_solvers=not is_mosek_gurobi_available()
-        )
+        q_parser.set_sim_params(h=0.1, use_free_solvers=not is_mosek_gurobi_available())
         compare_q_sim_cpp_vs_py(
             test_case=self,
             q_parser=q_parser,

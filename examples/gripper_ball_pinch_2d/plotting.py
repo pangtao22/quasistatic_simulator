@@ -26,9 +26,7 @@ def PlotForceDistance(
     for i, ax in zip([0, 2], axes):
         ax2 = ax.twinx()
         color = "blue"
-        ax2.step(
-            t_sim, phi_log[:-1, i], "o", markersize=3, where="post", color=color
-        )
+        ax2.step(t_sim, phi_log[:-1, i], "o", markersize=3, where="post", color=color)
         ax2.set_ylabel(r"$\phi_{}$ [m]".format(i + 1), color=color)
         ax2.set_ylim([-0.001, 0.0065])
         ax2.tick_params(axis="y", labelcolor=color)

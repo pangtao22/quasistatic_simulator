@@ -112,9 +112,7 @@ q_schunk_traj = concatenate_traj_list(q_schunk_traj_list)
 iiwa_name = "iiwa"
 schunk_name = "schunk"
 
-X_L7E = RigidTransform(
-    RollPitchYaw(np.pi / 2, 0, np.pi / 2), np.array([0, 0, 0.114])
-)
+X_L7E = RigidTransform(RollPitchYaw(np.pi / 2, 0, np.pi / 2), np.array([0, 0, 0.114]))
 
 q_u0_list = np.zeros((10, 7))
 q_u0_list[0] = [1, 0, 0, 0, 0.55, 0, 0.03]

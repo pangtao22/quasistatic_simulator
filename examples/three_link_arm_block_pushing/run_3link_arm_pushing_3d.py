@@ -70,9 +70,7 @@ if __name__ == "__main__":
     axes[0].set_title("Joint angles")
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_robot_log_mbp[:, i], label="mbp")
-        ax.plot(
-            t_quasistatic, q_robot_log_quasistatic[:, i], label="quasistatic"
-        )
+        ax.plot(t_quasistatic, q_robot_log_quasistatic[:, i], label="quasistatic")
         ax.legend()
     plt.xlabel("t [s]")
     plt.show()

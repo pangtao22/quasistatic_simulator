@@ -97,9 +97,7 @@ def add_externally_applied_generalized_force(
 ):
     load_applier = LoadApplier(F_WB_traj, body_idx)
     builder.AddSystem(load_applier)
-    builder.Connect(
-        load_applier.spatial_force_output_port, spatial_force_input_port
-    )
+    builder.Connect(load_applier.spatial_force_output_port, spatial_force_input_port)
 
 
 def get_logs_from_sim(
@@ -109,9 +107,7 @@ def get_logs_from_sim(
 
     context = sim.get_context()
     for model, log_sink in log_sinks_dict.items():
-        loggers_dict[model] = log_sink.GetLog(
-            log_sink.GetMyContextFromRoot(context)
-        )
+        loggers_dict[model] = log_sink.GetLog(log_sink.GetMyContextFromRoot(context))
     return loggers_dict
 
 
@@ -289,12 +285,8 @@ def run_mbp_sim(
             n_v = plant.num_velocities(robot_model)
             mux = builder.AddSystem(Multiplexer([n_q, n_v]))
             traj_source_v = builder.AddSystem(TrajectorySource(v_a_traj))
-            builder.Connect(
-                traj_source_q.get_output_port(), mux.get_input_port(0)
-            )
-            builder.Connect(
-                traj_source_v.get_output_port(), mux.get_input_port(1)
-            )
+            builder.Connect(traj_source_q.get_output_port(), mux.get_input_port(0))
+            builder.Connect(traj_source_v.get_output_port(), mux.get_input_port(1))
             builder.Connect(
                 mux.get_output_port(), controller.get_input_port_desired_state()
             )
@@ -314,9 +306,7 @@ def run_mbp_sim(
     if is_visualizing:
         if meshcat is None:
             meshcat = StartMeshcat()
-        meshcat_vis = MeshcatVisualizer.AddToBuilder(
-            builder, scene_graph, meshcat
-        )
+        meshcat_vis = MeshcatVisualizer.AddToBuilder(builder, scene_graph, meshcat)
         ContactVisualizer.AddToBuilder(
             builder,
             plant,
@@ -326,16 +316,12 @@ def run_mbp_sim(
     # logs.
     log_sinks_dict = dict()
     for model in robot_models.union(object_models):
-        logger = LogVectorOutput(
-            plant.get_state_output_port(model), builder, 0.01
-        )
+        logger = LogVectorOutput(plant.get_state_output_port(model), builder, 0.01)
         log_sinks_dict[model] = logger
 
     diagram = builder.Build()
 
-    q0_dict = create_dict_keyed_by_model_instance_index(
-        plant, q_dict_str=q0_dict_str
-    )
+    q0_dict = create_dict_keyed_by_model_instance_index(plant, q_dict_str=q0_dict_str)
 
     # Construct simulator and run simulation.
     sim = Simulator(diagram)
@@ -343,9 +329,7 @@ def run_mbp_sim(
 
     for controller in robot_controller_dict.values():
         if isinstance(controller, RobotInternalController):
-            context_controller = diagram.GetSubsystemContext(
-                controller, context
-            )
+            context_controller = diagram.GetSubsystemContext(controller, context)
             controller.tau_feedforward_input_port.FixValue(
                 context_controller,
                 np.zeros(controller.tau_feedforward_input_port.size()),

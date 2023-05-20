@@ -15,9 +15,7 @@ class TestIiwaExternalLoading(unittest.TestCase):
         iiwa_log_qs = loggers_dict_quasistatic_str[iiwa_name]
         q_iiwa_qs = iiwa_log_qs.data().T[:, :nq]
 
-        self.assertLessEqual(
-            np.linalg.norm(q_iiwa_qs[-1] - q_iiwa_mbp[-1]), 1e-6
-        )
+        self.assertLessEqual(np.linalg.norm(q_iiwa_qs[-1] - q_iiwa_mbp[-1]), 1e-6)
 
 
 if __name__ == "__main__":

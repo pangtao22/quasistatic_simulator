@@ -6,7 +6,7 @@ directives:
 
 - add_model:
     name: door_fixed
-    file: package://quasistatic_simulator/door_fixed.sdf 
+    file: package://quasistatic_simulator/door_fixed.sdf
 
 - add_frame:
     name: ground_world_offset
@@ -27,4 +27,3 @@ directives:
 - add_weld:
     parent: world
     child: allegro_hand_right::ghost_body_x
-

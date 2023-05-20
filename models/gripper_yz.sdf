@@ -24,7 +24,7 @@
         <material>
           <diffuse>0 0 1 1</diffuse>
         </material>
-      </visual>      
+      </visual>
     </link>
 
     <joint name="y_slider_left" type="prismatic">
@@ -42,7 +42,7 @@
         <xyz>0 1 0</xyz>
       </axis>
     </joint>
-    
+
     <link name="ghost_body_y">
       <inertial>
         <mass>1.0e-6</mass>

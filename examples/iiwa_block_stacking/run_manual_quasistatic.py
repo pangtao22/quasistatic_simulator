@@ -34,9 +34,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
     q_parser.set_sim_params(h=h)
     q_sim = q_parser.make_simulator_py(internal_vis=False)
 
-    q0_dict = create_dict_keyed_by_model_instance_index(
-        q_sim.plant, q0_dict_str
-    )
+    q0_dict = create_dict_keyed_by_model_instance_index(q_sim.plant, q0_dict_str)
 
     # %% show initial configuration before simulation starts.
     q_sim.update_mbp_positions(q0_dict)
@@ -70,8 +68,7 @@ def run_quasistatic_sim_manually(h: float, is_visualizing: bool):
         t_log.append((i + 1) * h)
 
     q_logs_dict = {
-        model: extract_log_for_object(q_log, model)
-        for model in q_sim.models_all
+        model: extract_log_for_object(q_log, model) for model in q_sim.models_all
     }
 
     return (

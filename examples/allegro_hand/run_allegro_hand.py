@@ -117,9 +117,7 @@ sim_params.h = h
 
 q_sim.update_mbp_positions(q_dict)
 tau_ext_dict = q_sim.calc_tau_ext([])
-q_sim.step(
-    q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, sim_params=sim_params
-)
+q_sim.step(q_a_cmd_dict=qa_cmd_dict, tau_ext_dict=tau_ext_dict, sim_params=sim_params)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
 
 # numerical gradient
@@ -159,8 +157,6 @@ fd_gradient_calculator = FiniteDiffGradientCalculator(q_sim_cpp)
 q_nominal = q_sim_cpp.get_q_vec_from_dict(q_dict)
 u_nominal = q_sim_cpp.get_q_a_cmd_vec_from_dict(qa_cmd_dict)
 sim_params.gravity = np.zeros(3)
-A_numerical = fd_gradient_calculator.calc_A(
-    q_nominal, u_nominal, 1e-4, sim_params
-)
+A_numerical = fd_gradient_calculator.calc_A(q_nominal, u_nominal, 1e-4, sim_params)
 
 A_analytic = q_sim_cpp.get_Dq_nextDq()

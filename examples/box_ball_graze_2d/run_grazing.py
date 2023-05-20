@@ -12,9 +12,7 @@ from qsim.model_paths import models_dir
 #%%
 h = problem_definition["h"]
 
-parser = QuasistaticParser(
-    os.path.join(models_dir, "q_sys", "ball_grazing_2d.yml")
-)
+parser = QuasistaticParser(os.path.join(models_dir, "q_sys", "ball_grazing_2d.yml"))
 parser.set_quasi_dynamic(True)
 
 # model names

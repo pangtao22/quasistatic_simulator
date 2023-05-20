@@ -1,0 +1,19 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+    -   id: black
+-   repo: https://github.com/ssciwr/clang-format-hook.git
+    rev: v12.0.1  # Use the sha / tag you want to point at
+    hooks:
+    -   id: clang-format
+
+-   repo: https://github.com/cpplint/cpplint.git
+    rev: 1.6.1
+    hooks:
+    -   id: cpplint

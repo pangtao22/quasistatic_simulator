@@ -56,8 +56,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
       </visual>
     </link>
 <!-- ====================== Index Finger ====================== -->
@@ -90,8 +90,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>                
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
       </visual>
     </link>
     <joint name="joint_0" type="revolute">
@@ -154,7 +154,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
         </material>
       </visual>
     </link>
@@ -218,7 +218,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
         </material>
       </visual>
     </link>
@@ -274,7 +274,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
         </material>
       </visual>
       <visual name="link_3_tip_visual_1">
@@ -334,8 +334,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
       </visual>
     </link>
     <joint name="joint_4" type="revolute">
@@ -398,8 +398,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
     </link>
@@ -463,8 +463,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
     </link>
@@ -520,8 +520,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
       <visual name="link_7_tip_visual_1">
@@ -578,8 +578,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
     </link>
@@ -645,8 +645,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
     </link>
@@ -710,8 +710,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
     </link>
@@ -767,8 +767,8 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.2 0.2 0.2 0.9</diffuse>        
-        </material>        
+          <diffuse>0.2 0.2 0.2 0.9</diffuse>
+        </material>
 
       </visual>
       <visual name="link_11_tip_visual_1">

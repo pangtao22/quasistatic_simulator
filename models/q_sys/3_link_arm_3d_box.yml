@@ -15,6 +15,3 @@ quasistatic_sim_params:
   contact_detection_tolerance: .inf
   is_quasi_dynamic: True
   unactuated_mass_scale: 5.
-
-
-

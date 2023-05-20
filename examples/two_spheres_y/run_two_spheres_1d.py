@@ -72,9 +72,7 @@ sim_params.unactuated_mass_scale = 50
 sim_params.gradient_mode = GradientMode.kAB
 q_sim.calc_dynamics(q=q_nominal, u=u_nominal, sim_params=sim_params)
 dfdu_active = q_sim.get_Dq_nextDqa_cmd()
-A_numerical = fd_gradient_calculator.calc_A(
-    q_nominal, u_nominal, 1e-3, sim_params
-)
+A_numerical = fd_gradient_calculator.calc_A(q_nominal, u_nominal, 1e-3, sim_params)
 
 print("dfdu_active\n", dfdu_active)
 print("A_ad\n", q_sim.get_Dq_nextDq())
