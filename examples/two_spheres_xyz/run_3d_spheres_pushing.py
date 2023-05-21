@@ -36,9 +36,7 @@ qa_knots[0] = [
 ]
 qa_knots[1] = [np.cos(theta) * 1.0, np.sin(theta) * 1.0, r_obj]
 qa_knots[2] = qa_knots[1]
-qa_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, duration * 0.8, duration], qa_knots.T
-)
+qa_traj = PiecewisePolynomial.FirstOrderHold([0, duration * 0.8, duration], qa_knots.T)
 q_a_traj_dict_str = {robot_name: qa_traj}
 qu0 = np.array([0.0, 0.0, r_obj])
 q0_dict_str = {object_name: qu0, robot_name: qa_knots[0]}

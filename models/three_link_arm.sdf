@@ -40,7 +40,7 @@
   <visual name='cylinder'>
     <pose> 0 0.0 0 1.5708 0 0</pose>
     <geometry>
-      <cylinder> 
+      <cylinder>
         <length>0.9</length>
         <radius>0.05</radius>
       </cylinder>
@@ -84,7 +84,7 @@
   <visual name='cylinder'>
     <pose> 0 0.0 0 1.5708 0 0</pose>
     <geometry>
-      <cylinder> 
+      <cylinder>
         <length>0.9</length>
         <radius>0.05</radius>
       </cylinder>
@@ -168,6 +168,3 @@
 
   </model>
 </sdf>
-
-
-

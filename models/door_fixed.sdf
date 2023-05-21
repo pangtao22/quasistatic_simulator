@@ -35,12 +35,12 @@
           </box>
         </geometry>
         <material>
-          <diffuse>0.75 0.6 0.5 0.3</diffuse>        
+          <diffuse>0.75 0.6 0.5 0.3</diffuse>
         </material>
       </visual>
 
       <collision name="collision">
-        <pose>0 0 0 0 0 0 </pose>      
+        <pose>0 0 0 0 0 0 </pose>
         <geometry>
           <box>
             <size>0.05 0.49 1.0</size>

@@ -59,9 +59,7 @@ class QuasistaticSimulator:
             self.vis = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
             self.vis["cylinder"].set_object(
                 meshcat.geometry.Cylinder(height=0.1, radius=r),
-                meshcat.geometry.MeshLambertMaterial(
-                    color=0xFFFFFF, opacity=0.5
-                ),
+                meshcat.geometry.MeshLambertMaterial(color=0xFFFFFF, opacity=0.5),
             )
             self.vis["cylinder"].set_transform(
                 meshcat.transformations.euler_matrix(np.pi / 2, 0, 0)
@@ -69,21 +67,15 @@ class QuasistaticSimulator:
             self.finger_thickness = 0.02
             self.vis["left_finger"].set_object(
                 meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
-                meshcat.geometry.MeshLambertMaterial(
-                    color=0xFF0000, opacity=1.0
-                ),
+                meshcat.geometry.MeshLambertMaterial(color=0xFF0000, opacity=1.0),
             )
             self.vis["right_finger"].set_object(
                 meshcat.geometry.Box([self.finger_thickness, 0.1, 0.2]),
-                meshcat.geometry.MeshLambertMaterial(
-                    color=0xFF0000, opacity=1.0
-                ),
+                meshcat.geometry.MeshLambertMaterial(color=0xFF0000, opacity=1.0),
             )
             self.vis["support"].set_object(
                 meshcat.geometry.Box([1, 1, 0.1]),
-                meshcat.geometry.MeshLambertMaterial(
-                    color=0x00FF00, opacity=1.0
-                ),
+                meshcat.geometry.MeshLambertMaterial(color=0x00FF00, opacity=1.0),
             )
             self.vis["support"].set_transform(
                 meshcat.transformations.translation_matrix([0, -0.5, 0])

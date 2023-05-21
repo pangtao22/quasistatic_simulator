@@ -50,7 +50,7 @@
       <limit>
         <lower>-1.5708</lower>
         <upper>0</upper>
-        <effort>300</effort>  
+        <effort>300</effort>
       </limit>
     </axis>
   </joint>
@@ -89,7 +89,7 @@
       </sphere>
     </geometry>
     <material>
-      <diffuse>0.2 0.2 0.2 0.8</diffuse>    
+      <diffuse>0.2 0.2 0.2 0.8</diffuse>
     </material>
   </visual>
 
@@ -266,10 +266,7 @@
         </ode>
       </friction>
     </surface>
-  </collision> 
+  </collision>
   </link>
   </model>
 </sdf>
-
-
-

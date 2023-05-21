@@ -54,9 +54,7 @@ class TestQuasistaticSystem(unittest.TestCase):
         # Simulation time step.
         h = 0.2
         q_parser = QuasistaticParser(q_model_path)
-        q_parser.set_sim_params(
-            h=h, use_free_solvers=not is_mosek_gurobi_available()
-        )
+        q_parser.set_sim_params(h=h, use_free_solvers=not is_mosek_gurobi_available())
 
         # Simulate using Simulator.
         loggers_dict_systems_str, q_sys = run_quasistatic_sim(

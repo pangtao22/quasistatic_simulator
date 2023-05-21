@@ -50,7 +50,7 @@
       <limit>
         <lower>0</lower>
         <upper>1.5708</upper>
-        <effort>300</effort>  
+        <effort>300</effort>
       </limit>
     </axis>
   </joint>
@@ -265,7 +265,7 @@
         </ode>
       </friction>
     </surface>
-  </collision> 
+  </collision>
   </link>
   </model>
 </sdf>

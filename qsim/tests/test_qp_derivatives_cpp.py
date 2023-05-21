@@ -62,9 +62,7 @@ class TestQpDerivatives(unittest.TestCase):
     def test_derivatives(self):
         lambda_threshold = 1e-3
         atol = 1e-8
-        for Q, b, G, e in zip(
-            self.Q_list, self.b_list, self.G_list, self.e_list
-        ):
+        for Q, b, G, e in zip(self.Q_list, self.b_list, self.G_list, self.e_list):
             z_star, lambda_star = build_qp_and_solve(Q, b, G, e, self.solver)
             self.dqp_py.update_problem(
                 Q=Q,

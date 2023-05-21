@@ -6,15 +6,15 @@ directives:
 
 - add_model:
     name: ground
-    file: package://quasistatic_simulator/ground_box_thin.sdf    
+    file: package://quasistatic_simulator/ground_box_thin.sdf
 
 - add_model:
     name: wall
-    file: package://quasistatic_simulator/wall_box.sdf 
+    file: package://quasistatic_simulator/wall_box.sdf
 
 - add_model:
     name: wall_left
-    file: package://quasistatic_simulator/wall_box_left.sdf        
+    file: package://quasistatic_simulator/wall_box_left.sdf
 
 - add_frame:
     name: wall_frame1
@@ -51,4 +51,4 @@ directives:
 
 - add_weld:
     parent: wall_frame2
-    child: wall_left    
+    child: wall_left

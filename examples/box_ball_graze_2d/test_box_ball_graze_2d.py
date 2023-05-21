@@ -22,9 +22,7 @@ class TestBoxBallGraze(unittest.TestCase):
         self.parser = QuasistaticParser(
             os.path.join(models_dir, "q_sys", "ball_grazing_2d.yml")
         )
-        self.parser.set_sim_params(
-            use_free_solvers=not is_mosek_gurobi_available()
-        )
+        self.parser.set_sim_params(use_free_solvers=not is_mosek_gurobi_available())
 
     def test_old_vs_new(self):
         self.parser.set_sim_params(is_quasi_dynamic=True, h=self.h)
@@ -73,9 +71,7 @@ class TestBoxBallGraze(unittest.TestCase):
 
         for i in range(n_steps - 1):
             q_a_cmd = qa_traj.value((i + 1) * self.h).squeeze()
-            dq_a, dq_u, lambda_n, lambda_f, result = q_sim.step_anitescu(
-                q, q_a_cmd
-            )
+            dq_a, dq_u, lambda_n, lambda_f, result = q_sim.step_anitescu(q, q_a_cmd)
 
             # Update q.
             q += np.hstack([dq_u, dq_a])
@@ -106,9 +102,7 @@ class TestBoxBallGraze(unittest.TestCase):
 
         q_sim = self.parser.make_simulator_py(internal_vis=False)
         q_sim_cpp = self.parser.make_simulator_cpp()
-        q_sim_params = QuasistaticSimulator.copy_sim_params(
-            self.parser.q_sim_params
-        )
+        q_sim_params = QuasistaticSimulator.copy_sim_params(self.parser.q_sim_params)
 
         model_u = q_sim.plant.GetModelInstanceByName("box")
         model_a = q_sim.plant.GetModelInstanceByName("ball")

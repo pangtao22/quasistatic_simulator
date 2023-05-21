@@ -27,9 +27,7 @@ gravity = np.array([0, 0, -10.0])
 
 F_WB = np.zeros((2, 3))
 F_WB[1] = [0, 0, -100.0]
-F_WB_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, q_iiwa_traj.end_time() / 2], F_WB.T
-)
+F_WB_traj = PiecewisePolynomial.FirstOrderHold([0, q_iiwa_traj.end_time() / 2], F_WB.T)
 
 
 def run_comparison(is_visualizing: bool, real_time_rate: float):

@@ -16,9 +16,7 @@ class TestIiwaBlockStacking(unittest.TestCase):
             h=self.h_quasistatic,
             use_free_solvers=not is_mosek_gurobi_available(),
         )
-        tolerance = (
-            1e-2 if self.q_parser.q_sim_params.use_free_solvers else 1e-4
-        )
+        tolerance = 1e-2 if self.q_parser.q_sim_params.use_free_solvers else 1e-4
         compare_q_sim_cpp_vs_py(
             test_case=self,
             q_parser=self.q_parser,
@@ -54,11 +52,7 @@ class TestIiwaBlockStacking(unittest.TestCase):
         Accuracy thresholds are chosen based on a "visually reasonable" runs of
         both simulations.
         """
-        (
-            loggers_dict_mbp_str,
-            loggers_dict_quasistatic_str,
-            plant,
-        ) = run_comparison(
+        (loggers_dict_mbp_str, loggers_dict_quasistatic_str, plant,) = run_comparison(
             h_mbp=1e-3, h_quasistatic=self.h_quasistatic, is_visualizing=False
         )
 

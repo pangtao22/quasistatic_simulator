@@ -2,7 +2,7 @@ model_directive: package://quasistatic_simulator/allegro_hand_plate.yml
 robots:
   -
     name: allegro_hand_right
-    Kp: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]    
+    Kp: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
 
 objects:
   -

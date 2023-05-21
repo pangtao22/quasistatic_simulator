@@ -121,9 +121,7 @@ plt.show()
 
 #%% error as a function of time step
 plt.figure(figsize=(6, 2.5))
-e_cube_integral_final = [
-    a[-1] for a, b in zip(e_cube_integral_list, e_a_integral_list)
-]
+e_cube_integral_final = [a[-1] for a, b in zip(e_cube_integral_list, e_a_integral_list)]
 plt.grid(True)
 plt.scatter(
     time_steps_real[:n_quasistatic],
@@ -163,9 +161,7 @@ for i, dt in enumerate(time_steps):
 
     t = np.arange(len(q_u0_logs[i])) * time_steps[i]
     angles = [get_angle_from_quaternion(qu[:4].copy()) for qu in q_u0_logs[i]]
-    roll_angles = [
-        get_roll_from_quaternion(qu[:4].copy()) for qu in q_u0_logs[i]
-    ]
+    roll_angles = [get_roll_from_quaternion(qu[:4].copy()) for qu in q_u0_logs[i]]
     for j, ax in enumerate(axes):
         if j == 3:
             ax.plot(t, angles, label=label)

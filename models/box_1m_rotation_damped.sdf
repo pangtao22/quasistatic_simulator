@@ -52,7 +52,7 @@
         </limit>
 	<dynamics>
 	  <damping>100.0</damping>
-	</dynamics>  
+	</dynamics>
       </axis>
     </joint>
 
@@ -69,7 +69,7 @@
         </limit>
 	<dynamics>
 	  <damping>100.0</damping>
-	</dynamics>  	
+	</dynamics>
       </axis>
     </joint>
 
@@ -86,7 +86,7 @@
         </limit>
 	<dynamics>
 	  <damping>100.0</damping>
-	</dynamics>  	
+	</dynamics>
       </axis>
     </joint>
 

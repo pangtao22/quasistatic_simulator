@@ -99,9 +99,7 @@ if __name__ == "__main__":
     figure, axes = plt.subplots(7, 1, figsize=(4, 10), dpi=200)
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_iiwa_log_mbp[:, i], label="mbp")
-        ax.plot(
-            t_quasistatic, q_iiwa_log_quasistatic[:, i], label="quasistatic"
-        )
+        ax.plot(t_quasistatic, q_iiwa_log_quasistatic[:, i], label="quasistatic")
         ax.set_ylabel("joint {} [rad]".format(i + 1))
         ax.legend()
     axes[-1].set_xlabel("t [s]")

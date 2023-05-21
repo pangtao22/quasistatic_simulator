@@ -7,9 +7,7 @@ from qsim.utils import is_mosek_gurobi_available
 
 class Test3linkArmBoxPushing2D(unittest.TestCase):
     def setUp(self):
-        self.q_parser = QuasistaticParser(
-            os.path.join(models_dir, q_model_path_2d)
-        )
+        self.q_parser = QuasistaticParser(os.path.join(models_dir, q_model_path_2d))
         self.q_parser.set_sim_params(
             h=h_quasistatic,
             use_free_solvers=not is_mosek_gurobi_available(),

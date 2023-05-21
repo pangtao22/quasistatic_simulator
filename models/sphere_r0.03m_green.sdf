@@ -11,7 +11,7 @@
           <iyy>0.00036</iyy>
           <iyz>0</iyz>
           <izz>0.00036</izz>
-        </inertia>        
+        </inertia>
       </inertial>
 
       <visual name="visual">

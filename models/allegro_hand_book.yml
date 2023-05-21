@@ -6,7 +6,7 @@ directives:
 
 - add_model:
     name: ground
-    file: package://quasistatic_simulator/ground_box_thin.sdf    
+    file: package://quasistatic_simulator/ground_box_thin.sdf
 
 - add_frame:
     name: world_hand_offset

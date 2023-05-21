@@ -34,9 +34,7 @@ def calc_integral_errors(
         q_gt_traj=angle_box_mbp_traj,
     )
     # Quasistatic vs MBP, object position.
-    xyz_box_mbp_traj = PiecewisePolynomial.FirstOrderHold(
-        t_mbp, q_box_log_mbp[:, :2].T
-    )
+    xyz_box_mbp_traj = PiecewisePolynomial.FirstOrderHold(t_mbp, q_box_log_mbp[:, :2].T)
     e_xyz_box, e_vec_xyz_box, t_xyz_box = calc_error_integral(
         q_knots=q_box_log_quasistatic[:, :2],
         t=t_quasistatic,
@@ -73,9 +71,7 @@ if __name__ == "__main__":
     axes[0].set_title("Joint angles")
     for i, ax in enumerate(axes):
         ax.plot(t_mbp, q_robot_log_mbp[:, i], label="mbp")
-        ax.plot(
-            t_quasistatic, q_robot_log_quasistatic[:, i], label="quasistatic"
-        )
+        ax.plot(t_quasistatic, q_robot_log_quasistatic[:, i], label="quasistatic")
         ax.set_ylabel("[rad]")
         ax.legend()
     plt.xlabel("t [s]")

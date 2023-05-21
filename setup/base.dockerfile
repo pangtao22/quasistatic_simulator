@@ -32,7 +32,6 @@ ENV QSIM_PATH /quasistatic_simulator
 ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
 
 # put qsim_cpp on the python path.
-ENV PYTHONPATH $QSIM_CPP_PATH/build/src:$PYTHONPATH
+ENV PYTHONPATH $QSIM_CPP_PATH/build/bindings:$PYTHONPATH
 ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
 ENV PYTHONPATH /opt/drake/lib/python3.10/site-packages:$PYTHONPATH
-

@@ -3,7 +3,7 @@
 
 ![](/media/planar_hand.gif) ![](/media/allegro_hand_ball.gif) ![](/media/allegro_hand_door.gif)
 
-This repo provides an implementation of a **differentiable**, **convex** and **quasi-static** dynamics model which is effective for **contact-rich manipulation planning**. The dynamics formulation is described in 
+This repo provides an implementation of a **differentiable**, **convex** and **quasi-static** dynamics model which is effective for **contact-rich manipulation planning**. The dynamics formulation is described in
 - Section 3 of [Global Planning for Contact-Rich Manipulation via
 Local Smoothing of Quasi-dynamic Contact Models](https://arxiv.org/abs/2206.10787), currently under review.
 - [A Convex Quasistatic Time-stepping Scheme for Rigid Multibody Systems with Contact and Friction](http://groups.csail.mit.edu/robotics-center/public_papers/Pang20b.pdf), ICRA2021.
@@ -31,8 +31,8 @@ If on Apple Silicon Macs, run
 ```
 docker buildx build --platform=linux/amd64 -t qsim -f ./setup/qsim.dockerfile .
 ```
-Beware that compiling is slow! It took M2 Max more than 20 minutes to build the 
-image. 
+Beware that compiling is slow! It took M2 Max more than 20 minutes to build the
+image.
 
 3. To run the github "build and test" action locally, run
 ```
@@ -42,16 +42,16 @@ If on Apple Silicon Macs, run
 ```
 docker run -v $PWD:"/workdir" --workdir="/workdir" --platform=linux/amd64 --entrypoint "/workdir/setup/run_tests.sh" qsim
 ```
-It is also very slow, even slower than building the image and then running 
+It is also very slow, even slower than building the image and then running
 the test in CI.
 
 ---
-If following the dockerfile and the scripts therein to build locally, it is 
-recommended to set `-DCMAKE_BUILD_TYPE=Release`. Building in release mode 
-seems to trigger segfaults inside containers.   
+If following the dockerfile and the scripts therein to build locally, it is
+recommended to set `-DCMAKE_BUILD_TYPE=Release`. Building in release mode
+seems to trigger segfaults inside containers.
 
 ## Running python tests
-In the root of the repo, run 
+In the root of the repo, run
 ```bash
 pytest .
 ```

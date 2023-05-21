@@ -2,7 +2,7 @@ model_directive: package://quasistatic_simulator/allegro_hand.yml
 robots:
   -
     name: allegro_hand_right
-    Kp: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]    
+    Kp: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
 
 objects:
   -
@@ -11,7 +11,7 @@ objects:
 
   -
     name: sphere_2
-    file: package://quasistatic_simulator/sphere_r0.03m_green.sdf    
+    file: package://quasistatic_simulator/sphere_r0.03m_green.sdf
 
 quasistatic_sim_params:
   gravity: [0, 0, 0.]

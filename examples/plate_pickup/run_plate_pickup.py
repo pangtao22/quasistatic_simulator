@@ -40,9 +40,7 @@ qa_knots[3] = [0.05, 0.03, -1.2, -0.02, 0.02]
 qa_knots[4] = [0.05, 0.06, -1.2, -0.01, 0.01]
 qa_knots[5] = [0.05, 0.2, -1.2, -0.00, 0.00]
 qa_knots[6] = [0.32, 0.5, -1.2, -0.00, 0.00]
-q_robot_traj = PiecewisePolynomial.FirstOrderHold(
-    [0, 2, 4, 6, 8, 10, 12], qa_knots.T
-)
+q_robot_traj = PiecewisePolynomial.FirstOrderHold([0, 2, 4, 6, 8, 10, 12], qa_knots.T)
 
 q_a_traj_dict_str = {"gripper": q_robot_traj}
 

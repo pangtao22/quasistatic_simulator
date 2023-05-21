@@ -16,8 +16,15 @@ import webbrowser
 import numpy as np
 from pydrake.common.value import AbstractValue
 from pydrake.geometry import (
-    Box, ConvertVolumeToSurfaceMesh, Convex, Cylinder, Mesh, Sphere,
-    QueryObject, Role, VolumeMesh
+    Box,
+    ConvertVolumeToSurfaceMesh,
+    Convex,
+    Cylinder,
+    Mesh,
+    Sphere,
+    QueryObject,
+    Role,
+    VolumeMesh,
 )
 from pydrake.math import RigidTransform, RotationMatrix
 from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
@@ -26,16 +33,15 @@ from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
 # if/when PyCQA/pycodestyle#834 lands and is incorporated.
 with warnings.catch_warnings():
     warnings.filterwarnings(
-        "ignore", category=ImportWarning,
-        message="can't resolve package from __spec__")
+        "ignore", category=ImportWarning, message="can't resolve package from __spec__"
+    )
     # TODO(SeanCurtis-TRI): Meshcat modified itself from a conditional
     # import of IPython to an unconditional import. IPython eventually
     # depends on imp. If the dependency becomes conditional or the
     # ultimate dependency upgrades from imp to importlib, this can be
     # removed.
     warnings.filterwarnings(
-        "ignore", message="the imp module is deprecated",
-        category=DeprecationWarning
+        "ignore", message="the imp module is deprecated", category=DeprecationWarning
     )
     import meshcat
 import meshcat.geometry as g  # noqa
@@ -44,10 +50,10 @@ from meshcat.animation import Animation
 
 # To help avoid small simulation timesteps, we use a default period that has an
 # exact representation in binary floating point; see drake#15021 for details.
-_DEFAULT_PUBLISH_PERIOD = 1 / 32.
+_DEFAULT_PUBLISH_PERIOD = 1 / 32.0
 
 
-def AddTriad(vis, name, prefix, length=1., radius=0.04, opacity=1.):
+def AddTriad(vis, name, prefix, length=1.0, radius=0.04, opacity=1.0):
     """
     Initializes coordinate axes of a frame T. The x-axis is drawn red,
     y-axis green and z-axis blue. The axes point in +x, +y and +z directions,
@@ -63,21 +69,20 @@ def AddTriad(vis, name, prefix, length=1., radius=0.04, opacity=1.):
         radius: the radius of each axis in meters.
         opacity: the opacity of the coordinate axes, between 0 and 1.
     """
-    delta_xyz = np.array([[length / 2, 0, 0],
-                          [0, length / 2, 0],
-                          [0, 0, length / 2]])
+    delta_xyz = np.array([[length / 2, 0, 0], [0, length / 2, 0], [0, 0, length / 2]])
 
-    axes_name = ['x', 'y', 'z']
-    colors = [0xff0000, 0x00ff00, 0x0000ff]
+    axes_name = ["x", "y", "z"]
+    colors = [0xFF0000, 0x00FF00, 0x0000FF]
     rotation_axes = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
 
     for i in range(3):
         material = meshcat.geometry.MeshLambertMaterial(
-            color=colors[i], opacity=opacity)
+            color=colors[i], opacity=opacity
+        )
         vis[prefix][name][axes_name[i]].set_object(
-            meshcat.geometry.Cylinder(length, radius), material)
-        X = meshcat.transformations.rotation_matrix(
-            np.pi / 2, rotation_axes[i])
+            meshcat.geometry.Cylinder(length, radius), material
+        )
+        X = meshcat.transformations.rotation_matrix(np.pi / 2, rotation_axes[i])
         X[0:3, 3] = delta_xyz[i]
         vis[prefix][name][axes_name[i]].set_transform(X)
 
@@ -96,9 +101,9 @@ class StringToRoleAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         assert isinstance(values, str)
 
-        if values == 'proximity':
+        if values == "proximity":
             mapped_value = Role.kProximity
-        elif values == 'illustration':
+        elif values == "illustration":
             mapped_value = Role.kIllustration
         else:
             raise ValueError(f"Role parameter got invalid value {s}")
@@ -140,6 +145,7 @@ class HydroTriSurface(g.Geometry):
     ])
     mesh = HydroTriSurface(vertices, normals)
     """
+
     __slots__ = ["vertices", "normals"]
 
     def __init__(self, vertices, normals):
@@ -150,20 +156,21 @@ class HydroTriSurface(g.Geometry):
         assert (vertices.shape[0] % 3) == 0, "vertices must have 3N values"
         assert vertices.shape[1] == 3, "`vertices` must be an 3Nx3 array"
         assert normals.shape[1] == 3, "`normals` must be an 3Nx3 array"
-        assert vertices.shape[0] == normals.shape[0], \
-            "'vertices' and 'normals' must be the same size"
+        assert (
+            vertices.shape[0] == normals.shape[0]
+        ), "'vertices' and 'normals' must be the same size"
         self.vertices = vertices
         self.normals = normals
 
     def lower(self, object_data):
-        attrs = {u"position": g.pack_numpy_array(self.vertices.T),
-                 u"normal": g.pack_numpy_array(self.normals.T)}
+        attrs = {
+            "position": g.pack_numpy_array(self.vertices.T),
+            "normal": g.pack_numpy_array(self.normals.T),
+        }
         return {
-            u"uuid": self.uuid,
-            u"type": u"BufferGeometry",
-            u"data": {
-                u"attributes": attrs
-            }
+            "uuid": self.uuid,
+            "type": "BufferGeometry",
+            "data": {"attributes": attrs},
         }
 
 
@@ -204,44 +211,59 @@ class MeshcatVisualizer(LeafSystem):
                         open_browser=args.open_browser))
         """
         parser.add_argument(
-            "--meshcat", nargs='?', metavar='zmq_url', const="new",
+            "--meshcat",
+            nargs="?",
+            metavar="zmq_url",
+            const="new",
             default=None,
             help="Enable visualization with meshcat. If no zmq_url is "
-                 "specified, a meshcat-server will be started as a "
-                 "subprocess.  Use e.g. --meshcat=tcp://127.0.0.1:6000 to "
-                 "connect to an existing meshcat-server at the specified "
-                 "url.  Use --meshcat=default to connect to the "
-                 "meshcat-server running at the default url.")
+            "specified, a meshcat-server will be started as a "
+            "subprocess.  Use e.g. --meshcat=tcp://127.0.0.1:6000 to "
+            "connect to an existing meshcat-server at the specified "
+            "url.  Use --meshcat=default to connect to the "
+            "meshcat-server running at the default url.",
+        )
 
         parser.add_argument(
-            "--open_browser", action='store_true', default=False,
-            help="Open a browser when creating a new meshcat-server.")
+            "--open_browser",
+            action="store_true",
+            default=False,
+            help="Open a browser when creating a new meshcat-server.",
+        )
 
         parser.add_argument(
-            "--meshcat_role", action=StringToRoleAction,
-            default=Role.kIllustration, choices=['illustration', 'proximity'],
-            help="Defines the role of the geometry to visualize")
+            "--meshcat_role",
+            action=StringToRoleAction,
+            default=Role.kIllustration,
+            choices=["illustration", "proximity"],
+            help="Defines the role of the geometry to visualize",
+        )
 
         parser.add_argument(
-            "--meshcat_hydroelastic", action="store_true", default=False,
+            "--meshcat_hydroelastic",
+            action="store_true",
+            default=False,
             help="If --role=proximity, then any geometry with a hydroelastic "
-                 "mesh representation will be rendered as that discrete mesh "
-                 "instead of the declared primitive.")
+            "mesh representation will be rendered as that discrete mesh "
+            "instead of the declared primitive.",
+        )
 
-    def __init__(self,
-                 scene_graph=None,
-                 draw_period=_DEFAULT_PUBLISH_PERIOD,
-                 prefix="drake",
-                 zmq_url="default",
-                 open_browser=None,
-                 frames_to_draw=[],
-                 frames_opacity=1.,
-                 axis_length=0.15,
-                 axis_radius=0.006,
-                 delete_prefix_on_load=True,
-                 role=Role.kIllustration,
-                 prefer_hydro=False,
-                 **kwargs):
+    def __init__(
+        self,
+        scene_graph=None,
+        draw_period=_DEFAULT_PUBLISH_PERIOD,
+        prefix="drake",
+        zmq_url="default",
+        open_browser=None,
+        frames_to_draw=[],
+        frames_opacity=1.0,
+        axis_length=0.15,
+        axis_radius=0.006,
+        delete_prefix_on_load=True,
+        role=Role.kIllustration,
+        prefer_hydro=False,
+        **kwargs,
+    ):
         """
         Args:
             scene_graph: A SceneGraph object.  This argument is optional, and
@@ -298,7 +320,7 @@ class MeshcatVisualizer(LeafSystem):
         """
         LeafSystem.__init__(self)
 
-        self.set_name('meshcat_visualizer')
+        self.set_name("meshcat_visualizer")
         self.DeclarePeriodicPublishNoHandler(draw_period, 0.0)
         self.draw_period = draw_period
         self._delete_prefix_on_load = delete_prefix_on_load
@@ -314,7 +336,8 @@ class MeshcatVisualizer(LeafSystem):
         self._scene_graph = scene_graph
 
         self._geometry_query_input_port = self.DeclareAbstractInputPort(
-            "geometry_query", AbstractValue.Make(QueryObject()))
+            "geometry_query", AbstractValue.Make(QueryObject())
+        )
 
         if zmq_url == "default":
             zmq_url = "tcp://127.0.0.1:6000"
@@ -332,8 +355,8 @@ class MeshcatVisualizer(LeafSystem):
         print("Connected to meshcat-server.")
 
         # Set background color (to match drake-visualizer).
-        self.vis['/Background'].set_property("top_color", [0.95, 0.95, 1.0])
-        self.vis['/Background'].set_property("bottom_color", [.32, .32, .35])
+        self.vis["/Background"].set_property("top_color", [0.95, 0.95, 1.0])
+        self.vis["/Background"].set_property("bottom_color", [0.32, 0.32, 0.35])
 
         if open_browser:
             webbrowser.open(self.vis.url())
@@ -345,8 +368,9 @@ class MeshcatVisualizer(LeafSystem):
         # for this.
         self.DeclareInitializationEvent(
             event=PublishEvent(
-                trigger_type=TriggerType.kInitialization,
-                callback=on_initialize))
+                trigger_type=TriggerType.kInitialization, callback=on_initialize
+            )
+        )
 
         # TODO(russt): Move this to a cache entry as in DrakeVisualizer.
         # Requires #14287.
@@ -362,8 +386,14 @@ class MeshcatVisualizer(LeafSystem):
         return self._geometry_query_input_port
 
     def set_planar_viewpoint(
-            self, camera_position=[0, -1, 0], camera_focus=[0, 0, 0], xmin=-1,
-            xmax=1, ymin=-1, ymax=1):
+        self,
+        camera_position=[0, -1, 0],
+        camera_focus=[0, 0, 0],
+        xmin=-1,
+        xmax=1,
+        ymin=-1,
+        ymax=1,
+    ):
         """
         Sets meshcat to use an orthographic projection with locked out orbit
         controls, and turns off the background, axes, and grid.  This allows
@@ -390,19 +420,22 @@ class MeshcatVisualizer(LeafSystem):
 
         # Set up orthographic camera.
         camera = g.OrthographicCamera(
-            left=xmin, right=xmax, top=ymax, bottom=ymin, near=-1000, far=1000)
-        self.vis['/Cameras/default/rotated'].set_object(camera)
-        self.vis['/Cameras/default'].set_transform(
-            RigidTransform(camera_position).GetAsMatrix4())
+            left=xmin, right=xmax, top=ymax, bottom=ymin, near=-1000, far=1000
+        )
+        self.vis["/Cameras/default/rotated"].set_object(camera)
+        self.vis["/Cameras/default"].set_transform(
+            RigidTransform(camera_position).GetAsMatrix4()
+        )
 
         # Lock the orbit controls.
-        self.vis['/Cameras/default/rotated/<object>'].set_property(
-            "position", [0, 0, 0])
+        self.vis["/Cameras/default/rotated/<object>"].set_property(
+            "position", [0, 0, 0]
+        )
 
         # Turn off background, axes, and grid.
-        self.vis['/Background'].set_property("visible", False)
-        self.vis['/Grid'].set_property("visible", False)
-        self.vis['/Axes'].set_property("visible", False)
+        self.vis["/Background"].set_property("visible", False)
+        self.vis["/Grid"].set_property("visible", False)
+        self.vis["/Axes"].set_property("visible", False)
 
     def delete_prefix(self):
         """
@@ -427,22 +460,21 @@ class MeshcatVisualizer(LeafSystem):
             self.vis[self.prefix].delete()
 
         if context and self.get_geometry_query_input_port().HasValue(context):
-            inspector = self.get_geometry_query_input_port().Eval(
-                context).inspector()
+            inspector = self.get_geometry_query_input_port().Eval(context).inspector()
         elif self._scene_graph:
             inspector = self._scene_graph.model_inspector()
         else:
             raise RuntimeError(
                 "You must provide a valid Context for this system with the "
                 "geometry_query port connected or the ``scene_graph`` passed "
-                "in the constructor must be a valid SceneGraph.")
+                "in the constructor must be a valid SceneGraph."
+            )
 
         vis = self.vis[self.prefix]
         # Make a fixed-seed generator for random colors for bodies.
         color_generator = np.random.RandomState(seed=42)
         for frame_id in inspector.GetAllFrameIds():
-            count = inspector.NumGeometriesForFrameWithRole(
-                frame_id, self._role)
+            count = inspector.NumGeometriesForFrameWithRole(frame_id, self._role)
             if count == 0:
                 continue
             if frame_id == inspector.world_frame_id():
@@ -451,12 +483,15 @@ class MeshcatVisualizer(LeafSystem):
                 # Note: MBP declares frames with SceneGraph using `::`, we
                 # replace those with `/` here to expose the full tree to
                 # meshcat.
-                name = (inspector.GetOwningSourceName(frame_id) + "/"
-                        + inspector.GetName(frame_id).replace("::", "/"))
+                name = (
+                    inspector.GetOwningSourceName(frame_id)
+                    + "/"
+                    + inspector.GetName(frame_id).replace("::", "/")
+                )
 
             frame_vis = vis[name]
             for g_id in inspector.GetGeometries(frame_id, self._role):
-                color = 0xe5e5e5  # default color
+                color = 0xE5E5E5  # default color
                 alpha = 1.0
                 hydro_mesh = None
                 if self._role == Role.kIllustration:
@@ -464,7 +499,7 @@ class MeshcatVisualizer(LeafSystem):
                     if props and props.HasProperty("phong", "diffuse"):
                         rgba = props.GetProperty("phong", "diffuse")
                         # Convert Rgba from [0-1] to hex 0xRRGGBB.
-                        color = int(255 * rgba.r()) * 256 ** 2
+                        color = int(255 * rgba.r()) * 256**2
                         color += int(255 * rgba.g()) * 256
                         color += int(255 * rgba.b())
                         alpha = rgba.a()
@@ -473,11 +508,11 @@ class MeshcatVisualizer(LeafSystem):
                     # visually distinguishable.
                     color = color_generator.randint(2 ** (24))
                     if self._prefer_hydro:
-                        hydro_mesh = inspector. \
-                            maybe_get_hydroelastic_mesh(g_id)
+                        hydro_mesh = inspector.maybe_get_hydroelastic_mesh(g_id)
 
                 material = g.MeshLambertMaterial(
-                    color=color, transparent=alpha != 1., opacity=alpha)
+                    color=color, transparent=alpha != 1.0, opacity=alpha
+                )
 
                 shape = inspector.GetShape(g_id)
                 X_FG = inspector.GetPoseInFrame(g_id).GetAsMatrix4()
@@ -512,8 +547,7 @@ class MeshcatVisualizer(LeafSystem):
                         v += 3
                     geom = HydroTriSurface(vertices, normals)
                 elif isinstance(shape, Box):
-                    geom = g.Box([shape.width(), shape.depth(),
-                                  shape.height()])
+                    geom = g.Box([shape.width(), shape.depth(), shape.height()])
                 elif isinstance(shape, Sphere):
                     geom = g.Sphere(shape.radius())
                 elif isinstance(shape, Cylinder):
@@ -524,8 +558,7 @@ class MeshcatVisualizer(LeafSystem):
                     R_GC = RotationMatrix.MakeXRotation(np.pi / 2.0).matrix()
                     X_FG[0:3, 0:3] = X_FG[0:3, 0:3].dot(R_GC)
                 elif isinstance(shape, (Mesh, Convex)):
-                    geom = g.ObjMeshGeometry.from_file(
-                        shape.filename()[0:-3] + "obj")
+                    geom = g.ObjMeshGeometry.from_file(shape.filename()[0:-3] + "obj")
                     # Attempt to find a texture for the object by looking for
                     # an identically-named *.png next to the model.
                     # TODO(gizatt): Support .MTLs and prefer them over png,
@@ -538,18 +571,21 @@ class MeshcatVisualizer(LeafSystem):
                     candidate_texture_path = shape.filename()[0:-3] + "png"
                     if os.path.exists(candidate_texture_path):
                         material = g.MeshLambertMaterial(
-                            map=g.ImageTexture(image=g.PngImage.from_file(
-                                candidate_texture_path)))
+                            map=g.ImageTexture(
+                                image=g.PngImage.from_file(candidate_texture_path)
+                            )
+                        )
                     # Make the uuid's deterministic for mesh geometry, to
                     # support caching at the zmqserver.  This means that
                     # multiple (identical) geometries may have the same UUID,
                     # but testing suggests that meshcat + three.js are ok with
                     # it.
-                    geom.uuid = str(uuid.uuid5(
-                        uuid.NAMESPACE_X500, geom.contents + "mesh"))
-                    material.uuid = str(uuid.uuid5(
-                        uuid.NAMESPACE_X500, geom.contents
-                                             + "material"))
+                    geom.uuid = str(
+                        uuid.uuid5(uuid.NAMESPACE_X500, geom.contents + "mesh")
+                    )
+                    material.uuid = str(
+                        uuid.uuid5(uuid.NAMESPACE_X500, geom.contents + "material")
+                    )
                     X_FG = X_FG.dot(tf.scale_matrix(shape.scale()))
                 else:
                     warnings.warn(f"Unsupported shape {shape} ignored")
@@ -565,15 +601,17 @@ class MeshcatVisualizer(LeafSystem):
                         prefix=self.prefix + "/" + name,
                         length=self.axis_length,
                         radius=self.axis_radius,
-                        opacity=self.frames_opacity
+                        opacity=self.frames_opacity,
                     )
                     self.frames_to_draw.remove(frame_id)
 
             if frame_id != inspector.world_frame_id():
-                self._dynamic_frames.append({
-                    "id": frame_id,
-                    "name": name,
-                })
+                self._dynamic_frames.append(
+                    {
+                        "id": frame_id,
+                        "name": name,
+                    }
+                )
 
         # Loop through the input frames_to_draw list and warn the user if the
         # frame_id does not exist in the scene graph.
@@ -598,12 +636,13 @@ class MeshcatVisualizer(LeafSystem):
         query_object = self.get_geometry_query_input_port().Eval(context)
 
         for frame in self._dynamic_frames:
-            frame_vis = vis[frame['name']]
-            X_WF = query_object.GetPoseInWorld(frame['id'])
+            frame_vis = vis[frame["name"]]
+            X_WF = query_object.GetPoseInWorld(frame["id"])
             frame_vis.set_transform(X_WF.GetAsMatrix4())
             if self._is_recording:
                 with self._animation.at_frame(
-                        frame_vis, self._recording_frame_num) as f:
+                    frame_vis, self._recording_frame_num
+                ) as f:
                     f.set_transform(X_WF.GetAsMatrix4())
 
         if self._is_recording:
@@ -633,20 +672,18 @@ class MeshcatVisualizer(LeafSystem):
                 automatically.
             repetitions: number of times that the animation should play.
         """
-        self.vis.set_animation(self._animation, play=play,
-                               repetitions=repetitions)
+        self.vis.set_animation(self._animation, play=play, repetitions=repetitions)
 
     def reset_recording(self):
         """
         Resets all recorded data.
         """
         # Note: This syntax was chosen to match PyPlotVisualizer.
-        self._animation = Animation(default_framerate=1. / self.draw_period)
+        self._animation = Animation(default_framerate=1.0 / self.draw_period)
         self._recording_frame_num = 0
 
 
-def ConnectMeshcatVisualizer(builder, scene_graph=None, output_port=None,
-                             **kwargs):
+def ConnectMeshcatVisualizer(builder, scene_graph=None, output_port=None, **kwargs):
     """Creates an instance of MeshcatVisualizer, adds it to the diagram, and
     wires the scene_graph query output port to the input port of the
     visualizer.  Provides an interface comparable to
@@ -677,8 +714,9 @@ def ConnectMeshcatVisualizer(builder, scene_graph=None, output_port=None,
     visualizer = builder.AddSystem(MeshcatVisualizer(scene_graph, **kwargs))
 
     if output_port is None:
-        assert scene_graph, ("If no output_port is specified, then the "
-                             "scene_graph must be valid.")
+        assert scene_graph, (
+            "If no output_port is specified, then the " "scene_graph must be valid."
+        )
         output_port = scene_graph.get_query_output_port()
     builder.Connect(output_port, visualizer.get_geometry_query_input_port())
     return visualizer
