@@ -8,6 +8,7 @@ RUN apt-get update \
       && apt-get install --no-install-recommends -qy curl apt-transport-https \
       sudo ca-certificates libgtest-dev libgflags-dev python3.10-dev  \
       python3-pip git python-is-python3 libyaml-cpp-dev \
+      clang-tidy-14 clang-14 \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
@@ -27,9 +28,12 @@ RUN /tmp/install_eigen3.4.sh
 COPY ./setup/requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install -r /tmp/requirements.txt
 
-## Build QuasistaticSimulatorCpp and its python bindings.
+# Build QuasistaticSimulatorCpp and its python bindings.
 ENV QSIM_PATH /quasistatic_simulator
 ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
+
+# Copy cmake toolchain file.
+COPY ./setup/toolchain.cmake /toolchain.cmake
 
 # put qsim_cpp on the python path.
 ENV PYTHONPATH $QSIM_CPP_PATH/build/bindings:$PYTHONPATH

@@ -3,7 +3,7 @@
 __pycache__
 .ipynb_checkpoints
 .pytest_cache
-build
+*build*
 .DS_Store
 *.pdf
 *.gz
@@ -13,5 +13,3 @@ build
 *.html
 *.pyc
 .cache
-cmake-build-debug
-cmake-build-release

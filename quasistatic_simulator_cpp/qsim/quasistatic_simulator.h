@@ -386,7 +386,7 @@ class QuasistaticSimulator {
       const ModelInstanceIndexToVecMap& q_next_dict,
       const Eigen::Ref<const Eigen::VectorXd>& v_star,
       const QuasistaticSimParameters& params,
-      Eigen::LLT<Eigen::MatrixXd> const* const H_llt);
+      Eigen::LLT<Eigen::MatrixXd> const* H_llt);
 
   void BackwardLogIcecream(const ModelInstanceIndexToVecMap& q_dict,
                            const ModelInstanceIndexToVecMap& q_next_dict,
