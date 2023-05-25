@@ -11,5 +11,5 @@ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Debug \
       ..
 
-run_clang_tidy -quiet -style=../.clang-tidy \
+run-clang-tidy-14 -quiet -style=../.clang-tidy \
   '^.*/(bindings|diffcp|qsim)/.+\.(h|cc)$'
