@@ -109,3 +109,21 @@ jobs:
         run: ./setup/build_bindings.sh
       - name: Run tests
         run: ./setup/run_tests.sh
+
+  run_clang_tidy:
+    runs-on: ubuntu-latest
+    needs: [detect_changes, build_and_push]
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: ${{ needs.detect_changes.outputs.image_name }}:${{ needs.detect_changes.outputs.image_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Copy resources
+        run: ./setup/copy_resources.sh
+      - name: Run clang-tidy checks.
+        run: ./setup/run_clang_tidy_checks.sh
