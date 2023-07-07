@@ -3,6 +3,7 @@ import unittest
 from qsim.examples.setup_simulations import compare_q_sim_cpp_vs_py
 
 from qsim.utils import is_mosek_gurobi_available
+from qsim.examples.iiwa_block_stacking.run_mbp_vs_quasistatic import *
 
 
 class TestIiwaBlockStacking(unittest.TestCase):

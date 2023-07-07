@@ -1,7 +1,10 @@
 from typing import Dict
 
 import numpy as np
+import numpy.typing as npt
+
 from pydrake.all import (
+    Context,
     LeafSystem,
     BasicVector,
     PortDataType,
@@ -112,8 +115,14 @@ class QuasistaticSystem(LeafSystem):
             self.q_sim.get_contact_results()
         )
 
-    def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
+    def set_initial_state(
+        self,
+        context: Context,
+        q0_dict: Dict[ModelInstanceIndex, npt.NDArray],
+    ):
         self.q_sim.update_mbp_positions(q0_dict)
+        q0 = self.q_sim.get_mbp_positions_as_vec()
+        context.SetDiscreteState(q0)
 
     def update_q(self, context, discrete_state):
         # Commanded positions.
@@ -129,7 +138,8 @@ class QuasistaticSystem(LeafSystem):
 
         tau_ext_dict = self.q_sim.calc_tau_ext(easf_list)
 
-        q = context.get_discrete_state_vector()
+        q = context.get_discrete_state_vector().value()
+        self.q_sim.update_mbp_positions_from_vector(q)
         self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.sim_params)
         q_next = self.q_sim.get_mbp_positions_as_vec()
         discrete_state.get_mutable_vector().SetFromVector(q_next)

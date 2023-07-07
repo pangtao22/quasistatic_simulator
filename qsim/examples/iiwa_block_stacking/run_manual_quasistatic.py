@@ -9,6 +9,8 @@ from qsim.examples.setup_simulations import (
     create_dict_keyed_by_string,
 )
 
+from qsim.examples.iiwa_block_stacking.simulation_parameters import *
+
 
 def extract_log_for_object(
     q_log: List[Dict[ModelInstanceIndex, np.array]], model: ModelInstanceIndex

@@ -189,7 +189,9 @@ def run_quasistatic_sim(
     # Construct simulator and run simulation.
     t_final = find_t_final_from_commanded_trajectories(q_a_traj_dict)
     sim = Simulator(diagram)
-    q_sys.set_initial_state(q0_dict)
+    context = sim.get_mutable_context()
+    context_q_sys = q_sys.GetMyMutableContextFromRoot(context)
+    q_sys.set_initial_state(context_q_sys, q0_dict)
     sim.Initialize()
     sim.set_target_realtime_rate(real_time_rate)
     if is_visualizing:

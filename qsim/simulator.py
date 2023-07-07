@@ -153,8 +153,12 @@ class QuasistaticSimulator:
         self.inspector = scene_graph.model_inspector()
 
         self.context = diagram.CreateDefaultContext()
-        self.context_plant = diagram.GetMutableSubsystemContext(plant, self.context)
-        self.context_sg = diagram.GetMutableSubsystemContext(scene_graph, self.context)
+        self.context_plant = diagram.GetMutableSubsystemContext(
+            plant, self.context
+        )
+        self.context_sg = diagram.GetMutableSubsystemContext(
+            scene_graph, self.context
+        )
 
         # Internal visualization is used when QuasistaticSimulator is used
         # outside the Systems framework.
@@ -163,8 +167,10 @@ class QuasistaticSimulator:
                 self.viz, self.context
             )
             if self.contact_viz is not None:
-                self.context_meshcat_contact = diagram.GetMutableSubsystemContext(
-                    self.contact_viz, self.context
+                self.context_meshcat_contact = (
+                    diagram.GetMutableSubsystemContext(
+                        self.contact_viz, self.context
+                    )
                 )
 
         self.models_unactuated = object_models
@@ -306,7 +312,9 @@ class QuasistaticSimulator:
                 )
 
             if gm == GradientMode.kAB:
-                raise RuntimeError(f"Computing A for mode {gm} is not supported ")
+                raise RuntimeError(
+                    f"Computing A for mode {gm} is not supported "
+                )
 
     def get_sim_parmas_copy(self):
         return self.copy_sim_params(self.sim_params)
@@ -332,6 +340,9 @@ class QuasistaticSimulator:
     def get_positions(self, model: ModelInstanceIndex):
         return self.plant.GetPositions(self.context_plant, model)
 
+    def get_position_indices(self):
+        return self.position_indices
+
     def get_query_object(self):
         return self.query_object
 
@@ -345,7 +356,9 @@ class QuasistaticSimulator:
         return np.sum([self.n_v_dict[model] for model in self.models_actuated])
 
     def num_unactuated_dof(self):
-        return np.sum([self.n_v_dict[model] for model in self.models_unactuated])
+        return np.sum(
+            [self.n_v_dict[model] for model in self.models_unactuated]
+        )
 
     def get_dynamics_derivatives(self):
         return (
@@ -368,7 +381,9 @@ class QuasistaticSimulator:
             self.context_sg
         )
 
-    def update_mbp_positions(self, q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+    def update_mbp_positions(
+        self, q_dict: Dict[ModelInstanceIndex, np.ndarray]
+    ):
         """
         :param q_dict: A dict of np arrays keyed by model instance indices.
             Each array is the configuration of a model instance in
@@ -396,6 +411,9 @@ class QuasistaticSimulator:
             model: self.plant.GetPositions(self.context_plant, model)
             for model in self.models_all
         }
+
+    def get_mbp_positions_as_vec(self):
+        return self.plant.GetPositions(self.context_plant)
 
     def draw_current_configuration(self, draw_forces=False):
         if self.internal_vis == InternalVisualizationType.NoVis:
@@ -430,8 +448,8 @@ class QuasistaticSimulator:
         tau_ext_u_dict = self.calc_gravity_for_unactuated_models()
 
         # external spatial force for actuated models.
-        tau_ext_a_dict = self.get_generalized_force_from_external_spatial_force(
-            easf_list
+        tau_ext_a_dict = (
+            self.get_generalized_force_from_external_spatial_force(easf_list)
         )
         return {**tau_ext_a_dict, **tau_ext_u_dict}
 
@@ -492,7 +510,9 @@ class QuasistaticSimulator:
                 return model
 
     def calc_gravity_for_unactuated_models(self):
-        gravity_all = self.plant.CalcGravityGeneralizedForces(self.context_plant)
+        gravity_all = self.plant.CalcGravityGeneralizedForces(
+            self.context_plant
+        )
         return {
             model: gravity_all[self.velocity_indices[model]]
             for model in self.models_unactuated
@@ -503,7 +523,8 @@ class QuasistaticSimulator:
     ):
         # TODO: test this more thoroughly.
         tau_ext_actuated = {
-            model: np.zeros(self.n_v_dict[model]) for model in self.models_actuated
+            model: np.zeros(self.n_v_dict[model])
+            for model in self.models_actuated
         }
 
         for easf in easf_list:
@@ -521,7 +542,9 @@ class QuasistaticSimulator:
                 frame_E=self.plant.world_frame(),
             )
 
-            tau_ext_actuated[model] += J[:, self.velocity_indices[model]].T.dot(F_Bq_W)
+            tau_ext_actuated[model] += J[
+                :, self.velocity_indices[model]
+            ].T.dot(F_Bq_W)
 
         return tau_ext_actuated
 
@@ -534,8 +557,10 @@ class QuasistaticSimulator:
         """
         # Evaluate contacts.
         query_object = self.query_object
-        signed_distance_pairs = query_object.ComputeSignedDistancePairwiseClosestPoints(
-            contact_detection_tolerance
+        signed_distance_pairs = (
+            query_object.ComputeSignedDistancePairwiseClosestPoints(
+                contact_detection_tolerance
+            )
         )
 
         n_c = len(signed_distance_pairs)
@@ -561,7 +586,9 @@ class QuasistaticSimulator:
             """
 
             phi[i_c] = sdp.distance
-            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(sdp)
+            U[i_c] = self.get_friction_coefficient_for_signed_distance_pair(
+                sdp
+            )
             bodyA = self.get_mbp_body_from_scene_graph_geometry(sdp.id_A)
             bodyB = self.get_mbp_body_from_scene_graph_geometry(sdp.id_B)
             X_AGa = self.inspector.GetPoseInFrame(sdp.id_A)
@@ -670,7 +697,9 @@ class QuasistaticSimulator:
             # TODO: contact forces at step (l+1) is drawn with the
             # configuration at step l.
             if is_A_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyA)
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyA
+                )
                 contact_info_list.append(
                     MyContactInfo(
                         bodyA_index=bodyB.index(),
@@ -683,7 +712,9 @@ class QuasistaticSimulator:
                     )
                 )
             elif is_B_in:
-                X_WD = self.plant.EvalBodyPoseInWorld(self.context_plant, bodyB)
+                X_WD = self.plant.EvalBodyPoseInWorld(
+                    self.context_plant, bodyB
+                )
                 contact_info_list.append(
                     MyContactInfo(
                         bodyA_index=bodyA.index(),
@@ -697,7 +728,8 @@ class QuasistaticSimulator:
                 )
             else:
                 raise RuntimeError(
-                    "At least one body in a contact pair " "should be unactuated."
+                    "At least one body in a contact pair "
+                    "should be unactuated."
                 )
 
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list
@@ -718,7 +750,9 @@ class QuasistaticSimulator:
             i_f_end = i_f_start + n_d[i_c]
             beta_i = beta[i_f_start:i_f_end]
             f_normal_W = my_contact_info.n_W * beta_i.sum() / h
-            f_tangential_W = my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h
+            f_tangential_W = (
+                my_contact_info.dC_W.T.dot(beta_i) * mu_list[i_c] / h
+            )
             point_pair = PenetrationAsPointPair()
             point_pair.id_A = my_contact_info.geometry_id_A
             point_pair.id_B = my_contact_info.geometry_id_B
@@ -744,15 +778,15 @@ class QuasistaticSimulator:
 
     def get_position_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_positions())
-        return self.plant.GetPositionsFromArray(model_instance_index, selector).astype(
-            int
-        )
+        return self.plant.GetPositionsFromArray(
+            model_instance_index, selector
+        ).astype(int)
 
     def get_velocity_indices_for_model(self, model_instance_index):
         selector = np.arange(self.plant.num_velocities())
-        return self.plant.GetVelocitiesFromArray(model_instance_index, selector).astype(
-            int
-        )
+        return self.plant.GetVelocitiesFromArray(
+            model_instance_index, selector
+        ).astype(int)
 
     def get_friction_coefficient_for_signed_distance_pair(self, sdp):
         props_A = self.inspector.GetProximityProperties(sdp.id_A)
@@ -876,7 +910,9 @@ class QuasistaticSimulator:
         min_K_a_h2 = self.min_K_a * h**2
 
         for model, M_u in M_u_dict.items():
-            epsilon = min_K_a_h2 / max_eigen_value_M_u[model] / unactuated_mass_scale
+            epsilon = (
+                min_K_a_h2 / max_eigen_value_M_u[model] / unactuated_mass_scale
+            )
             M_u *= epsilon
 
         return M_u_dict
@@ -1008,7 +1044,9 @@ class QuasistaticSimulator:
             A[2, -1] = 1
 
             b = np.array([phi_constraints[i] / h, 1, 0])
-            prog.AddExponentialConeConstraint(A=A, b=b, vars=np.hstack([v, [s[i]]]))
+            prog.AddExponentialConeConstraint(
+                A=A, b=b, vars=np.hstack([v, [s[i]]])
+            )
 
         result = self.solver_cone.Solve(prog, None, None)
         assert result.is_success()
@@ -1074,7 +1112,9 @@ class QuasistaticSimulator:
             constraints,
         )
 
-        prob.solve(requires_grad=gradient_mode != GradientMode.kNone, solver="GUROBI")
+        prob.solve(
+            requires_grad=gradient_mode != GradientMode.kNone, solver="GUROBI"
+        )
         self.check_cvx_status(prob.status)
 
         # extract v_h from vector into a dictionary.
@@ -1197,7 +1237,9 @@ class QuasistaticSimulator:
             n_d,
             n_f,
             U,
-        ) = self.calc_jacobian_and_phi(self.sim_params.contact_detection_tolerance)
+        ) = self.calc_jacobian_and_phi(
+            self.sim_params.contact_detection_tolerance
+        )
 
         v_h_value_dict, beta, Dv_nextDb, Dv_nextDe = self.step_function_dict[
             forward_mode
@@ -1236,7 +1278,9 @@ class QuasistaticSimulator:
         self.step_configuration(q_dict, dq_dict, unactuated_mass_scale)
         self.update_mbp_positions(q_dict)
         if hasattr(ContactResults, "AddContactInfo"):
-            self.update_contact_results(contact_info_list, beta, h, n_c, n_d, U)
+            self.update_contact_results(
+                contact_info_list, beta, h, n_c, n_d, U
+            )
 
         # Gradients.
         """
@@ -1287,7 +1331,9 @@ class QuasistaticSimulator:
                 log_barrier_weight=self.sim_params.log_barrier_weight,
             )
         else:
-            raise NotImplementedError(f"{self.sim_params.mode} is not supported.")
+            raise NotImplementedError(
+                f"{self.sim_params.mode} is not supported."
+            )
 
         return q_dict
 
@@ -1409,7 +1455,9 @@ class QuasistaticSimulator:
         return E
 
     @staticmethod
-    def copy_model_instance_index_dict(q_dict: Dict[ModelInstanceIndex, np.ndarray]):
+    def copy_model_instance_index_dict(
+        q_dict: Dict[ModelInstanceIndex, np.ndarray]
+    ):
         return {key: np.array(value) for key, value in q_dict.items()}
 
     def calc_dfdu(
@@ -1456,7 +1504,9 @@ class QuasistaticSimulator:
                     idx_v_model[3:], :
                 ]
             else:
-                Dq_dot_nextDqa_cmd[idx_q_model, :] = Dv_nextDqa_cmd[idx_v_model, :]
+                Dq_dot_nextDqa_cmd[idx_q_model, :] = Dv_nextDqa_cmd[
+                    idx_v_model, :
+                ]
         return h * Dq_dot_nextDqa_cmd
 
     def calc_dfdx(
@@ -1532,7 +1582,9 @@ class QuasistaticSimulator:
             n_q_i = len(self.position_indices[model_a])
 
             for i in range(n_q_i):
-                qa_cmd_dict_plus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_plus = self.copy_model_instance_index_dict(
+                    qa_cmd_dict
+                )
                 qa_cmd_dict_plus[model_a][i] += du
                 self.update_mbp_positions(q_dict)
                 q_dict_plus = self.step(
@@ -1541,7 +1593,9 @@ class QuasistaticSimulator:
                     sim_params=sim_params,
                 )
 
-                qa_cmd_dict_minus = self.copy_model_instance_index_dict(qa_cmd_dict)
+                qa_cmd_dict_minus = self.copy_model_instance_index_dict(
+                    qa_cmd_dict
+                )
                 qa_cmd_dict_minus[model_a][i] -= du
                 self.update_mbp_positions(q_dict)
                 q_dict_minus = self.step(
@@ -1616,10 +1670,14 @@ class QuasistaticSimulator:
         # It is important that object_models and robot_models are ordered.
         object_models = set()
         for name, sdf_path in object_sdf_paths.items():
-            object_models.add(parser.AddModelFromFile(sdf_path, model_name=name))
+            object_models.add(
+                parser.AddModelFromFile(sdf_path, model_name=name)
+            )
 
         # Robots
-        ProcessModelDirectives(LoadModelDirectives(model_directive_path), plant, parser)
+        ProcessModelDirectives(
+            LoadModelDirectives(model_directive_path), plant, parser
+        )
         robot_models = set()
         for name in robot_names:
             robot_model = plant.GetModelInstanceByName(name)

@@ -1,5 +1,7 @@
 import unittest
 
+from .run_3link_arm_pushing_3d import *
+
 
 class Test3linkArmBoxPushing3D(unittest.TestCase):
     """

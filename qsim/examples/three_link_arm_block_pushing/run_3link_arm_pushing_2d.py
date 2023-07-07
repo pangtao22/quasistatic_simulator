@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 from qsim.examples.log_comparison import *
 from qsim.examples.setup_simulations import shift_q_traj_to_start_at_minus_h
 
+from qsim.examples.three_link_arm_block_pushing.utils import *
+
+
 # box initial state.
 q_u0 = np.array([1.7, 0.5, 0])
 q0_dict_str = {robot_name: qa_knots[0], box_name: q_u0}

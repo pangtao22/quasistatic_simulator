@@ -15,12 +15,14 @@ from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )
 
+from qsim.examples.iiwa_block_stacking.simulation_parameters import *
+
 
 def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(
         h=h_quasistatic,
-        use_free_solvers=True,
+        use_free_solvers=False,
     )
     meshcat = None
     if is_visualizing:

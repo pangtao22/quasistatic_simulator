@@ -98,7 +98,7 @@ class QuasistaticParser:
         if backend == QuasistaticSystemBackend.CPP:
             q_sim = self.make_simulator_cpp()
         elif backend == QuasistaticSystemBackend.PYTHON:
-            q_sim = self.make_simulator_py()
+            q_sim = self.make_simulator_py(InternalVisualizationType.NoVis)
         else:
             raise RuntimeError
 

@@ -5,6 +5,8 @@ from qsim.parser import QuasistaticSystemBackend
 
 from qsim.utils import is_mosek_gurobi_available
 
+from qsim.examples.iiwa_block_stacking.run_manual_quasistatic import *
+
 
 class TestQuasistaticSystem(unittest.TestCase):
     def test_quasistatic_system(self):

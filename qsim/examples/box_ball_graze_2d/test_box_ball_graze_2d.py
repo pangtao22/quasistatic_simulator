@@ -54,7 +54,7 @@ class TestBoxBallGraze(unittest.TestCase):
         # Run sim with new simulator.
         loggers_dict_quasistatic_str, __ = run_quasistatic_sim(
             q_parser=self.parser,
-            backend=QuasistaticSystemBackend.PYTHON,
+            backend=QuasistaticSystemBackend.CPP,
             q_a_traj_dict_str=q_a_traj_dict_str,
             q0_dict_str=q0_dict_str,
             is_visualizing=False,
