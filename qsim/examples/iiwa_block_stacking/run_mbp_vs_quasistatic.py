@@ -22,7 +22,7 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     q_parser = QuasistaticParser(q_model_path)
     q_parser.set_sim_params(
         h=h_quasistatic,
-        use_free_solvers=False,
+        use_free_solvers=True,
     )
     meshcat = None
     if is_visualizing:
