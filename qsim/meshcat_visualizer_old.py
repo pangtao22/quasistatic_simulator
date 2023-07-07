@@ -33,7 +33,9 @@ from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
 # if/when PyCQA/pycodestyle#834 lands and is incorporated.
 with warnings.catch_warnings():
     warnings.filterwarnings(
-        "ignore", category=ImportWarning, message="can't resolve package from __spec__"
+        "ignore",
+        category=ImportWarning,
+        message="can't resolve package from __spec__",
     )
     # TODO(SeanCurtis-TRI): Meshcat modified itself from a conditional
     # import of IPython to an unconditional import. IPython eventually
@@ -41,7 +43,9 @@ with warnings.catch_warnings():
     # ultimate dependency upgrades from imp to importlib, this can be
     # removed.
     warnings.filterwarnings(
-        "ignore", message="the imp module is deprecated", category=DeprecationWarning
+        "ignore",
+        message="the imp module is deprecated",
+        category=DeprecationWarning,
     )
     import meshcat
 import meshcat.geometry as g  # noqa
@@ -69,7 +73,9 @@ def AddTriad(vis, name, prefix, length=1.0, radius=0.04, opacity=1.0):
         radius: the radius of each axis in meters.
         opacity: the opacity of the coordinate axes, between 0 and 1.
     """
-    delta_xyz = np.array([[length / 2, 0, 0], [0, length / 2, 0], [0, 0, length / 2]])
+    delta_xyz = np.array(
+        [[length / 2, 0, 0], [0, length / 2, 0], [0, 0, length / 2]]
+    )
 
     axes_name = ["x", "y", "z"]
     colors = [0xFF0000, 0x00FF00, 0x0000FF]
@@ -82,7 +88,9 @@ def AddTriad(vis, name, prefix, length=1.0, radius=0.04, opacity=1.0):
         vis[prefix][name][axes_name[i]].set_object(
             meshcat.geometry.Cylinder(length, radius), material
         )
-        X = meshcat.transformations.rotation_matrix(np.pi / 2, rotation_axes[i])
+        X = meshcat.transformations.rotation_matrix(
+            np.pi / 2, rotation_axes[i]
+        )
         X[0:3, 3] = delta_xyz[i]
         vis[prefix][name][axes_name[i]].set_transform(X)
 
@@ -356,7 +364,9 @@ class MeshcatVisualizer(LeafSystem):
 
         # Set background color (to match drake-visualizer).
         self.vis["/Background"].set_property("top_color", [0.95, 0.95, 1.0])
-        self.vis["/Background"].set_property("bottom_color", [0.32, 0.32, 0.35])
+        self.vis["/Background"].set_property(
+            "bottom_color", [0.32, 0.32, 0.35]
+        )
 
         if open_browser:
             webbrowser.open(self.vis.url())
@@ -368,7 +378,8 @@ class MeshcatVisualizer(LeafSystem):
         # for this.
         self.DeclareInitializationEvent(
             event=PublishEvent(
-                trigger_type=TriggerType.kInitialization, callback=on_initialize
+                trigger_type=TriggerType.kInitialization,
+                callback=on_initialize,
             )
         )
 
@@ -460,7 +471,9 @@ class MeshcatVisualizer(LeafSystem):
             self.vis[self.prefix].delete()
 
         if context and self.get_geometry_query_input_port().HasValue(context):
-            inspector = self.get_geometry_query_input_port().Eval(context).inspector()
+            inspector = (
+                self.get_geometry_query_input_port().Eval(context).inspector()
+            )
         elif self._scene_graph:
             inspector = self._scene_graph.model_inspector()
         else:
@@ -474,7 +487,9 @@ class MeshcatVisualizer(LeafSystem):
         # Make a fixed-seed generator for random colors for bodies.
         color_generator = np.random.RandomState(seed=42)
         for frame_id in inspector.GetAllFrameIds():
-            count = inspector.NumGeometriesForFrameWithRole(frame_id, self._role)
+            count = inspector.NumGeometriesForFrameWithRole(
+                frame_id, self._role
+            )
             if count == 0:
                 continue
             if frame_id == inspector.world_frame_id():
@@ -508,7 +523,9 @@ class MeshcatVisualizer(LeafSystem):
                     # visually distinguishable.
                     color = color_generator.randint(2 ** (24))
                     if self._prefer_hydro:
-                        hydro_mesh = inspector.maybe_get_hydroelastic_mesh(g_id)
+                        hydro_mesh = inspector.maybe_get_hydroelastic_mesh(
+                            g_id
+                        )
 
                 material = g.MeshLambertMaterial(
                     color=color, transparent=alpha != 1.0, opacity=alpha
@@ -547,7 +564,9 @@ class MeshcatVisualizer(LeafSystem):
                         v += 3
                     geom = HydroTriSurface(vertices, normals)
                 elif isinstance(shape, Box):
-                    geom = g.Box([shape.width(), shape.depth(), shape.height()])
+                    geom = g.Box(
+                        [shape.width(), shape.depth(), shape.height()]
+                    )
                 elif isinstance(shape, Sphere):
                     geom = g.Sphere(shape.radius())
                 elif isinstance(shape, Cylinder):
@@ -558,7 +577,9 @@ class MeshcatVisualizer(LeafSystem):
                     R_GC = RotationMatrix.MakeXRotation(np.pi / 2.0).matrix()
                     X_FG[0:3, 0:3] = X_FG[0:3, 0:3].dot(R_GC)
                 elif isinstance(shape, (Mesh, Convex)):
-                    geom = g.ObjMeshGeometry.from_file(shape.filename()[0:-3] + "obj")
+                    geom = g.ObjMeshGeometry.from_file(
+                        shape.filename()[0:-3] + "obj"
+                    )
                     # Attempt to find a texture for the object by looking for
                     # an identically-named *.png next to the model.
                     # TODO(gizatt): Support .MTLs and prefer them over png,
@@ -572,7 +593,9 @@ class MeshcatVisualizer(LeafSystem):
                     if os.path.exists(candidate_texture_path):
                         material = g.MeshLambertMaterial(
                             map=g.ImageTexture(
-                                image=g.PngImage.from_file(candidate_texture_path)
+                                image=g.PngImage.from_file(
+                                    candidate_texture_path
+                                )
                             )
                         )
                     # Make the uuid's deterministic for mesh geometry, to
@@ -584,7 +607,9 @@ class MeshcatVisualizer(LeafSystem):
                         uuid.uuid5(uuid.NAMESPACE_X500, geom.contents + "mesh")
                     )
                     material.uuid = str(
-                        uuid.uuid5(uuid.NAMESPACE_X500, geom.contents + "material")
+                        uuid.uuid5(
+                            uuid.NAMESPACE_X500, geom.contents + "material"
+                        )
                     )
                     X_FG = X_FG.dot(tf.scale_matrix(shape.scale()))
                 else:
@@ -672,7 +697,9 @@ class MeshcatVisualizer(LeafSystem):
                 automatically.
             repetitions: number of times that the animation should play.
         """
-        self.vis.set_animation(self._animation, play=play, repetitions=repetitions)
+        self.vis.set_animation(
+            self._animation, play=play, repetitions=repetitions
+        )
 
     def reset_recording(self):
         """
@@ -683,7 +710,9 @@ class MeshcatVisualizer(LeafSystem):
         self._recording_frame_num = 0
 
 
-def ConnectMeshcatVisualizer(builder, scene_graph=None, output_port=None, **kwargs):
+def ConnectMeshcatVisualizer(
+    builder, scene_graph=None, output_port=None, **kwargs
+):
     """Creates an instance of MeshcatVisualizer, adds it to the diagram, and
     wires the scene_graph query output port to the input port of the
     visualizer.  Provides an interface comparable to
@@ -715,7 +744,8 @@ def ConnectMeshcatVisualizer(builder, scene_graph=None, output_port=None, **kwar
 
     if output_port is None:
         assert scene_graph, (
-            "If no output_port is specified, then the " "scene_graph must be valid."
+            "If no output_port is specified, then the "
+            "scene_graph must be valid."
         )
         output_port = scene_graph.get_query_output_port()
     builder.Connect(output_port, visualizer.get_geometry_query_input_port())
