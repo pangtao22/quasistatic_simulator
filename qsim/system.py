@@ -1,5 +1,4 @@
 from typing import Dict
-import enum
 
 import numpy as np
 from pydrake.all import (
@@ -18,71 +17,46 @@ from qsim_cpp import QuasistaticSimulatorCpp
 from .simulator import QuasistaticSimulator, QuasistaticSimParameters
 
 
-class QuasistaticSystemBackend(enum.Enum):
-    PYTHON = enum.auto()
-    CPP = enum.auto()
-
-
 class QuasistaticSystem(LeafSystem):
     def __init__(
         self,
-        model_directive_path: str,
-        robot_stiffness_dict: Dict[str, np.ndarray],
-        object_sdf_paths: Dict[str, str],
+        q_sim: QuasistaticSimulatorCpp | QuasistaticSimulator,
         sim_params: QuasistaticSimParameters,
-        backend=QuasistaticSystemBackend.PYTHON,
     ):
         """
-        Also refer to the docstring of quasistatic simulator.
-        :param time_step:  quasistatic simulation time step in seconds.
-        :param model_directive_path:
-        :param robot_stiffness_dict:
-        :param object_sdf_paths:
-        :param sim_params:
+        A Drake System wrapper for QuasistaticSimulator.
         """
-        LeafSystem.__init__(self)
+        super().__init__()
         self.set_name("quasistatic_system")
 
-        # State updates are triggered by publish events.
-        self.DeclarePeriodicDiscreteUpdateNoHandler(sim_params.h)
-        # need at least one state to call self.DoCalcDiscreteVariableUpdates.
-        self.DeclareDiscreteState(1)
-
         # Quasistatic simulator instance.
-        if backend == QuasistaticSystemBackend.CPP:
-            self.q_sim = QuasistaticSimulatorCpp(
-                model_directive_path=model_directive_path,
-                robot_stiffness_str=robot_stiffness_dict,
-                object_sdf_paths=object_sdf_paths,
-                sim_params=sim_params,
-            )
-        elif backend == QuasistaticSystemBackend.PYTHON:
-            self.q_sim = QuasistaticSimulator(
-                model_directive_path=model_directive_path,
-                robot_stiffness_dict=robot_stiffness_dict,
-                object_sdf_paths=object_sdf_paths,
-                sim_params=sim_params,
-                internal_vis=False,
-            )
-        else:
-            raise RuntimeError(
-                "QuasistaticSystem backend must be either python or cpp."
-            )
-
+        self.q_sim = q_sim
+        self.sim_params = sim_params
         self.plant = self.q_sim.get_plant()
         self.actuated_models = self.q_sim.get_actuated_models()
 
+        # State is defined as q, the configuration of the system.
+        self.DeclarePeriodicDiscreteUpdateNoHandler(sim_params.h)
+        state_idx = self.DeclareDiscreteState(self.plant.num_positions())
+        self.DeclareStateOutputPort("q", state_idx)
+        self.DeclarePeriodicDiscreteUpdateEvent(
+            period_sec=sim_params.h, offset_sec=0.0, update=self.update_q
+        )
+
+        self.model_indices_map = self.q_sim.get_position_indices()
+
         # output ports for states of unactuated objects and robots (actuated).
-        self.state_output_ports = dict()
+        self.q_model_output_ports = dict()
         for model in self.q_sim.get_all_models():
             port_name = self.plant.GetModelInstanceName(model) + "_state"
-            nq = self.plant.num_positions(model)
+            n_q_model = self.plant.num_positions(model)
+            indices_model = self.model_indices_map[model]
 
-            self.state_output_ports[model] = self.DeclareVectorOutputPort(
+            self.q_model_output_ports[model] = self.DeclareVectorOutputPort(
                 port_name,
-                BasicVector(nq),
+                BasicVector(n_q_model),
                 lambda context, output, model=model: output.SetFromVector(
-                    self.q_sim.get_positions(model)
+                    context.get_discrete_state_vector()[indices_model]
                 ),
             )
 
@@ -116,8 +90,8 @@ class QuasistaticSystem(LeafSystem):
             AbstractValue.Make([ExternallyAppliedSpatialForce()]),
         )
 
-    def get_state_output_port(self, model: ModelInstanceIndex):
-        return self.state_output_ports[model]
+    def get_q_model_output_port(self, model: ModelInstanceIndex):
+        return self.q_model_output_ports[model]
 
     def get_commanded_positions_input_port(self, model: ModelInstanceIndex):
         return self.commanded_positions_input_ports[model]
@@ -131,8 +105,7 @@ class QuasistaticSystem(LeafSystem):
     def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
         self.q_sim.update_mbp_positions(q0_dict)
 
-    def DoCalcDiscreteVariableUpdates(self, context, events, discrete_state):
-        super().DoCalcDiscreteVariableUpdates(context, events, discrete_state)
+    def update_q(self, context, discrete_state):
         # Commanded positions.
         q_a_cmd_dict = {
             model: self.commanded_positions_input_ports[model].Eval(context)
@@ -146,4 +119,6 @@ class QuasistaticSystem(LeafSystem):
 
         tau_ext_dict = self.q_sim.calc_tau_ext(easf_list)
 
-        self.q_sim.step_default(q_a_cmd_dict, tau_ext_dict)
+        q = context.get_discrete_state_vector()
+        q_next = self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.sim_params)
+        discrete_state.get_mutable_vector().SetFromVector(q_next)

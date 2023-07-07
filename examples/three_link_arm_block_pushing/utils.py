@@ -11,8 +11,7 @@ from pydrake.all import (
     MultibodyPlant,
 )
 from qsim.model_paths import add_package_paths_local, models_dir
-from qsim.parser import QuasistaticParser
-from qsim.system import QuasistaticSystemBackend
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
 )

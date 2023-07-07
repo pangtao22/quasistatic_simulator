@@ -52,7 +52,9 @@ def run_comparison(h_mbp: float, h_quasistatic: float, is_visualizing: bool):
     # damping calculated for critical of a 2nd order system with the finger's
     # mass.
     controller_schunk = PidController(
-        q_parser.robot_stiffness_dict[schunk_name], np.zeros(2), np.ones(2) * 20
+        q_parser.robot_stiffness_dict[schunk_name],
+        np.zeros(2),
+        np.ones(2) * 20,
     )
     robot_controller_dict = {
         iiwa_name: controller_iiwa,

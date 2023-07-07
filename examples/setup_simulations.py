@@ -19,7 +19,7 @@ from pydrake.all import (
     StartMeshcat,
     Meshcat,
 )
-from qsim.parser import QuasistaticParser
+from qsim.parser import QuasistaticParser, QuasistaticSystemBackend
 from qsim.system import *
 from robotics_utilities.iiwa_controller.robot_internal_controller import (
     RobotInternalController,
@@ -163,7 +163,7 @@ def run_quasistatic_sim(
     log_sinks_dict = dict()
     for model in q_sys.q_sim.get_all_models():
         log_sinks_dict[model] = LogVectorOutput(
-            q_sys.get_state_output_port(model), builder
+            q_sys.get_q_model_output_port(model), builder
         )
 
     # visualization
