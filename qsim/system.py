@@ -55,8 +55,12 @@ class QuasistaticSystem(LeafSystem):
             self.q_model_output_ports[model] = self.DeclareVectorOutputPort(
                 port_name,
                 BasicVector(n_q_model),
-                lambda context, output, model=model: output.SetFromVector(
-                    context.get_discrete_state_vector()[indices_model]
+                lambda context, output, indices_model=indices_model: (
+                    output.SetFromVector(
+                        context.get_discrete_state_vector().value()[
+                            indices_model
+                        ]
+                    )
                 ),
             )
 
@@ -80,7 +84,9 @@ class QuasistaticSystem(LeafSystem):
             port_name = self.plant.GetModelInstanceName(model)
             port_name += "_commanded_position"
             nv = self.plant.num_velocities(model)
-            self.commanded_positions_input_ports[model] = self.DeclareInputPort(
+            self.commanded_positions_input_ports[
+                model
+            ] = self.DeclareInputPort(
                 port_name, PortDataType.kVectorValued, nv
             )
 
@@ -99,8 +105,12 @@ class QuasistaticSystem(LeafSystem):
     def copy_query_object_out(self, context, query_object_abstract_value):
         query_object_abstract_value.set_value(self.q_sim.get_query_object())
 
-    def copy_contact_results_out(self, context, contact_results_abstract_value):
-        contact_results_abstract_value.set_value(self.q_sim.get_contact_results())
+    def copy_contact_results_out(
+        self, context, contact_results_abstract_value
+    ):
+        contact_results_abstract_value.set_value(
+            self.q_sim.get_contact_results()
+        )
 
     def set_initial_state(self, q0_dict: Dict[ModelInstanceIndex, np.array]):
         self.q_sim.update_mbp_positions(q0_dict)
@@ -120,5 +130,6 @@ class QuasistaticSystem(LeafSystem):
         tau_ext_dict = self.q_sim.calc_tau_ext(easf_list)
 
         q = context.get_discrete_state_vector()
-        q_next = self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.sim_params)
+        self.q_sim.step(q_a_cmd_dict, tau_ext_dict, self.sim_params)
+        q_next = self.q_sim.get_mbp_positions_as_vec()
         discrete_state.get_mutable_vector().SetFromVector(q_next)

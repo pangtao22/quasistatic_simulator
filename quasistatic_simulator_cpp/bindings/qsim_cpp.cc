@@ -71,6 +71,7 @@ PYBIND11_MODULE(qsim_cpp, m) {
                  &Class::UpdateMbpPositions))
         .def("get_mbp_positions", &Class::GetMbpPositions)
         .def("get_positions", &Class::GetPositions)
+        .def("get_mbp_positions_as_vec", &Class::GetMbpPositionsAsVec)
         .def("step",
              py::overload_cast<const ModelInstanceIndexToVecMap&,
                                const ModelInstanceIndexToVecMap&,
