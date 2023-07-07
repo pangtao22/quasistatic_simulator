@@ -1,3 +1,4 @@
+import enum
 import os
 import copy
 from collections import OrderedDict
@@ -24,7 +25,12 @@ from .simulator import (
     QuasistaticSimParameters,
     InternalVisualizationType,
 )
-from .system import QuasistaticSystem, QuasistaticSystemBackend
+from .system import QuasistaticSystem
+
+
+class QuasistaticSystemBackend(enum.Enum):
+    PYTHON = enum.auto()
+    CPP = enum.auto()
 
 
 class QuasistaticParser:
@@ -37,7 +43,9 @@ class QuasistaticParser:
         # robots
         robot_stiffness_dict = {}
         for robot in config["robots"]:
-            robot_stiffness_dict[robot["name"]] = np.array(robot["Kp"], dtype=float)
+            robot_stiffness_dict[robot["name"]] = np.array(
+                robot["Kp"], dtype=float
+            )
         self.robot_stiffness_dict = robot_stiffness_dict
 
         # objects
@@ -86,12 +94,17 @@ class QuasistaticParser:
     def make_system(self, backend: QuasistaticSystemBackend):
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
+
+        if backend == QuasistaticSystemBackend.CPP:
+            q_sim = self.make_simulator_cpp()
+        elif backend == QuasistaticSystemBackend.PYTHON:
+            q_sim = self.make_simulator_py(InternalVisualizationType.NoVis)
+        else:
+            raise RuntimeError
+
         return QuasistaticSystem(
-            model_directive_path=self.model_directive_path,
-            robot_stiffness_dict=self.robot_stiffness_dict,
-            object_sdf_paths=self.object_sdf_paths,
+            q_sim=q_sim,
             sim_params=q_sim_params,
-            backend=backend,
         )
 
     def make_simulator_py(

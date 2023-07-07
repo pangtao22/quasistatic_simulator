@@ -69,8 +69,12 @@ PYBIND11_MODULE(qsim_cpp, m) {
         .def("update_mbp_positions",
              py::overload_cast<const ModelInstanceIndexToVecMap&>(
                  &Class::UpdateMbpPositions))
+        .def("update_mbp_positions_from_vector",
+             py::overload_cast<const Eigen::Ref<const Eigen::VectorXd>&>(
+                 &Class::UpdateMbpPositions))
         .def("get_mbp_positions", &Class::GetMbpPositions)
         .def("get_positions", &Class::GetPositions)
+        .def("get_mbp_positions_as_vec", &Class::GetMbpPositionsAsVec)
         .def("step",
              py::overload_cast<const ModelInstanceIndexToVecMap&,
                                const ModelInstanceIndexToVecMap&,

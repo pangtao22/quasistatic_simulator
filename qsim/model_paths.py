@@ -48,7 +48,9 @@ def create_2d_gripper_plant(builder, *args):
     parser.AddModelFromFile(ground_sdf_path)
     X_WG = RigidTransform.Identity()
     X_WG.set_translation([0, 0, -0.5])  # "ground"
-    plant.WeldFrames(A=plant.world_frame(), B=plant.GetFrameByName("ground"), X_AB=X_WG)
+    plant.WeldFrames(
+        A=plant.world_frame(), B=plant.GetFrameByName("ground"), X_AB=X_WG
+    )
 
     # Add robot.
     gripper_sdf_path = os.path.join(models_dir, "models", "gripper.sdf")
