@@ -92,5 +92,7 @@ jobs:
           user: ${{ github.actor }}
           container: ${{ env.IMAGE_NAME }}
           dry-run: false # Dry-run first, then change to `false`
+          keep-tags-regexes: |
+            tro$
           prune-untagged: true
           keep-younger-than: 7
