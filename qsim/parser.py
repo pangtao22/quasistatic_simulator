@@ -26,7 +26,7 @@ from .simulator import (
     InternalVisualizationType,
 )
 from .system import QuasistaticSystem
-from .quasistatic_visualizer import (
+from .visualizer import (
     QuasistaticVisualizer,
     QsimVisualizationType,
 )
