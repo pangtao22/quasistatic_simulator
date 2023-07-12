@@ -49,7 +49,6 @@ class QuasistaticVisualizer:
         self.q_sim = q_sys.q_sim
 
         plant = q_sys.plant
-        scene_graph = self.q_sim.get_scene_graph()
 
         builder = DiagramBuilder()
         builder.AddSystem(q_sys)
@@ -65,8 +64,9 @@ class QuasistaticVisualizer:
                     builder, plant, self.meshcat
                 )
         elif visualization_type == QsimVisualizationType.Python:
-            self.meshcat_vis = ConnectMeshcatVisualizerPy(builder, scene_graph)
-            self.meshcat_vis.load()
+            self.meshcat_vis = ConnectMeshcatVisualizerPy(
+                builder, output_port=q_sys.query_object_output_port
+            )
             self.contact_viz = None
 
         self.diagram = builder.Build()
@@ -78,6 +78,9 @@ class QuasistaticVisualizer:
         self.context_meshcat = self.meshcat_vis.GetMyMutableContextFromRoot(
             self.context
         )
+
+        if visualization_type == QsimVisualizationType.Python:
+            self.meshcat_vis.load(self.context_meshcat)
 
         if draw_forces:
             self.context_contact_vis = (
