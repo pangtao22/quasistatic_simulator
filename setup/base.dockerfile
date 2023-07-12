@@ -26,6 +26,7 @@ RUN /tmp/install_eigen3.4.sh
 # Install additional python dependencies
 COPY ./setup/requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install -r /tmp/requirements.txt
+RUN python3 -m pip install manipulation --no-dependencies
 
 ## Build QuasistaticSimulatorCpp and its python bindings.
 ENV QSIM_PATH /quasistatic_simulator
