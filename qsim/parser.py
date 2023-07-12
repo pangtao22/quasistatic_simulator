@@ -23,9 +23,12 @@ from .model_paths import package_paths_dict, add_package_paths_local
 from .simulator import (
     QuasistaticSimulator,
     QuasistaticSimParameters,
-    InternalVisualizationType,
 )
 from .system import QuasistaticSystem
+from .visualizer import (
+    QuasistaticVisualizer,
+    QsimVisualizationType,
+)
 
 
 class QuasistaticSystemBackend(enum.Enum):
@@ -98,7 +101,7 @@ class QuasistaticParser:
         if backend == QuasistaticSystemBackend.CPP:
             q_sim = self.make_simulator_cpp()
         elif backend == QuasistaticSystemBackend.PYTHON:
-            q_sim = self.make_simulator_py(InternalVisualizationType.NoVis)
+            q_sim = self.make_simulator_py()
         else:
             raise RuntimeError
 
@@ -107,9 +110,7 @@ class QuasistaticParser:
             sim_params=q_sim_params,
         )
 
-    def make_simulator_py(
-        self, internal_vis: InternalVisualizationType
-    ) -> QuasistaticSimulator:
+    def make_simulator_py(self) -> QuasistaticSimulator:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         return QuasistaticSimulator(
@@ -117,7 +118,6 @@ class QuasistaticParser:
             robot_stiffness_dict=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths_ordered,
             sim_params=q_sim_params,
-            internal_vis=internal_vis,
         )
 
     def make_simulator_cpp(self, has_objects=True) -> QuasistaticSimulatorCpp:
@@ -151,4 +151,15 @@ class QuasistaticParser:
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=self.object_sdf_paths,
             sim_params=q_sim_params,
+        )
+
+    def make_visualizer(
+        self,
+        visualization_type: QsimVisualizationType,
+        draw_forces: bool,
+    ) -> QuasistaticVisualizer:
+        return QuasistaticVisualizer(
+            q_sys=self.make_system(QuasistaticSystemBackend.CPP),
+            visualization_type=visualization_type,
+            draw_forces=draw_forces,
         )

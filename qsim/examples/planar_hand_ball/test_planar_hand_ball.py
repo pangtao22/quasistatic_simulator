@@ -76,7 +76,7 @@ class TestPlanarHandBall(unittest.TestCase):
             use_free_solvers=not is_mosek_gurobi_available(),
         )
 
-        self.q_sim_py = self.parser.make_simulator_py(False)
+        self.q_sim_py = self.parser.make_simulator_py()
         self.q_sim_cpp = self.parser.make_simulator_cpp()
 
         # model instance names.

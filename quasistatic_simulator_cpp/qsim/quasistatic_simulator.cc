@@ -1309,6 +1309,10 @@ void QuasistaticSimulator::GetGeneralizedForceFromExternalSpatialForce(
         easf,
     ModelInstanceIndexToVecMap* tau_ext) const {
   // TODO(pang): actually process externally applied spatial force.
+  if (!easf.empty()) {
+    throw std::runtime_error(
+        "Externally applied spatial force are not yet processed.");
+  }
   for (const auto& model : models_actuated_) {
     (*tau_ext)[model] = Eigen::VectorXd::Zero(plant_->num_velocities(model));
   }

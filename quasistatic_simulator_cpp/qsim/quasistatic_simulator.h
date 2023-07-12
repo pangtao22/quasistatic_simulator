@@ -114,6 +114,10 @@ class QuasistaticSimulator {
     return *sg_;
   }
 
+  const drake::systems::Diagram<double>& get_diagram() const {
+    return *diagram_;
+  }
+
   const drake::multibody::ContactResults<double>& get_contact_results() const {
     return contact_results_;
   }
