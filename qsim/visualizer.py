@@ -12,12 +12,13 @@ from pydrake.all import (
     StartMeshcat,
     ContactVisualizer,
     AbstractValue,
+    MeshcatVisualizer,
 )
 
 from manipulation.meshcat_utils import AddMeshcatTriad
 
 from qsim.system import QuasistaticSystem
-from qsim.meshcat_visualizer_old import MeshcatVisualizer, AddTriad
+from qsim.meshcat_visualizer_old import AddTriad
 
 from .meshcat_visualizer_old import (
     ConnectMeshcatVisualizer as ConnectMeshcatVisualizerPy,
@@ -56,7 +57,7 @@ class QuasistaticVisualizer:
         if visualization_type == QsimVisualizationType.Cpp:
             self.meshcat = StartMeshcat()
             self.meshcat_vis = MeshcatVisualizer.AddToBuilder(
-                builder, scene_graph, self.meshcat
+                builder, q_sys.query_object_output_port, self.meshcat
             )
             if draw_forces:
                 # ContactVisualizer
@@ -137,7 +138,6 @@ class QuasistaticVisualizer:
                     AbstractValue.Make(self.contact_results),
                 )
                 self.contact_viz.ForcedPublish(self.context_meshcat_contact)
-        self.q_sim_py.draw_current_configuration()
 
     def draw_goal_triad(
         self,

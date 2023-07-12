@@ -23,7 +23,6 @@ from .model_paths import package_paths_dict, add_package_paths_local
 from .simulator import (
     QuasistaticSimulator,
     QuasistaticSimParameters,
-    InternalVisualizationType,
 )
 from .system import QuasistaticSystem
 from .visualizer import (

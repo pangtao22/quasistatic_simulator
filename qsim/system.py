@@ -106,6 +106,8 @@ class QuasistaticSystem(LeafSystem):
         return self.commanded_positions_input_ports[model]
 
     def copy_query_object_out(self, context, query_object_abstract_value):
+        q = context.get_discrete_state_vector().value()
+        self.q_sim.update_mbp_positions_from_vector(q)
         query_object_abstract_value.set_value(self.q_sim.get_query_object())
 
     def copy_contact_results_out(
