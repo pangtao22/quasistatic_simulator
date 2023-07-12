@@ -104,7 +104,7 @@ class TestBoxBallGraze(unittest.TestCase):
             log_barrier_weight=100,
         )
 
-        q_sim = self.parser.make_simulator_py(internal_vis=False)
+        q_sim = self.parser.make_simulator_py()
         q_sim_cpp = self.parser.make_simulator_cpp()
         q_sim_params = QuasistaticSimulator.copy_sim_params(
             self.parser.q_sim_params
