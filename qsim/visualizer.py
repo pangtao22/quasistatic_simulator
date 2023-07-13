@@ -1,8 +1,6 @@
 from enum import IntEnum
-import os
 from typing import Dict, Set, List
 
-from matplotlib import cm
 import numpy as np
 from pydrake.all import (
     ModelInstanceIndex,
@@ -13,6 +11,7 @@ from pydrake.all import (
     ContactVisualizer,
     AbstractValue,
     MeshcatVisualizer,
+    ContactResults,
 )
 
 from manipulation.meshcat_utils import AddMeshcatTriad
@@ -40,15 +39,15 @@ class QuasistaticVisualizer:
         self,
         q_sys: QuasistaticSystem,
         visualization_type: QsimVisualizationType,
-        draw_forces: bool,
     ):
+        """
+        Contact force visualization is only supported by the C++ visualizer.
+        """
         self.q_sys = q_sys
         self.visualization_type = visualization_type
-        self.draw_forces = draw_forces
-
         self.q_sim = q_sys.q_sim
 
-        plant = q_sys.plant
+        self.draw_forces = visualization_type == QsimVisualizationType.Cpp
 
         builder = DiagramBuilder()
         builder.AddSystem(q_sys)
@@ -58,16 +57,15 @@ class QuasistaticVisualizer:
             self.meshcat_vis = MeshcatVisualizer.AddToBuilder(
                 builder, q_sys.query_object_output_port, self.meshcat
             )
-            if draw_forces:
-                # ContactVisualizer
-                self.contact_viz = ContactVisualizer.AddToBuilder(
-                    builder, plant, self.meshcat
-                )
+
+            # ContactVisualizer
+            self.contact_vis = ContactVisualizer.AddToBuilder(
+                builder, q_sys.contact_results_output_port, self.meshcat
+            )
         elif visualization_type == QsimVisualizationType.Python:
             self.meshcat_vis = ConnectMeshcatVisualizerPy(
                 builder, output_port=q_sys.query_object_output_port
             )
-            self.contact_viz = None
 
         self.diagram = builder.Build()
 
@@ -82,9 +80,9 @@ class QuasistaticVisualizer:
         if visualization_type == QsimVisualizationType.Python:
             self.meshcat_vis.load(self.context_meshcat)
 
-        if draw_forces:
+        if self.draw_forces:
             self.context_contact_vis = (
-                self.contact_viz.GetMyMutableContextFromRoot(self.context)
+                self.contact_vis.GetMyMutableContextFromRoot(self.context)
             )
 
         self.plant = self.q_sim.get_plant()
@@ -125,7 +123,13 @@ class QuasistaticVisualizer:
             idx_b = velocity_indices_b[model]
             assert idx_a == idx_b
 
-    def draw_configuration(self, q: np.ndarray):
+    def draw_configuration(
+        self, q: np.ndarray, contact_results: ContactResults | None = None
+    ):
+        """
+        If self.visualization_type == QsimVisualizationType.Python,
+         contact_results is silently ignored.
+        """
         self.context_q_sys.SetDiscreteState(q)
         if self.visualization_type == QsimVisualizationType.Python:
             self.meshcat_vis.DoPublish(self.context_meshcat, [])
@@ -135,12 +139,12 @@ class QuasistaticVisualizer:
             self.meshcat_vis.ForcedPublish(self.context_meshcat)
 
             # Contact forces
-            if self.draw_forces:
-                self.contact_viz.GetInputPort("contact_results").FixValue(
+            if contact_results:
+                self.contact_vis.GetInputPort("contact_results").FixValue(
                     self.context_contact_vis,
-                    AbstractValue.Make(self.contact_results),
+                    AbstractValue.Make(contact_results),
                 )
-                self.contact_viz.ForcedPublish(self.context_meshcat_contact)
+                self.contact_vis.ForcedPublish(self.context_contact_vis)
 
     def draw_goal_triad(
         self,
@@ -197,23 +201,43 @@ class QuasistaticVisualizer:
                 opacity=opacity,
             )
 
-    def publish_trajectory(self, x_knots: np.ndarray, h: float):
+    def publish_trajectory(
+        self,
+        h: float,
+        q_knots: np.ndarray,
+        contact_results_list: List[ContactResults],
+    ):
+        """
+        q_knots: (T + 1, n_q) array.
+        contact_results_list: (T,) list.
+        For 1 <= i <= T, contact_results_list[i - 1] is the contact forces at
+         configuration q_knots[i].
+
+        contact_results_list is silently ignored if visualization_type is
+         python.
+        """
+        assert len(q_knots) == len(contact_results_list) + 1
+
         if self.visualization_type == QsimVisualizationType.Cpp:
             self.meshcat_vis.DeleteRecording()
             self.meshcat_vis.StartRecording(False)
-            for i, t in enumerate(np.arange(len(x_knots)) * h):
+            for i, t in enumerate(np.arange(len(q_knots)) * h):
                 self.context.SetTime(t)
-                self.context_q_sys.SetDiscreteState(x_knots[i])
-                self.meshcat_vis.ForcedPublish(self.context_meshcat)
-
+                if i == 0:
+                    self.draw_configuration(q=q_knots[i], contact_results=None)
+                else:
+                    self.draw_configuration(
+                        q=q_knots[i],
+                        contact_results=contact_results_list[i - 1],
+                    )
             self.meshcat_vis.StopRecording()
             self.meshcat_vis.PublishRecording()
         elif self.visualization_type == QsimVisualizationType.Python:
             self.meshcat_vis.draw_period = h
             self.meshcat_vis.reset_recording()
             self.meshcat_vis.start_recording()
-            for x_i in x_knots:
-                self.draw_configuration(x_i)
+            for q_i in q_knots:
+                self.draw_configuration(q_i)
 
             self.meshcat_vis.stop_recording()
             self.meshcat_vis.publish_recording()

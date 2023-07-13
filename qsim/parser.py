@@ -156,10 +156,8 @@ class QuasistaticParser:
     def make_visualizer(
         self,
         visualization_type: QsimVisualizationType,
-        draw_forces: bool,
     ) -> QuasistaticVisualizer:
         return QuasistaticVisualizer(
             q_sys=self.make_system(QuasistaticSystemBackend.CPP),
             visualization_type=visualization_type,
-            draw_forces=draw_forces,
         )
