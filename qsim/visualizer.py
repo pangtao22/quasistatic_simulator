@@ -235,6 +235,7 @@ class QuasistaticVisualizer:
             assert n_knots == n_contacts + 1 or n_contacts == 0
 
         if self.visualization_type == QsimVisualizationType.Cpp:
+            self.contact_vis.Delete()
             self.meshcat_vis.DeleteRecording()
             self.meshcat_vis.StartRecording(False)
             for i, t in enumerate(np.arange(len(q_knots)) * h):
