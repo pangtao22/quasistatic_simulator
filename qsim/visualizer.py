@@ -66,24 +66,19 @@ class QuasistaticVisualizer:
             self.meshcat_vis = ConnectMeshcatVisualizerPy(
                 builder, output_port=q_sys.query_object_output_port
             )
+            self.contact_vis = None
 
         self.diagram = builder.Build()
 
-        self.context = self.diagram.CreateDefaultContext()
-        self.context_q_sys = self.q_sys.GetMyMutableContextFromRoot(
-            self.context
-        )
-        self.context_meshcat = self.meshcat_vis.GetMyMutableContextFromRoot(
-            self.context
-        )
+        (
+            self.context,
+            self.context_q_sys,
+            self.context_meshcat,
+            self.context_contact_vis,
+        ) = self.create_context()
 
         if visualization_type == QsimVisualizationType.Python:
             self.meshcat_vis.load(self.context_meshcat)
-
-        if self.draw_forces:
-            self.context_contact_vis = (
-                self.contact_vis.GetMyMutableContextFromRoot(self.context)
-            )
 
         self.plant = self.q_sim.get_plant()
         self.body_id_meshcat_name_map = self.get_body_id_to_meshcat_name_map()
@@ -100,6 +95,24 @@ class QuasistaticVisualizer:
                 body_id_meshcat_name_map[bi] = name
 
         return body_id_meshcat_name_map
+
+    def create_context(self):
+        context = self.diagram.CreateDefaultContext()
+        context_q_sys = self.q_sys.GetMyMutableContextFromRoot(context)
+        context_meshcat = self.meshcat_vis.GetMyMutableContextFromRoot(context)
+
+        context_contact_vis = None
+        if self.contact_vis:
+            context_contact_vis = self.contact_vis.GetMyMutableContextFromRoot(
+                context
+            )
+
+        return (
+            context,
+            context_q_sys,
+            context_meshcat,
+            context_contact_vis,
+        )
 
     @staticmethod
     def check_plants(
@@ -205,7 +218,7 @@ class QuasistaticVisualizer:
         self,
         h: float,
         q_knots: np.ndarray,
-        contact_results_list: List[ContactResults],
+        contact_results_list: List[ContactResults] | None = None,
     ):
         """
         q_knots: (T + 1, n_q) array.
@@ -216,20 +229,24 @@ class QuasistaticVisualizer:
         contact_results_list is silently ignored if visualization_type is
          python.
         """
-        assert len(q_knots) == len(contact_results_list) + 1
+        if contact_results_list:
+            n_contacts = len(contact_results_list)
+            n_knots = len(q_knots)
+            assert n_knots == n_contacts + 1 or n_contacts == 0
 
         if self.visualization_type == QsimVisualizationType.Cpp:
             self.meshcat_vis.DeleteRecording()
             self.meshcat_vis.StartRecording(False)
             for i, t in enumerate(np.arange(len(q_knots)) * h):
                 self.context.SetTime(t)
-                if i == 0:
-                    self.draw_configuration(q=q_knots[i], contact_results=None)
-                else:
-                    self.draw_configuration(
-                        q=q_knots[i],
-                        contact_results=contact_results_list[i - 1],
-                    )
+                contact_results = None
+                if contact_results_list and i > 0:
+                    contact_results = contact_results_list[i - 1]
+
+                self.draw_configuration(
+                    q=q_knots[i], contact_results=contact_results
+                )
+
             self.meshcat_vis.StopRecording()
             self.meshcat_vis.PublishRecording()
         elif self.visualization_type == QsimVisualizationType.Python:
