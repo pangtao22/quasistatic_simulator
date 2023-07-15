@@ -118,6 +118,25 @@ class QuasistaticSimulator {
     return *diagram_;
   }
 
+  const drake::geometry::QueryObject<drake::AutoDiffXd>& get_query_object_ad()
+      const {
+    return *query_object_ad_;
+  }
+
+  const drake::multibody::MultibodyPlant<drake::AutoDiffXd>& get_plant_ad()
+      const {
+    return *plant_ad_;
+  }
+
+  const drake::geometry::SceneGraph<drake::AutoDiffXd>& get_scene_graph_ad()
+      const {
+    return *sg_ad_;
+  }
+
+  const drake::systems::Diagram<drake::AutoDiffXd>& get_diagram_ad() const {
+    return *diagram_ad_;
+  }
+
   const drake::multibody::ContactResults<double>& get_contact_results() const {
     return contact_results_;
   }

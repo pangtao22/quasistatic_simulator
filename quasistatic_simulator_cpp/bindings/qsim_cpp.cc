@@ -106,6 +106,12 @@ PYBIND11_MODULE(qsim_cpp, m) {
              py::return_value_policy::reference_internal)
         .def("get_diagram", &Class::get_diagram,
              py::return_value_policy::reference_internal)
+        .def("get_plant_ad", &Class::get_plant_ad,
+             py::return_value_policy::reference_internal)
+        .def("get_scene_graph_ad", &Class::get_scene_graph_ad,
+             py::return_value_policy::reference_internal)
+        .def("get_diagram_ad", &Class::get_diagram_ad,
+             py::return_value_policy::reference_internal)
         .def("get_contact_results", &Class::get_contact_results,
              py::return_value_policy::reference_internal)
         .def("get_contact_results_copy", &Class::GetContactResultsCopy)
