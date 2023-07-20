@@ -2,6 +2,7 @@ from enum import IntEnum
 from typing import Dict, Set, List
 
 import numpy as np
+import numpy.typing as npt
 from pydrake.all import (
     ModelInstanceIndex,
     MultibodyPlant,
@@ -158,6 +159,14 @@ class QuasistaticVisualizer:
                     AbstractValue.Make(contact_results),
                 )
                 self.contact_vis.ForcedPublish(self.context_contact_vis)
+
+    def draw_configuration_dict(
+        self,
+        q_dict: Dict[ModelInstanceIndex, npt.NDArray],
+        contact_results: ContactResults | None = None,
+    ):
+        q = self.q_sim.get_q_vec_from_dict(q_dict)
+        self.draw_configuration(q, contact_results)
 
     def draw_goal_triad(
         self,
