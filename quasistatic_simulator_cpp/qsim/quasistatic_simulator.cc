@@ -137,21 +137,37 @@ QuasistaticSimulator::QuasistaticSimulator(
       models_actuated_(robot_models),
       models_unactuated_(object_models),
       robot_stiffness_(robot_stiffness),
+      diagram_ad_(
+          drake::systems::System<double>::ToAutoDiffXd<drake::systems::Diagram>(
+              *diagram_)),
+      plant_ad_(
+          dynamic_cast<const drake::multibody::MultibodyPlant<AutoDiffXd>*>(
+              &(diagram_ad_->GetSubsystemByName(plant_->get_name())))),
+      sg_ad_(
+          dynamic_cast<const drake::geometry::SceneGraph<drake::AutoDiffXd>*>(
+              &(diagram_ad_->GetSubsystemByName(sg_->get_name())))),
       solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
       solver_osqp_(std::make_unique<drake::solvers::OsqpSolver>()),
       solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()),
       solver_msk_(std::make_unique<drake::solvers::MosekSolver>()),
       solver_log_pyramid_(std::make_unique<QpLogBarrierSolver>()),
       solver_log_icecream_(std::make_unique<SocpLogBarrierSolver>()) {
-  // All models instances.
-  models_all_ = models_unactuated_;
-  models_all_.insert(models_actuated_.begin(), models_actuated_.end());
-
   // Contexts.
   context_ = diagram_->CreateDefaultContext();
   context_plant_ =
       &(diagram_->GetMutableSubsystemContext(*plant_, context_.get()));
   context_sg_ = &(diagram_->GetMutableSubsystemContext(*sg_, context_.get()));
+
+  // AutoDiff contexts.
+  context_ad_ = diagram_ad_->CreateDefaultContext();
+  context_plant_ad_ =
+      &(diagram_ad_->GetMutableSubsystemContext(*plant_ad_, context_ad_.get()));
+  context_sg_ad_ =
+      &(diagram_ad_->GetMutableSubsystemContext(*sg_ad_, context_ad_.get()));
+
+  // All models instances.
+  models_all_ = models_unactuated_;
+  models_all_.insert(models_actuated_.begin(), models_actuated_.end());
 
   // MBP introspection.
   n_q_ = plant_->num_positions();
@@ -212,22 +228,6 @@ QuasistaticSimulator::QuasistaticSimulator(
     i++;
   }
   min_K_a_ = min_stiffness_vec.minCoeff();
-
-  // AutoDiff plants.
-  diagram_ad_ =
-      drake::systems::System<double>::ToAutoDiffXd<drake::systems::Diagram>(
-          *diagram_);
-  plant_ad_ = dynamic_cast<const drake::multibody::MultibodyPlant<AutoDiffXd>*>(
-      &(diagram_ad_->GetSubsystemByName(plant_->get_name())));
-  sg_ad_ = dynamic_cast<const drake::geometry::SceneGraph<drake::AutoDiffXd>*>(
-      &(diagram_ad_->GetSubsystemByName(sg_->get_name())));
-
-  // AutoDiff contexts.
-  context_ad_ = diagram_ad_->CreateDefaultContext();
-  context_plant_ad_ =
-      &(diagram_ad_->GetMutableSubsystemContext(*plant_ad_, context_ad_.get()));
-  context_sg_ad_ =
-      &(diagram_ad_->GetMutableSubsystemContext(*sg_ad_, context_ad_.get()));
 
   // ContactComputers.
   cjc_ = std::make_unique<ContactJacobianCalculator<double>>(diagram_.get(),

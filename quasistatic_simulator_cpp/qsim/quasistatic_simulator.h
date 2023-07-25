@@ -465,7 +465,7 @@ class QuasistaticSimulator {
   const drake::geometry::SceneGraph<double>* sg_{nullptr};
 
   // AutoDiff Systems.
-  std::unique_ptr<drake::systems::Diagram<drake::AutoDiffXd>> diagram_ad_;
+  std::unique_ptr<const drake::systems::Diagram<drake::AutoDiffXd>> diagram_ad_;
   const drake::multibody::MultibodyPlant<drake::AutoDiffXd>* plant_ad_{nullptr};
   const drake::geometry::SceneGraph<drake::AutoDiffXd>* sg_ad_{nullptr};
 
