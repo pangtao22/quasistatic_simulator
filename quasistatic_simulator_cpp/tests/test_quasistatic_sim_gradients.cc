@@ -61,7 +61,7 @@ class TestQuasistaticSimGradients : public ::testing::TestWithParam<bool> {
   VectorXd q0_, u0_;
 };
 
-TEST_P(TestQuasistaticSimGradients, TestDfDu) {
+TEST_P(TestQuasistaticSimGradients, TestDfDxAndDfDu) {
   params_.gradient_mode = GradientMode::kAB;
   params_.forward_mode = ForwardDynamicsMode::kSocpMp;
   q_sim_->CalcDynamics(q0_, u0_, params_);
@@ -97,6 +97,20 @@ TEST_P(TestQuasistaticSimGradients, TestDfDu) {
   cout << "Norm diff B " << (B_analytic_socp - B_analytic_qp).norm() << endl;
   cout << "Norm diff B2 " << (B_analytic_socp - B_numerical).norm() << endl;
   cout << "Norm diff B3 " << (B_analytic_qp - B_numerical).norm() << endl;
+}
+
+TEST_P(TestQuasistaticSimGradients, TestFiniteDiffGradientCalculators) {
+  params_.forward_mode = ForwardDynamicsMode::kSocpMp;
+  auto fd_serial = FiniteDiffGradientCalculator(q_sim_.get());
+  auto fd_parallel = BatchFiniteDiffGradientCalculator(q_sim_b_.get());
+
+  Eigen::MatrixXd B_serial = fd_serial.CalcB(q0_, u0_, 1e-3, params_);
+  Eigen::MatrixXd B_parallel = fd_parallel.CalcB(q0_, u0_, 1e-3, params_);
+  EXPECT_LT((B_parallel - B_serial).norm(), 1e-5);
+
+  Eigen::MatrixXd A_serial = fd_serial.CalcA(q0_, u0_, 1e-3, params_);
+  Eigen::MatrixXd A_parallel = fd_parallel.CalcA(q0_, u0_, 1e-3, params_);
+  EXPECT_LT((A_parallel - A_serial).norm(), 1e-4);
 }
 
 INSTANTIATE_TEST_SUITE_P(

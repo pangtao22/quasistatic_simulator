@@ -21,6 +21,7 @@ enum class ModelIndicesMode { kQ, kV };
 
 class QuasistaticSimulator {
  public:
+  DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(QuasistaticSimulator);
   static std::unique_ptr<QuasistaticSimulator> MakeQuasistaticSimulator(
       const std::string& model_directive_path,
       const std::unordered_map<std::string, Eigen::VectorXd>&
