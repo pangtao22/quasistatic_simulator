@@ -1,7 +1,7 @@
 #include <filesystem>
 
 #include "qsim/get_model_paths.h"
-#include "qsim/quasistatic_simulator.h"
+#include "qsim/quasistatic_parser.h"
 
 using drake::multibody::ModelInstanceIndex;
 using Eigen::MatrixXd;
@@ -13,20 +13,10 @@ using std::endl;
 using std::string;
 using std::filesystem::path;
 
-static const char* kBox6cmPath =
-    (GetQsimModelsPath() / path("box_0.06m.sdf")).c_str();
-static const char* kBox7cmPath =
-    (GetQsimModelsPath() / path("box_0.07m.sdf")).c_str();
-static const char* kBox8cmPath =
-    (GetQsimModelsPath() / path("box_0.08m.sdf")).c_str();
-static const char* kModelDirectivePath =
-    (GetQsimModelsPath() / path("iiwa_and_schunk_and_ground.yml")).c_str();
-
-std::unordered_map<ModelInstanceIndex, VectorXd>
-CreateMapKeyedByModelInstanceIndex(
+ModelInstanceIndexToVecMap CreateMapKeyedByModelInstanceIndex(
     const drake::multibody::MultibodyPlant<double>& plant,
     const std::unordered_map<string, VectorXd>& map_str) {
-  std::unordered_map<ModelInstanceIndex, VectorXd> map_model;
+  ModelInstanceIndexToVecMap map_model;
   for (const auto& [name, v] : map_str) {
     auto model = plant.GetModelInstanceByName(name);
     map_model[model] = v;
@@ -35,7 +25,7 @@ CreateMapKeyedByModelInstanceIndex(
 }
 
 int main() {
-  cout << std::filesystem::current_path().generic_string() << endl;
+  auto q_model_path = GetQsimModelsPath() / "q_sys" / "iiwa_and_boxes.yml";
 
   QuasistaticSimParameters sim_params;
   sim_params.h = 0.1;
@@ -44,23 +34,14 @@ int main() {
   sim_params.contact_detection_tolerance = 0.02;
   sim_params.is_quasi_dynamic = false;
 
+  auto q_parser = QuasistaticParser(q_model_path);
+  q_parser.set_sim_params(sim_params);
+
+  std::unique_ptr<QuasistaticSimulator> q_sim_ptr = q_parser.MakeSimulator();
+  auto& q_sim = *q_sim_ptr;
+
   const string iiwa_name("iiwa");
   const string schunk_name("schunk");
-  VectorXd Kp_iiwa(7);
-  Kp_iiwa << 800, 600, 600, 600, 400, 200, 200;
-  VectorXd Kp_schunk(2);
-  Kp_schunk << 1000, 1000;
-
-  std::unordered_map<string, VectorXd> robot_stiffness_dict = {
-      {iiwa_name, Kp_iiwa}, {schunk_name, Kp_schunk}};
-  std::unordered_map<string, string> object_sdf_dict = {
-      {"box0", kBox6cmPath}, {"box1", kBox8cmPath}, {"box2", kBox7cmPath},
-      {"box3", kBox8cmPath}, {"box4", kBox8cmPath}, {"box5", kBox7cmPath},
-      {"box6", kBox8cmPath}, {"box7", kBox8cmPath}, {"box8", kBox7cmPath},
-      {"box9", kBox8cmPath}};
-
-  auto q_sim = QuasistaticSimulator(kModelDirectivePath, robot_stiffness_dict,
-                                    object_sdf_dict, sim_params);
 
   MatrixXd q_u0_list(10, 7);
   q_u0_list.row(0) << 1, 0, 0, 0, 0.55, 0, 0.03;

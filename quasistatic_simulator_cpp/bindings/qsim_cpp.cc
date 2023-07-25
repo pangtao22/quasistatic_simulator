@@ -60,12 +60,10 @@ PYBIND11_MODULE(qsim_cpp, m) {
   {
     using Class = QuasistaticSimulator;
     py::class_<Class>(m, "QuasistaticSimulatorCpp")
-        .def(py::init<std::string,
-                      const std::unordered_map<std::string, Eigen::VectorXd>&,
-                      const std::unordered_map<std::string, std::string>&,
-                      QuasistaticSimParameters>(),
-             py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
-             py::arg("object_sdf_paths"), py::arg("sim_params"))
+        .def_static(
+            "make_quasistatic_simulator", &Class::MakeQuasistaticSimulator,
+            py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
+            py::arg("object_sdf_paths"), py::arg("sim_params"))
         .def("update_mbp_positions",
              py::overload_cast<const ModelInstanceIndexToVecMap&>(
                  &Class::UpdateMbpPositions))
@@ -146,6 +144,8 @@ PYBIND11_MODULE(qsim_cpp, m) {
                       QuasistaticSimParameters>(),
              py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
              py::arg("object_sdf_paths"), py::arg("sim_params"))
+        .def(py::init<const QuasistaticSimulator&>(),
+             py::arg("quasistatic_simulator"))
         .def("calc_dynamics_parallel", &Class::CalcDynamicsParallel)
         .def("calc_bundled_ABc_trj", &Class::CalcBundledABcTrj)
         .def("sample_gaussian_matrix", &Class::SampleGaussianMatrix)

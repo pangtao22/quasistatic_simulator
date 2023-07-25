@@ -27,17 +27,17 @@ using std::endl;
 using std::string;
 using std::vector;
 
-void CreateMbp(
-    drake::systems::DiagramBuilder<double>* builder,
-    const string& model_directive_path,
-    const std::unordered_map<string, VectorXd>& robot_stiffness_str,
-    const std::unordered_map<string, string>& object_sdf_paths,
-    const Eigen::Ref<const Vector3d>& gravity,
-    drake::multibody::MultibodyPlant<double>** plant,
-    drake::geometry::SceneGraph<double>** scene_graph,
-    std::set<ModelInstanceIndex>* robot_models,
-    std::set<ModelInstanceIndex>* object_models,
-    std::unordered_map<ModelInstanceIndex, Eigen::VectorXd>* robot_stiffness) {
+namespace {
+void CreateMbp(drake::systems::DiagramBuilder<double>* builder,
+               const string& model_directive_path,
+               const std::unordered_map<string, VectorXd>& robot_stiffness_str,
+               const std::unordered_map<string, string>& object_sdf_paths,
+               const Eigen::Ref<const Vector3d>& gravity,
+               drake::multibody::MultibodyPlant<double>** plant,
+               drake::geometry::SceneGraph<double>** scene_graph,
+               std::set<ModelInstanceIndex>* robot_models,
+               std::set<ModelInstanceIndex>* object_models,
+               ModelInstanceIndexToVecMap* robot_stiffness) {
   std::tie(*plant, *scene_graph) =
       drake::multibody::AddMultibodyPlantSceneGraph(builder, 1e-3);
   // Set name so that MBP and SceneGraph can be accessed by name.
@@ -79,27 +79,73 @@ void CreateMbp(
   (*plant)->Finalize();
 }
 
-QuasistaticSimulator::QuasistaticSimulator(
+}  // namespace
+
+std::unique_ptr<QuasistaticSimulator>
+QuasistaticSimulator::MakeQuasistaticSimulator(
     const std::string& model_directive_path,
     const std::unordered_map<std::string, Eigen::VectorXd>& robot_stiffness_str,
     const std::unordered_map<std::string, std::string>& object_sdf_paths,
-    QuasistaticSimParameters sim_params)
-    : sim_params_(std::move(sim_params)),
+    const QuasistaticSimParameters& sim_params) {
+  auto builder = drake::systems::DiagramBuilder<double>();
+  drake::multibody::MultibodyPlant<double>* plant_ptr{nullptr};
+  drake::geometry::SceneGraph<double>* scene_graph_ptr{nullptr};
+  std::set<drake::multibody::ModelInstanceIndex> robot_models;
+  std::set<drake::multibody::ModelInstanceIndex> object_models;
+  ModelInstanceIndexToVecMap robot_stiffness;
+
+  CreateMbp(&builder, model_directive_path, robot_stiffness_str,
+            object_sdf_paths, sim_params.gravity, &plant_ptr, &scene_graph_ptr,
+            &robot_models, &object_models, &robot_stiffness);
+  std::unique_ptr<drake::systems::Diagram<double>> diagram = builder.Build();
+
+  return std::unique_ptr<QuasistaticSimulator>(new QuasistaticSimulator(
+      sim_params, std::move(diagram), plant_ptr, scene_graph_ptr,
+      std::move(robot_models), std::move(object_models),
+      std::move(robot_stiffness)));
+}
+
+std::unique_ptr<QuasistaticSimulator> QuasistaticSimulator::Clone() const {
+  auto diagram_new = drake::systems::Diagram<double>::Clone(*diagram_);
+  auto plant_new_ptr =
+      dynamic_cast<const drake::multibody::MultibodyPlant<double>*>(
+          &(diagram_new->GetSubsystemByName(plant_->get_name())));
+  auto sg_new_ptr = dynamic_cast<const drake::geometry::SceneGraph<double>*>(
+      &(diagram_new->GetSubsystemByName(sg_->get_name())));
+
+  return std::unique_ptr<QuasistaticSimulator>(new QuasistaticSimulator(
+      sim_params_, std::move(diagram_new), plant_new_ptr, sg_new_ptr,
+      std::move(
+          std::set<drake::multibody::ModelInstanceIndex>(models_actuated_)),
+      std::move(
+          std::set<drake::multibody::ModelInstanceIndex>(models_unactuated_)),
+      std::move(ModelInstanceIndexToVecMap(robot_stiffness_))));
+}
+
+QuasistaticSimulator::QuasistaticSimulator(
+    QuasistaticSimParameters sim_params,
+    std::unique_ptr<drake::systems::Diagram<double>> diagram,
+    const drake::multibody::MultibodyPlant<double>* plant_ptr,
+    const drake::geometry::SceneGraph<double>* scene_graph_ptr,
+    std::set<drake::multibody::ModelInstanceIndex>&& robot_models,
+    std::set<drake::multibody::ModelInstanceIndex>&& object_models,
+    ModelInstanceIndexToVecMap&& robot_stiffness)
+    : sim_params_(sim_params),
+      diagram_(std::move(diagram)),
+      plant_(plant_ptr),
+      sg_(scene_graph_ptr),
+      models_actuated_(robot_models),
+      models_unactuated_(object_models),
+      robot_stiffness_(robot_stiffness),
       solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
       solver_osqp_(std::make_unique<drake::solvers::OsqpSolver>()),
       solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()),
       solver_msk_(std::make_unique<drake::solvers::MosekSolver>()),
       solver_log_pyramid_(std::make_unique<QpLogBarrierSolver>()),
       solver_log_icecream_(std::make_unique<SocpLogBarrierSolver>()) {
-  auto builder = drake::systems::DiagramBuilder<double>();
-
-  CreateMbp(&builder, model_directive_path, robot_stiffness_str,
-            object_sdf_paths, sim_params_.gravity, &plant_, &sg_,
-            &models_actuated_, &models_unactuated_, &robot_stiffness_);
   // All models instances.
   models_all_ = models_unactuated_;
   models_all_.insert(models_actuated_.begin(), models_actuated_.end());
-  diagram_ = builder.Build();
 
   // Contexts.
   context_ = diagram_->CreateDefaultContext();
@@ -875,7 +921,7 @@ void QuasistaticSimulator::CalcUnconstrainedBFromHessian(
 ModelInstanceIndexToVecMap QuasistaticSimulator::GetVdictFromVec(
     const Eigen::Ref<const Eigen::VectorXd>& v) const {
   DRAKE_THROW_UNLESS(v.size() == n_v_);
-  std::unordered_map<ModelInstanceIndex, VectorXd> v_dict;
+  ModelInstanceIndexToVecMap v_dict;
 
   for (const auto& model : models_all_) {
     const auto& idx_v = velocity_indices_.at(model);

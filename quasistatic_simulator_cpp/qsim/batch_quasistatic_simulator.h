@@ -15,6 +15,8 @@ class BatchQuasistaticSimulator {
       const std::unordered_map<std::string, std::string>& object_sdf_paths,
       const QuasistaticSimParameters& sim_params);
 
+  explicit BatchQuasistaticSimulator(const QuasistaticSimulator& q_sim);
+
   /*
    * Each row in x_batch and u_batch represent a pair of current states and
    * inputs. The function returns a tuple of
@@ -115,7 +117,7 @@ class BatchQuasistaticSimulator {
     num_max_parallel_executions = n;
   }
 
-  QuasistaticSimulator& get_q_sim() const { return *q_sims_.begin(); }
+  QuasistaticSimulator& get_q_sim() const { return **q_sims_.begin(); }
 
  private:
   static std::vector<size_t> CalcBatchSizes(size_t n_tasks, size_t n_threads);
@@ -125,6 +127,6 @@ class BatchQuasistaticSimulator {
 
   std::unique_ptr<drake::solvers::GurobiSolver> solver_;
 
-  mutable std::vector<QuasistaticSimulator> q_sims_;
+  mutable std::vector<std::unique_ptr<QuasistaticSimulator>> q_sims_;
   mutable std::mt19937 gen_;
 };

@@ -18,14 +18,18 @@ BatchQuasistaticSimulator::BatchQuasistaticSimulator(
     const std::unordered_map<std::string, Eigen::VectorXd>& robot_stiffness_str,
     const std::unordered_map<std::string, std::string>& object_sdf_paths,
     const QuasistaticSimParameters& sim_params)
+    : BatchQuasistaticSimulator(*QuasistaticSimulator::MakeQuasistaticSimulator(
+          model_directive_path, robot_stiffness_str, object_sdf_paths,
+          sim_params)) {}
+
+BatchQuasistaticSimulator::BatchQuasistaticSimulator(
+    const QuasistaticSimulator& q_sim)
     : num_max_parallel_executions(std::thread::hardware_concurrency()),
       solver_(std::make_unique<drake::solvers::GurobiSolver>()) {
   std::random_device rd;
   gen_.seed(rd());
-
   for (int i = 0; i < num_max_parallel_executions; i++) {
-    q_sims_.emplace_back(model_directive_path, robot_stiffness_str,
-                         object_sdf_paths, sim_params);
+    q_sims_.push_back(std::move(q_sim.Clone()));
   }
 }
 
@@ -179,15 +183,15 @@ BatchQuasistaticSimulator::CalcDynamicsParallel(
       for (int i = 0; i < batch_sizes[i_thread]; i++) {
         try {
           x_next_t.row(i) = QuasistaticSimulator::CalcDynamics(
-              &q_sim, x_batch.row(i + offset), u_batch.row(i + offset),
+              q_sim.get(), x_batch.row(i + offset), u_batch.row(i + offset),
               sim_params);
 
           if (calc_B) {
-            B_t[i] = q_sim.get_Dq_nextDqa_cmd();
+            B_t[i] = q_sim->get_Dq_nextDqa_cmd();
           }
 
           if (calc_A) {
-            A_t[i] = q_sim.get_Dq_nextDq();
+            A_t[i] = q_sim->get_Dq_nextDq();
           }
 
           is_valid_t[i] = true;
@@ -428,7 +432,7 @@ std::vector<Eigen::MatrixXd> BatchQuasistaticSimulator::CalcBundledBTrjDirect(
           [&q_sim = q_sims_[idx_sim], &x_trj = std::as_const(x_trj),
            &u_trj = std::as_const(u_trj), &du_trj = std::as_const(du_trj),
            &B_batch, t = n_bundled_B_dispatched, sim_params, idx_sim] {
-            B_batch[t] = CalcBundledB(&q_sim, x_trj.row(t), u_trj.row(t),
+            B_batch[t] = CalcBundledB(q_sim.get(), x_trj.row(t), u_trj.row(t),
                                       du_trj[t], sim_params);
             return idx_sim;
           };

@@ -21,12 +21,14 @@ enum class ModelIndicesMode { kQ, kV };
 
 class QuasistaticSimulator {
  public:
-  QuasistaticSimulator(
+  static std::unique_ptr<QuasistaticSimulator> MakeQuasistaticSimulator(
       const std::string& model_directive_path,
       const std::unordered_map<std::string, Eigen::VectorXd>&
           robot_stiffness_str,
       const std::unordered_map<std::string, std::string>& object_sdf_paths,
-      QuasistaticSimParameters sim_params);
+      const QuasistaticSimParameters& sim_params);
+
+  std::unique_ptr<QuasistaticSimulator> Clone() const;
 
   void UpdateMbpPositions(const ModelInstanceIndexToVecMap& q_dict);
   void UpdateMbpPositions(const Eigen::Ref<const Eigen::VectorXd>& q);
@@ -229,6 +231,15 @@ class QuasistaticSimulator {
   void print_solver_info_for_default_params() const;
 
  private:
+  QuasistaticSimulator(
+      QuasistaticSimParameters sim_params,
+      std::unique_ptr<drake::systems::Diagram<double>> diagram,
+      const drake::multibody::MultibodyPlant<double>* plant_ptr,
+      const drake::geometry::SceneGraph<double>* scene_graph_ptr,
+      std::set<drake::multibody::ModelInstanceIndex>&& robot_models,
+      std::set<drake::multibody::ModelInstanceIndex>&& object_models,
+      ModelInstanceIndexToVecMap&& robot_stiffness);
+
   static Eigen::Matrix<double, 4, 3> CalcNW2Qdot(
       const Eigen::Ref<const Eigen::Vector4d>& Q);
 
@@ -449,9 +460,9 @@ class QuasistaticSimulator {
   Eigen::MatrixXd Dq_nextDqa_cmd_;
 
   // Systems.
-  std::unique_ptr<drake::systems::Diagram<double>> diagram_;
-  drake::multibody::MultibodyPlant<double>* plant_{nullptr};
-  drake::geometry::SceneGraph<double>* sg_{nullptr};
+  std::unique_ptr<const drake::systems::Diagram<double>> diagram_;
+  const drake::multibody::MultibodyPlant<double>* plant_{nullptr};
+  const drake::geometry::SceneGraph<double>* sg_{nullptr};
 
   // AutoDiff Systems.
   std::unique_ptr<drake::systems::Diagram<drake::AutoDiffXd>> diagram_ad_;

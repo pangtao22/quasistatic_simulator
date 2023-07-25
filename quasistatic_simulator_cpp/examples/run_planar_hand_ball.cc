@@ -40,8 +40,11 @@ int main() {
   std::unordered_map<string, string> object_sdf_dict;
   object_sdf_dict[object_name] = kObjectSdfPath;
 
-  auto q_sim = QuasistaticSimulator(kModelDirectivePath, robot_stiffness_dict,
-                                    object_sdf_dict, sim_params);
+  std::unique_ptr<QuasistaticSimulator> q_sim_ptr =
+      QuasistaticSimulator::MakeQuasistaticSimulator(
+          kModelDirectivePath, robot_stiffness_dict, object_sdf_dict,
+          sim_params);
+  auto& q_sim = *q_sim_ptr;
 
   const auto name_to_idx_map = q_sim.GetModelInstanceNameToIndexMap();
   const auto idx_l = name_to_idx_map.at(robot_l_name);
