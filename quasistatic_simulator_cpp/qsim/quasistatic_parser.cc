@@ -77,7 +77,7 @@ QuasistaticParser::QuasistaticParser(const std::string& q_model_path) {
 }
 
 std::unique_ptr<QuasistaticSimulator> QuasistaticParser::MakeSimulator() const {
-  return std::make_unique<QuasistaticSimulator>(
+  return QuasistaticSimulator::MakeQuasistaticSimulator(
       model_directive_path_, robot_stiffness_, object_sdf_paths_, sim_params_);
 }
 

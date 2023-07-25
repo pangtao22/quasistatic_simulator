@@ -124,7 +124,7 @@ class QuasistaticParser:
         q_sim_params = QuasistaticSimulator.copy_sim_params(self.q_sim_params)
         QuasistaticSimulator.check_params_validity(q_sim_params)
         objects_sdf_paths = self.object_sdf_paths if has_objects else {}
-        return QuasistaticSimulatorCpp(
+        return QuasistaticSimulatorCpp.make_quasistatic_simulator(
             model_directive_path=self.model_directive_path,
             robot_stiffness_str=self.robot_stiffness_dict,
             object_sdf_paths=objects_sdf_paths,

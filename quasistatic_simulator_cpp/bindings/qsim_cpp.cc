@@ -60,12 +60,10 @@ PYBIND11_MODULE(qsim_cpp, m) {
   {
     using Class = QuasistaticSimulator;
     py::class_<Class>(m, "QuasistaticSimulatorCpp")
-        .def(py::init<std::string,
-                      const std::unordered_map<std::string, Eigen::VectorXd>&,
-                      const std::unordered_map<std::string, std::string>&,
-                      QuasistaticSimParameters>(),
-             py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
-             py::arg("object_sdf_paths"), py::arg("sim_params"))
+        .def_static(
+            "make_quasistatic_simulator", &Class::MakeQuasistaticSimulator,
+            py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
+            py::arg("object_sdf_paths"), py::arg("sim_params"))
         .def("update_mbp_positions",
              py::overload_cast<const ModelInstanceIndexToVecMap&>(
                  &Class::UpdateMbpPositions))
@@ -146,6 +144,8 @@ PYBIND11_MODULE(qsim_cpp, m) {
                       QuasistaticSimParameters>(),
              py::arg("model_directive_path"), py::arg("robot_stiffness_str"),
              py::arg("object_sdf_paths"), py::arg("sim_params"))
+        .def(py::init<const QuasistaticSimulator&>(),
+             py::arg("quasistatic_simulator"))
         .def("calc_dynamics_parallel", &Class::CalcDynamicsParallel)
         .def("calc_bundled_ABc_trj", &Class::CalcBundledABcTrj)
         .def("sample_gaussian_matrix", &Class::SampleGaussianMatrix)
@@ -161,6 +161,19 @@ PYBIND11_MODULE(qsim_cpp, m) {
     py::class_<Class>(m, "FiniteDiffGradientCalculator")
         .def(py::init([](QuasistaticSimulator* q_sim) {
                return std::make_unique<Class>(q_sim);
+             }),
+             py::arg("q_sim"), py::keep_alive<1, 2>()
+             // Keep alive,reference: "self" keeps "q_sim" alive.
+             )
+        .def("calc_A", &Class::CalcA)
+        .def("calc_B", &Class::CalcB);
+  }
+
+  {
+    using Class = BatchFiniteDiffGradientCalculator;
+    py::class_<Class>(m, "BatchFiniteDiffGradientCalculator")
+        .def(py::init([](BatchQuasistaticSimulator* q_sim_batch) {
+               return std::make_unique<Class>(q_sim_batch);
              }),
              py::arg("q_sim"), py::keep_alive<1, 2>()
              // Keep alive,reference: "self" keeps "q_sim" alive.
