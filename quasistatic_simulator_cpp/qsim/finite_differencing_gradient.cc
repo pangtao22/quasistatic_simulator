@@ -86,7 +86,11 @@ Eigen::MatrixXd BatchFiniteDiffGradientCalculator::CalcB(
       q_sim_batch_->CalcDynamicsParallel(x_buffer_B_, u_buffer_B_, sim_params);
 
   for (const auto is_valid : is_valid_batch) {
-    DRAKE_THROW_UNLESS(is_valid);
+    if (!is_valid) {
+      throw std::runtime_error(
+          "Dynamics evaluation failed during the computation of B using finite "
+          "differencing");
+    }
   }
 
   // DfDu transposed.
@@ -116,7 +120,11 @@ Eigen::MatrixXd BatchFiniteDiffGradientCalculator::CalcA(
       q_sim_batch_->CalcDynamicsParallel(x_buffer_A_, u_buffer_A_, sim_params);
 
   for (const auto is_valid : is_valid_batch) {
-    DRAKE_THROW_UNLESS(is_valid);
+    if (!is_valid) {
+      throw std::runtime_error(
+          "Dynamics evaluation failed during the computation of A using finite "
+          "differencing");
+    }
   }
 
   Eigen::MatrixXd DfDx_T =
