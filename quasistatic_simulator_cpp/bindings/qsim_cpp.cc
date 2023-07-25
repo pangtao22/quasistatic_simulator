@@ -170,6 +170,19 @@ PYBIND11_MODULE(qsim_cpp, m) {
   }
 
   {
+    using Class = BatchFiniteDiffGradientCalculator;
+    py::class_<Class>(m, "BatchFiniteDiffGradientCalculator")
+        .def(py::init([](BatchQuasistaticSimulator* q_sim_batch) {
+               return std::make_unique<Class>(q_sim_batch);
+             }),
+             py::arg("q_sim"), py::keep_alive<1, 2>()
+             // Keep alive,reference: "self" keeps "q_sim" alive.
+             )
+        .def("calc_A", &Class::CalcA)
+        .def("calc_B", &Class::CalcB);
+  }
+
+  {
     using Class = QpDerivativesActive;
     py::class_<Class>(m, "QpDerivativesActive")
         .def(py::init<double>(), py::arg("tol"))
