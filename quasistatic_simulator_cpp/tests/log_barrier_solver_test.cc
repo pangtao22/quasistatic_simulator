@@ -1,6 +1,7 @@
+#include "diffcp/log_barrier_solver.h"
+
 #include <gtest/gtest.h>
 
-#include "diffcp/log_barrier_solver.h"
 #include "drake/math/jacobian.h"
 #include "drake/solvers/gurobi_solver.h"
 #include "drake/solvers/mosek_solver.h"

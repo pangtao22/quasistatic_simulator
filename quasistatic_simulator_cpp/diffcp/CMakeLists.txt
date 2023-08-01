@@ -1,4 +1,4 @@
-add_library(log_barrier_solver log_barrier_solver.cc)
+add_library(log_barrier_solver log_barrier_solver.cc solver_selector.cc)
 target_link_libraries(log_barrier_solver drake::drake)
 target_include_directories(log_barrier_solver PUBLIC ${PROJECT_SOURCE_DIR})
 
