@@ -3,8 +3,6 @@
 #include <gtest/gtest.h>
 
 #include "drake/math/jacobian.h"
-#include "drake/solvers/gurobi_solver.h"
-#include "drake/solvers/mosek_solver.h"
 #include "tests/test_utilities.h"
 
 using drake::AutoDiffXd;

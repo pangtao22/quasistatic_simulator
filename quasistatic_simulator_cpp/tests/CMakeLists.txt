@@ -24,7 +24,7 @@ target_include_directories(test_quasistatic_sim_gradients
         PUBLIC ${PROJECT_SOURCE_DIR})
 
 add_executable(test_solver_selector solver_selector_test.cc)
-target_link_libraries(test_solver_selector solver_selector GTest::gtest)
+target_link_libraries(test_solver_selector GTest::gtest log_barrier_solver)
 target_include_directories(test_solver_selector PUBLIC ${PROJECT_SOURCE_DIR})
 
 add_test(NAME test_batch_simulator COMMAND test_batch_simulator)
