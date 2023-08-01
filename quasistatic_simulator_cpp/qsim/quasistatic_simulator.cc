@@ -146,10 +146,7 @@ QuasistaticSimulator::QuasistaticSimulator(
       sg_ad_(
           dynamic_cast<const drake::geometry::SceneGraph<drake::AutoDiffXd>*>(
               &(diagram_ad_->GetSubsystemByName(sg_->get_name())))),
-      solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
-      solver_osqp_(std::make_unique<drake::solvers::OsqpSolver>()),
-      solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()),
-      solver_msk_(std::make_unique<drake::solvers::MosekSolver>()),
+      solver_selector_(SolverSelector::MakeSolverSelector()),
       solver_log_pyramid_(std::make_unique<QpLogBarrierSolver>()),
       solver_log_icecream_(std::make_unique<SocpLogBarrierSolver>()) {
   // Contexts.
@@ -586,8 +583,8 @@ void QuasistaticSimulator::ForwardQp(
   auto constraints = prog.AddLinearConstraint(
       -J, VectorXd::Constant(n_f, -std::numeric_limits<double>::infinity()), e,
       v);
-  auto solver = PickBestQpSolver(params);
-  solver->Solve(prog, {}, {}, &mp_result_);
+  const drake::solvers::SolverInterface& solver = PickBestQpSolver(params);
+  solver.Solve(prog, {}, {}, &mp_result_);
   if (!mp_result_.is_success()) {
     throw std::runtime_error("Quasistatic dynamics QP cannot be solved.");
   }
@@ -634,8 +631,8 @@ void QuasistaticSimulator::ForwardSocp(
         prog.AddLorentzConeConstraint(J_list.at(i_c), e_list->back(), v));
   }
 
-  auto solver = PickBestSocpSolver(params);
-  solver->Solve(prog, {}, {}, &mp_result_);
+  const drake::solvers::SolverInterface& solver = PickBestSocpSolver(params);
+  solver.Solve(prog, {}, {}, &mp_result_);
   if (!mp_result_.is_success()) {
     throw std::runtime_error("Quasistatic dynamics SOCP cannot be solved.");
   }
@@ -689,8 +686,8 @@ void QuasistaticSimulator::ForwardLogPyramid(
     v_s_i[n_v_] = s[i];
     prog.AddExponentialConeConstraint(A.sparseView(), b, v_s_i);
   }
-  auto solver = PickBestConeSolver(params);
-  solver->Solve(prog, {}, {}, &mp_result_);
+  const drake::solvers::SolverInterface& solver = PickBestConeSolver(params);
+  solver.Solve(prog, {}, {}, &mp_result_);
   if (!mp_result_.is_success()) {
     throw std::runtime_error(
         "Quasistatic dynamics Log Pyramid cannot be solved.");
@@ -1679,40 +1676,38 @@ QuasistaticSimulator::GetActuatedJointLimits() const {
   return joint_limits;
 }
 
-drake::solvers::SolverBase* QuasistaticSimulator::PickBestSocpSolver(
+const drake::solvers::SolverInterface& QuasistaticSimulator::PickBestSocpSolver(
     const QuasistaticSimParameters& params) const {
   if (params.use_free_solvers) {
-    return solver_scs_.get();
+    return solver_selector_->get_solver(drake::solvers::ScsSolver::id());
   }
   // Commercial solvers.
-  if (is_socp_calculating_dual(params)) {
-    return solver_msk_.get();
-  }
-  return solver_grb_.get();
+  return solver_selector_->PickBestSocpSolver(is_socp_calculating_dual(params));
 }
 
-drake::solvers::SolverBase* QuasistaticSimulator::PickBestQpSolver(
+const drake::solvers::SolverInterface& QuasistaticSimulator::PickBestQpSolver(
     const QuasistaticSimParameters& params) const {
   if (params.use_free_solvers) {
-    return solver_osqp_.get();
+    return solver_selector_->get_solver(drake::solvers::OsqpSolver::id());
   }
-  return solver_grb_.get();
+  return solver_selector_->PickBestQpSolver();
 }
 
-drake::solvers::SolverBase* QuasistaticSimulator::PickBestConeSolver(
+const drake::solvers::SolverInterface& QuasistaticSimulator::PickBestConeSolver(
     const QuasistaticSimParameters& params) const {
   if (params.use_free_solvers) {
-    return solver_scs_.get();
+    return solver_selector_->get_solver(drake::solvers::ScsSolver::id());
   }
-  return solver_msk_.get();
+  return solver_selector_->get_solver(drake::solvers::MosekSolver::id());
 }
 
 void QuasistaticSimulator::print_solver_info_for_default_params() const {
-  const auto socp_solver_name =
-      PickBestConeSolver(sim_params_)->solver_id().name();
-  const auto qp_solver_name = PickBestQpSolver(sim_params_)->solver_id().name();
-  const auto cone_solver_name =
-      PickBestConeSolver(sim_params_)->solver_id().name();
+  const std::string socp_solver_name =
+      PickBestConeSolver(sim_params_).solver_id().name();
+  const std::string qp_solver_name =
+      PickBestQpSolver(sim_params_).solver_id().name();
+  const std::string cone_solver_name =
+      PickBestConeSolver(sim_params_).solver_id().name();
 
   cout << "=========== Solver Info ===========" << endl;
   cout << "Using free solvers? " << sim_params_.use_free_solvers << endl;

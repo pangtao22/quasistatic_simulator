@@ -21,8 +21,9 @@ bool HasSolver(const drake::solvers::SolverInterface& solver) {
 
 SolverSelector::SolverSelector(
     SolverIdToSolverUnorderdMap&& solver_id_to_solver_map)
-    : has_gurobi_{HasSolver(*solver_id_to_solver_map[GurobiSolver::id()])},
-      has_mosek_{HasSolver(*solver_id_to_solver_map[GurobiSolver::id()])} {}
+    : solver_id_to_solver_map_(std::move(solver_id_to_solver_map)),
+      has_gurobi_{HasSolver(*solver_id_to_solver_map_.at(GurobiSolver::id()))},
+      has_mosek_{HasSolver(*solver_id_to_solver_map_.at(MosekSolver::id()))} {}
 
 std::unique_ptr<SolverSelector> SolverSelector::MakeSolverSelector() {
   SolverIdToSolverUnorderdMap solver_id_to_solver_map;
