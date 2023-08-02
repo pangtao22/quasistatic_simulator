@@ -5,6 +5,7 @@
 #include "diffcp/log_barrier_solver.h"
 #include "diffcp/qp_derivatives.h"
 #include "diffcp/socp_derivatives.h"
+#include "diffcp/solver_selector.h"
 #include "qsim/batch_quasistatic_simulator.h"
 #include "qsim/contact_jacobian_calculator.h"
 #include "qsim/finite_differencing_gradient.h"
@@ -203,9 +204,16 @@ PYBIND11_MODULE(qsim_cpp, m) {
   }
 
   {
+    using Class = SolverSelector;
+    py::class_<Class>(m, "SolverSelector").def(py::init([]() {
+      return SolverSelector::MakeSolverSelector();
+    }));
+  }
+
+  {
     using Class = QpLogBarrierSolver;
     py::class_<Class>(m, "QpLogBarrierSolver")
-        .def(py::init<>())
+        .def(py::init<const SolverSelector&>())
         .def("solve", &Class::Solve);
   }
 }

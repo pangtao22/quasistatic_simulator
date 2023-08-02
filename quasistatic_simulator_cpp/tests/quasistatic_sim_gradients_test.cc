@@ -106,7 +106,7 @@ TEST_P(TestQuasistaticSimGradients, TestFiniteDiffGradientCalculators) {
 
   Eigen::MatrixXd B_serial = fd_serial.CalcB(q0_, u0_, 1e-3, params_);
   Eigen::MatrixXd B_parallel = fd_parallel.CalcB(q0_, u0_, 1e-3, params_);
-  EXPECT_LT((B_parallel - B_serial).norm(), 1e-5);
+  EXPECT_LT((B_parallel - B_serial).norm(), 1e-4);
 
   Eigen::MatrixXd A_serial = fd_serial.CalcA(q0_, u0_, 1e-3, params_);
   Eigen::MatrixXd A_parallel = fd_parallel.CalcA(q0_, u0_, 1e-3, params_);

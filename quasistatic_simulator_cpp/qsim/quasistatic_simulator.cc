@@ -147,8 +147,10 @@ QuasistaticSimulator::QuasistaticSimulator(
           dynamic_cast<const drake::geometry::SceneGraph<drake::AutoDiffXd>*>(
               &(diagram_ad_->GetSubsystemByName(sg_->get_name())))),
       solver_selector_(SolverSelector::MakeSolverSelector()),
-      solver_log_pyramid_(std::make_unique<QpLogBarrierSolver>()),
-      solver_log_icecream_(std::make_unique<SocpLogBarrierSolver>()) {
+      solver_log_pyramid_(
+          std::make_unique<QpLogBarrierSolver>(*solver_selector_)),
+      solver_log_icecream_(
+          std::make_unique<SocpLogBarrierSolver>(*solver_selector_)) {
   // Contexts.
   context_ = diagram_->CreateDefaultContext();
   context_plant_ =

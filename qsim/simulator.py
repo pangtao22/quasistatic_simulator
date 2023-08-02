@@ -42,6 +42,7 @@ from qsim_cpp import (
     QuasistaticSimParameters,
     ForwardDynamicsMode,
     QpLogBarrierSolver,
+    SolverSelector,
 )
 from robotics_utilities.qp_derivatives.qp_derivatives import (
     QpDerivativesKktActive,
@@ -195,7 +196,8 @@ class QuasistaticSimulator:
             self.solver_qp = OsqpSolver()
             self.solver_cone = ScsSolver()
 
-        self.solver_qp_log = QpLogBarrierSolver()
+        self.solver_selector = SolverSelector()
+        self.solver_qp_log = QpLogBarrierSolver(self.solver_selector)
         self.options_grb = SolverOptions()
         self.options_grb.SetOption(GurobiSolver.id(), "QCPDual", 1)
 
@@ -236,7 +238,7 @@ class QuasistaticSimulator:
         gm = q_params.gradient_mode
         if q_params.nd_per_contact > 2 and gm == GradientMode.kAB:
             raise RuntimeError(
-                "Computing A matrix for 3D systems is not yet " "supported."
+                "Computing A matrix for 3D systems is not yet supported."
             )
 
         if q_params.unactuated_mass_scale == 0:
@@ -261,7 +263,7 @@ class QuasistaticSimulator:
         if q_params.forward_mode in log_forward_modes:
             if np.isnan(q_params.log_barrier_weight):
                 raise RuntimeError(
-                    f"Log barrier weight is nan when running in"
+                    "Log barrier weight is nan when running in"
                     f" {q_params.forward_mode}."
                 )
 
@@ -661,8 +663,7 @@ class QuasistaticSimulator:
                 )
             else:
                 raise RuntimeError(
-                    "At least one body in a contact pair "
-                    "should be unactuated."
+                    "At least one body in a contact pair should be unactuated."
                 )
 
         return n_c, n_d, n_f, Jn, Jf, phi, U, contact_info_list

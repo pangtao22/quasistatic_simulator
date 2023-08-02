@@ -12,9 +12,9 @@ using Eigen::VectorXd;
 using std::cout;
 using std::endl;
 
-LogBarrierSolverBase::LogBarrierSolverBase()
-    : solver_scs_(std::make_unique<drake::solvers::ScsSolver>()),
-      solver_grb_(std::make_unique<drake::solvers::GurobiSolver>()) {}
+LogBarrierSolverBase::LogBarrierSolverBase(
+    const SolverSelector& solver_selector)
+    : solver_selector_(solver_selector) {}
 
 double LogBarrierSolverBase::BackStepLineSearch(
     const Eigen::Ref<const Eigen::MatrixXd>& Q,
@@ -187,12 +187,20 @@ void LogBarrierSolverBase::GetPhaseOneSolution(
   *v0_ptr = mp_result_.GetSolution(v);
 }
 
-drake::solvers::SolverBase* LogBarrierSolverBase::get_solver(
+const drake::solvers::SolverInterface& LogBarrierSolverBase::GetQpSolver(
     bool use_free_solver) const {
   if (use_free_solver) {
-    return solver_scs_.get();
+    return solver_selector_.get_solver(drake::solvers::ScsSolver::id());
   }
-  return solver_grb_.get();
+  return solver_selector_.PickBestQpSolver();
+}
+
+const drake::solvers::SolverInterface& LogBarrierSolverBase::GetSocpSolver(
+    bool use_free_solver) const {
+  if (use_free_solver) {
+    return solver_selector_.get_solver(drake::solvers::ScsSolver::id());
+  }
+  return solver_selector_.PickBestSocpSolver(false);
 }
 
 void QpLogBarrierSolver::SolvePhaseOne(
@@ -219,11 +227,12 @@ void QpLogBarrierSolver::SolvePhaseOne(
       v_s);
   prog.AddBoundingBoxConstraint(-1, 1, v);
 
-  get_solver(use_free_solver)->Solve(prog, {}, {}, &mp_result_);
+  GetQpSolver(use_free_solver).Solve(prog, {}, {}, &mp_result_);
   GetPhaseOneSolution(v, s, v0_ptr);
 }
 
-QpLogBarrierSolver::QpLogBarrierSolver() : LogBarrierSolverBase() {}
+QpLogBarrierSolver::QpLogBarrierSolver(const SolverSelector& solver_selector)
+    : LogBarrierSolverBase(solver_selector) {}
 
 double QpLogBarrierSolver::CalcF(
     const Eigen::Ref<const Eigen::MatrixXd>& Q,
@@ -262,7 +271,9 @@ void QpLogBarrierSolver::CalcGradientAndHessian(
   }
 }
 
-SocpLogBarrierSolver::SocpLogBarrierSolver() : LogBarrierSolverBase() {}
+SocpLogBarrierSolver::SocpLogBarrierSolver(
+    const SolverSelector& solver_selector)
+    : LogBarrierSolverBase(solver_selector) {}
 
 void SocpLogBarrierSolver::SolvePhaseOne(
     const Eigen::Ref<const Eigen::MatrixXd>& G,
@@ -290,7 +301,7 @@ void SocpLogBarrierSolver::SolvePhaseOne(
 
   prog.AddBoundingBoxConstraint(-1, 1, v);
 
-  get_solver(use_free_solver)->Solve(prog, {}, {}, &mp_result_);
+  GetSocpSolver(use_free_solver).Solve(prog, {}, {}, &mp_result_);
   GetPhaseOneSolution(v, s, v0_ptr);
 }
 
