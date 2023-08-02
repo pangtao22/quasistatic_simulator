@@ -4,6 +4,7 @@
 #include "diffcp/log_barrier_solver.h"
 #include "diffcp/qp_derivatives.h"
 #include "diffcp/socp_derivatives.h"
+#include "diffcp/solver_selector.h"
 #include "drake/multibody/plant/externally_applied_spatial_force.h"
 #include "drake/solvers/gurobi_solver.h"
 #include "drake/solvers/mathematical_program_result.h"
@@ -433,22 +434,19 @@ class QuasistaticSimulator {
     return params.calc_contact_forces ||
            (params.gradient_mode != GradientMode::kNone);
   }
-  drake::solvers::SolverBase* PickBestSocpSolver(
+  const drake::solvers::SolverInterface& PickBestSocpSolver(
       const QuasistaticSimParameters& params) const;
 
-  drake::solvers::SolverBase* PickBestQpSolver(
+  const drake::solvers::SolverInterface& PickBestQpSolver(
       const QuasistaticSimParameters& params) const;
 
-  drake::solvers::SolverBase* PickBestConeSolver(
+  const drake::solvers::SolverInterface& PickBestConeSolver(
       const QuasistaticSimParameters& params) const;
 
   QuasistaticSimParameters sim_params_;
 
   // Solvers.
-  std::unique_ptr<drake::solvers::ScsSolver> solver_scs_;
-  std::unique_ptr<drake::solvers::OsqpSolver> solver_osqp_;
-  std::unique_ptr<drake::solvers::GurobiSolver> solver_grb_;
-  std::unique_ptr<drake::solvers::MosekSolver> solver_msk_;
+  std::unique_ptr<SolverSelector> solver_selector_;
   std::unique_ptr<QpLogBarrierSolver> solver_log_pyramid_;
   std::unique_ptr<SocpLogBarrierSolver> solver_log_icecream_;
   mutable drake::solvers::MathematicalProgramResult mp_result_;

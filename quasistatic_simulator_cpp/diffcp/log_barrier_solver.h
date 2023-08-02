@@ -2,12 +2,17 @@
 
 #include <Eigen/Dense>
 
+#include "diffcp/solver_selector.h"
 #include "drake/solvers/mathematical_program.h"
-#include "drake/solvers/solver_base.h"
+#include "drake/solvers/solver_interface.h"
 
 class LogBarrierSolverBase {
  public:
-  LogBarrierSolverBase();
+  /*
+   * solver_selector should outlive this object. solver_selector is owned by
+   * QuasistaticSimulator.
+   */
+  explicit LogBarrierSolverBase(const SolverSelector& solver_selector);
   virtual void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd>& G,
                              const Eigen::Ref<const Eigen::VectorXd>& e,
                              const bool use_free_solver,
@@ -80,10 +85,12 @@ class LogBarrierSolverBase {
   const Eigen::LLT<Eigen::MatrixXd>& get_H_llt() const { return H_llt_; }
 
  protected:
-  drake::solvers::SolverBase* get_solver(bool use_free_solver) const;
+  const drake::solvers::SolverInterface& GetQpSolver(
+      bool use_free_solver) const;
+  const drake::solvers::SolverInterface& GetSocpSolver(
+      bool use_free_solver) const;
 
-  std::unique_ptr<drake::solvers::SolverBase> solver_grb_;
-  std::unique_ptr<drake::solvers::SolverBase> solver_scs_;
+  const SolverSelector& solver_selector_;
   mutable drake::solvers::MathematicalProgramResult mp_result_;
 
   // Hyperparameters for line search.
@@ -118,7 +125,7 @@ class LogBarrierSolverBase {
  */
 class QpLogBarrierSolver : public LogBarrierSolverBase {
  public:
-  QpLogBarrierSolver();
+  explicit QpLogBarrierSolver(const SolverSelector& solver_selector);
   void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd>& G,
                      const Eigen::Ref<const Eigen::VectorXd>& e,
                      const bool use_free_solver,
@@ -165,7 +172,7 @@ class QpLogBarrierSolver : public LogBarrierSolverBase {
  */
 class SocpLogBarrierSolver : public LogBarrierSolverBase {
  public:
-  SocpLogBarrierSolver();
+  explicit SocpLogBarrierSolver(const SolverSelector& solver_selector);
   void SolvePhaseOne(const Eigen::Ref<const Eigen::MatrixXd>& G,
                      const Eigen::Ref<const Eigen::VectorXd>& e,
                      const bool use_free_solver,

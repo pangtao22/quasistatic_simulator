@@ -1,9 +1,8 @@
+#include "diffcp/log_barrier_solver.h"
+
 #include <gtest/gtest.h>
 
-#include "diffcp/log_barrier_solver.h"
 #include "drake/math/jacobian.h"
-#include "drake/solvers/gurobi_solver.h"
-#include "drake/solvers/mosek_solver.h"
 #include "tests/test_utilities.h"
 
 using drake::AutoDiffXd;
@@ -54,6 +53,8 @@ class TestLogBarrierSolvers : public ::testing::TestWithParam<bool> {
   const double mu_{1}, kappa_{100}, h_{0.1};
   MatrixXd Q_, J_pyramid_, J_icecream_;
   VectorXd tau_h_, phi_pyramid_, phi_icecream_;
+  std::unique_ptr<const SolverSelector> solver_selector_{
+      SolverSelector::MakeSolverSelector()};
 };
 
 TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
@@ -84,7 +85,7 @@ TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
     H_drake.row(i) = f_value.derivatives()[i].derivatives();
   }
 
-  auto solver_log_socp = SocpLogBarrierSolver();
+  auto solver_log_socp = SocpLogBarrierSolver(*solver_selector_);
   Eigen::VectorXd Df(n_v_);
   Eigen::MatrixXd H(n_v_, n_v_);
   solver_log_socp.CalcGradientAndHessian(
@@ -95,8 +96,8 @@ TEST_P(TestLogBarrierSolvers, TestSocpGradientAndHessian) {
 }
 
 TEST_P(TestLogBarrierSolvers, TestSolve) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+  auto solver_pyramid = QpLogBarrierSolver(*solver_selector_);
+  auto solver_icecream = SocpLogBarrierSolver(*solver_selector_);
   // TODO(pang): also compare with MOSEK.
   VectorXd v_star_pyramid, v_star_icecream;
   solver_pyramid.Solve(Q_, -tau_h_, -J_pyramid_, phi_pyramid_ / h_, kappa_,
@@ -107,8 +108,8 @@ TEST_P(TestLogBarrierSolvers, TestSolve) {
 }
 
 TEST_P(TestLogBarrierSolvers, TestMultipleStepNewton) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+  auto solver_pyramid = QpLogBarrierSolver(*solver_selector_);
+  auto solver_icecream = SocpLogBarrierSolver(*solver_selector_);
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
   solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, use_free_solver_,
@@ -125,8 +126,8 @@ TEST_P(TestLogBarrierSolvers, TestMultipleStepNewton) {
 }
 
 TEST_P(TestLogBarrierSolvers, TestGradientDescent) {
-  auto solver_pyramid = QpLogBarrierSolver();
-  auto solver_icecream = SocpLogBarrierSolver();
+  auto solver_pyramid = QpLogBarrierSolver(*solver_selector_);
+  auto solver_icecream = SocpLogBarrierSolver(*solver_selector_);
 
   VectorXd v_star_pyramid(n_v_), v_star_icecream(n_v_);
   solver_pyramid.SolvePhaseOne(-J_pyramid_, phi_pyramid_ / h_, use_free_solver_,
