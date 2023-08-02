@@ -240,7 +240,8 @@ class QuasistaticSimulator {
       const drake::geometry::SceneGraph<double>* scene_graph_ptr,
       std::set<drake::multibody::ModelInstanceIndex>&& robot_models,
       std::set<drake::multibody::ModelInstanceIndex>&& object_models,
-      ModelInstanceIndexToVecMap&& robot_stiffness);
+      ModelInstanceIndexToVecMap&& robot_stiffness,
+      std::unique_ptr<SolverSelector> solver_selector);
 
   static Eigen::Matrix<double, 4, 3> CalcNW2Qdot(
       const Eigen::Ref<const Eigen::Vector4d>& Q);

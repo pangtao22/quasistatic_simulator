@@ -17,24 +17,39 @@ namespace {
 bool HasSolver(const drake::solvers::SolverInterface& solver) {
   return solver.available() && solver.enabled();
 }
-}  // namespace
 
-SolverSelector::SolverSelector(
-    SolverIdToSolverUnorderdMap&& solver_id_to_solver_map)
-    : solver_id_to_solver_map_(std::move(solver_id_to_solver_map)),
-      has_gurobi_{HasSolver(*solver_id_to_solver_map_.at(GurobiSolver::id()))},
-      has_mosek_{HasSolver(*solver_id_to_solver_map_.at(MosekSolver::id()))} {}
-
-std::unique_ptr<SolverSelector> SolverSelector::MakeSolverSelector() {
+SolverIdToSolverUnorderdMap MakeSolverIdToSolverUnorderdMap() {
   SolverIdToSolverUnorderdMap solver_id_to_solver_map;
   const std::vector<drake::solvers::SolverId> solver_ids{
       ScsSolver::id(), OsqpSolver::id(), MosekSolver::id(), GurobiSolver::id()};
   for (const auto& solver_id : solver_ids) {
     solver_id_to_solver_map[solver_id] = drake::solvers::MakeSolver(solver_id);
   }
+  return solver_id_to_solver_map;
+}
 
-  return std::unique_ptr<SolverSelector>(
-      new SolverSelector(std::move(solver_id_to_solver_map)));
+}  // namespace
+
+SolverSelector::SolverSelector(
+    bool has_gruobi, bool has_mosek,
+    SolverIdToSolverUnorderdMap&& solver_id_to_solver_map)
+    : solver_id_to_solver_map_(std::move(solver_id_to_solver_map)),
+      has_gurobi_{has_gruobi},
+      has_mosek_{has_mosek} {}
+
+std::unique_ptr<SolverSelector> SolverSelector::MakeSolverSelector() {
+  SolverIdToSolverUnorderdMap solver_id_to_solver_map =
+      MakeSolverIdToSolverUnorderdMap();
+
+  return std::unique_ptr<SolverSelector>(new SolverSelector(
+      HasSolver(*solver_id_to_solver_map.at(GurobiSolver::id())),
+      HasSolver(*solver_id_to_solver_map.at(MosekSolver::id())),
+      std::move(solver_id_to_solver_map)));
+}
+
+std::unique_ptr<SolverSelector> SolverSelector::Clone() const {
+  return std::unique_ptr<SolverSelector>(new SolverSelector(
+      has_gurobi_, has_mosek_, MakeSolverIdToSolverUnorderdMap()));
 }
 
 drake::solvers::SolverId SolverSelector::PickBestSocpSolver(bool has_gurobi,

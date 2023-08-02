@@ -102,7 +102,7 @@ QuasistaticSimulator::MakeQuasistaticSimulator(
   return std::unique_ptr<QuasistaticSimulator>(new QuasistaticSimulator(
       sim_params, std::move(diagram), plant_ptr, scene_graph_ptr,
       std::move(robot_models), std::move(object_models),
-      std::move(robot_stiffness)));
+      std::move(robot_stiffness), SolverSelector::MakeSolverSelector()));
 }
 
 std::unique_ptr<QuasistaticSimulator> QuasistaticSimulator::Clone() const {
@@ -119,7 +119,8 @@ std::unique_ptr<QuasistaticSimulator> QuasistaticSimulator::Clone() const {
           std::set<drake::multibody::ModelInstanceIndex>(models_actuated_)),
       std::move(
           std::set<drake::multibody::ModelInstanceIndex>(models_unactuated_)),
-      std::move(ModelInstanceIndexToVecMap(robot_stiffness_))));
+      std::move(ModelInstanceIndexToVecMap(robot_stiffness_)),
+      solver_selector_->Clone()));
 }
 
 QuasistaticSimulator::QuasistaticSimulator(
@@ -129,7 +130,8 @@ QuasistaticSimulator::QuasistaticSimulator(
     const drake::geometry::SceneGraph<double>* scene_graph_ptr,
     std::set<drake::multibody::ModelInstanceIndex>&& robot_models,
     std::set<drake::multibody::ModelInstanceIndex>&& object_models,
-    ModelInstanceIndexToVecMap&& robot_stiffness)
+    ModelInstanceIndexToVecMap&& robot_stiffness,
+    std::unique_ptr<SolverSelector> solver_selector)
     : sim_params_(sim_params),
       diagram_(std::move(diagram)),
       plant_(plant_ptr),
@@ -146,7 +148,7 @@ QuasistaticSimulator::QuasistaticSimulator(
       sg_ad_(
           dynamic_cast<const drake::geometry::SceneGraph<drake::AutoDiffXd>*>(
               &(diagram_ad_->GetSubsystemByName(sg_->get_name())))),
-      solver_selector_(SolverSelector::MakeSolverSelector()),
+      solver_selector_(std::move(solver_selector)),
       solver_log_pyramid_(
           std::make_unique<QpLogBarrierSolver>(*solver_selector_)),
       solver_log_icecream_(

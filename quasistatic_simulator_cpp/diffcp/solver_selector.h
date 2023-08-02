@@ -9,7 +9,7 @@
 
 using SolverIdToSolverUnorderdMap =
     std::unordered_map<drake::solvers::SolverId,
-                       std::unique_ptr<drake::solvers::SolverInterface>>;
+                       std::unique_ptr<const drake::solvers::SolverInterface>>;
 
 /*
  * This class owns every solver.
@@ -18,6 +18,7 @@ class SolverSelector {
  public:
   DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(SolverSelector)
   static std::unique_ptr<SolverSelector> MakeSolverSelector();
+  std::unique_ptr<SolverSelector> Clone() const;
   /*
    *  has_gurobi | has_mosek  | needs_dual |  Best Solver
    *      0      |      0     |     0      |      Scs
@@ -53,6 +54,7 @@ class SolverSelector {
 
  private:
   explicit SolverSelector(
+      bool has_gruobi, bool has_mosek,
       SolverIdToSolverUnorderdMap&& solver_id_to_solver_map);
   const SolverIdToSolverUnorderdMap solver_id_to_solver_map_;
   const bool has_gurobi_{false};
