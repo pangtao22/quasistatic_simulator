@@ -70,11 +70,14 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(GTest REQUIRED)
 
+include(GNUInstallDirs)
+
 add_subdirectory(qsim)
-add_subdirectory(diffcp)
 add_subdirectory(bindings)
-add_subdirectory(tests)
+add_subdirectory(diffcp)
 add_subdirectory(examples)
+add_subdirectory(tests)
+
 
 install(EXPORT ${CMAKE_PROJECT_NAME}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
