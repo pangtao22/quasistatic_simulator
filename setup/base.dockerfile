@@ -11,6 +11,7 @@ RUN apt-get update \
       && rm -rf /var/lib/apt/lists/* \
       && apt-get clean all
 
+# Drake
 ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.18.0/drake-20230620-jammy.tar.gz
 RUN curl -fSL -o drake.tar.gz $DRAKE_URL
 RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
@@ -18,6 +19,7 @@ RUN apt-get update \
   && yes "Y" | bash /opt/drake/share/drake/setup/install_prereqs \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean all
+ENV DRAKE_INSTALL_PATH=/opt/drake
 
 # Install Eigen 3.4
 COPY setup/install_eigen3.4.sh /tmp/
@@ -33,6 +35,6 @@ ENV QSIM_PATH /quasistatic_simulator
 ENV QSIM_CPP_PATH $QSIM_PATH/quasistatic_simulator_cpp
 
 # put qsim_cpp on the python path.
-ENV PYTHONPATH $QSIM_CPP_PATH/build/bindings:$PYTHONPATH
 ENV PYTHONPATH $QSIM_PATH:$PYTHONPATH
 ENV PYTHONPATH /opt/drake/lib/python3.10/site-packages:$PYTHONPATH
+ENV PYTHONPATH /opt/quasistatic_simulator/lib/python3.10/site-packages:$PYTHONPATH

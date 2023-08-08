@@ -31,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 cmake_minimum_required(VERSION 3.14)
-project(quasistatic_simulator_cpp)
+project(quasistatic_simulator)
 
 # N.B. This is a temporary flag. It only really applies to Linux, as Mac
 # does not need X11.
@@ -70,8 +70,23 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(GTest REQUIRED)
 
+include(GNUInstallDirs)
+
 add_subdirectory(qsim)
-add_subdirectory(diffcp)
 add_subdirectory(bindings)
-add_subdirectory(tests)
+add_subdirectory(diffcp)
 add_subdirectory(examples)
+add_subdirectory(tests)
+
+
+install(EXPORT ${CMAKE_PROJECT_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
+        NAMESPACE ${CMAKE_PROJECT_NAME}::
+        FILE ${CMAKE_PROJECT_NAME}Config.cmake
+)
+
+install(DIRECTORY qsim diffcp
+        DESTINATION include
+        FILES_MATCHING
+        PATTERN *.h
+)
