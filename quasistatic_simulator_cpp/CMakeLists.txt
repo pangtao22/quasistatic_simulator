@@ -85,7 +85,7 @@ install(EXPORT ${CMAKE_PROJECT_NAME}
         FILE ${CMAKE_PROJECT_NAME}Config.cmake
 )
 
-install(DIRECTORY qsim
+install(DIRECTORY qsim diffcp
         DESTINATION include
         FILES_MATCHING
         PATTERN *.h
