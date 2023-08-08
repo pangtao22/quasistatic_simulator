@@ -75,3 +75,15 @@ add_subdirectory(diffcp)
 add_subdirectory(bindings)
 add_subdirectory(tests)
 add_subdirectory(examples)
+
+install(EXPORT ${CMAKE_PROJECT_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
+        NAMESPACE ${CMAKE_PROJECT_NAME}::
+        FILE ${CMAKE_PROJECT_NAME}Config.cmake
+)
+
+install(DIRECTORY qsim
+        DESTINATION include
+        FILES_MATCHING
+        PATTERN *.h
+)
