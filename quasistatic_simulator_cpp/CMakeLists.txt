@@ -31,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 cmake_minimum_required(VERSION 3.14)
-project(quasistatic_simulator_cpp)
+project(quasistatic_simulator)
 
 # N.B. This is a temporary flag. It only really applies to Linux, as Mac
 # does not need X11.
