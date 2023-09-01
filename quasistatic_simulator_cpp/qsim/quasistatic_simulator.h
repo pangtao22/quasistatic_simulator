@@ -97,6 +97,11 @@ class QuasistaticSimulator {
     return sim_params_;
   }
 
+  [[nodiscard]] Eigen::VectorXd GetRobotStiffness(
+      const drake::multibody::ModelInstanceIndex& model) const {
+    return robot_stiffness_.at(model);
+  }
+
   /*
    * Technically it only makes sense for Bodies to float. But our convention
    * is that un-actuated model instances only consist of one rigid body.
@@ -194,11 +199,19 @@ class QuasistaticSimulator {
   Eigen::VectorXd GetQaCmdVecFromDict(
       const ModelInstanceIndexToVecMap& q_a_cmd_dict) const;
 
+  /*
+   * Assumes that q_a_cmd = [q_a_cmd_model_instance_i,
+   *                         q_a_cmd_model_instance_j,
+   *                         ...],
+   * where i <= j.
+   */
   ModelInstanceIndexToVecMap GetQaCmdDictFromVec(
       const Eigen::Ref<const Eigen::VectorXd>& q_a_cmd) const;
 
   Eigen::VectorXi GetQaIndicesIntoQ() const;
   Eigen::VectorXi GetQuIndicesIntoQ() const;
+  Eigen::VectorXi GetIndicesIntoInput(
+      drake::multibody::ModelInstanceIndex model_instance) const;
   Eigen::VectorXi GetModelsIndicesIntoQ(
       const std::set<drake::multibody::ModelInstanceIndex>& models) const;
 

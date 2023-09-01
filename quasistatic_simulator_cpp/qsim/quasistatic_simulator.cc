@@ -1008,6 +1008,23 @@ Eigen::VectorXi QuasistaticSimulator::GetQuIndicesIntoQ() const {
   return GetModelsIndicesIntoQ(models_unactuated_);
 }
 
+Eigen::VectorXi QuasistaticSimulator::GetIndicesIntoInput(
+    drake::multibody::ModelInstanceIndex model_instance) const {
+  const int n = std::accumulate(models_actuated_.begin(),
+                                models_actuated_.find(model_instance), 0,
+                                [&position_indices = position_indices_](
+                                    int n, const ModelInstanceIndex& model) {
+                                  return n + position_indices.at(model).size();
+                                });
+  const int n_dofs = position_indices_.at(model_instance).size();
+
+  Eigen::VectorXi indices(n_dofs);
+  for (int i = 0; i < n_dofs; i++) {
+    indices[i] = n + i;
+  }
+  return indices;
+}
+
 void QuasistaticSimulator::Step(
     const ModelInstanceIndexToVecMap& q_a_cmd_dict,
     const ModelInstanceIndexToVecMap& tau_ext_dict) {
