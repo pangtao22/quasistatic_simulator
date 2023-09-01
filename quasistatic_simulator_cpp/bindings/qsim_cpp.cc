@@ -116,6 +116,8 @@ PYBIND11_MODULE(qsim_cpp, m) {
         .def("get_contact_results_copy", &Class::GetContactResultsCopy)
         .def("get_sim_params", &Class::get_sim_params,
              py::return_value_policy::reference_internal)
+        .def("get_robot_stiffness", &Class::GetRobotStiffness,
+             py::return_value_policy::reference_internal)
         .def("get_sim_params_copy", &Class::get_sim_params_copy)
         .def("num_actuated_dofs", &Class::num_actuated_dofs)
         .def("num_unactuated_dofs", &Class::num_unactuated_dofs)
@@ -131,6 +133,7 @@ PYBIND11_MODULE(qsim_cpp, m) {
         .def("get_q_a_cmd_dict_from_vec", &Class::GetQaCmdDictFromVec)
         .def("get_q_a_indices_into_q", &Class::GetQaIndicesIntoQ)
         .def("get_q_u_indices_into_q", &Class::GetQuIndicesIntoQ)
+        .def("get_indices_into_input", &Class::GetIndicesIntoInput)
         .def("get_actuated_joint_limits", &Class::GetActuatedJointLimits)
         .def("print_solver_info_for_default_params",
              &Class::print_solver_info_for_default_params);
