@@ -1604,9 +1604,10 @@ class QuasistaticSimulator:
         # It is important that object_models and robot_models are ordered.
         object_models = set()
         for name, sdf_path in object_sdf_paths.items():
-            object_models.add(
-                parser.AddModelFromFile(sdf_path, model_name=name)
-            )
+            models = parser.AddModels(sdf_path)
+            assert len(models) == 1
+            plant.RenameModelInstance(models[0], name)
+            object_models.add(models[0])
 
         # Robots
         ProcessModelDirectives(

@@ -12,7 +12,7 @@ RUN apt-get update \
       && apt-get clean all
 
 # Drake
-ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.18.0/drake-20230620-jammy.tar.gz
+ENV DRAKE_URL=https://github.com/RobotLocomotion/drake/releases/download/v1.20.0/drake-20230816-jammy.tar.gz
 RUN curl -fSL -o drake.tar.gz $DRAKE_URL
 RUN tar -xzf drake.tar.gz -C /opt && rm drake.tar.gz
 RUN apt-get update \

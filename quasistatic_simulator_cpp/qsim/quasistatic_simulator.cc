@@ -59,8 +59,11 @@ void CreateMbp(drake::systems::DiagramBuilder<double>* builder,
     object_names.insert(item.first);
   }
   for (const auto& name : object_names) {
-    object_models->insert(
-        parser.AddModelFromFile(object_sdf_paths.at(name), name));
+    std::vector<ModelInstanceIndex> model_indices =
+        parser.AddModels(object_sdf_paths.at(name));
+    DRAKE_DEMAND(model_indices.size() == 1);
+    (*plant)->RenameModelInstance(model_indices[0], name);
+    object_models->insert(model_indices[0]);
   }
 
   // Robots.
