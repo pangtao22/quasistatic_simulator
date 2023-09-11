@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package>
+  <name>quasistatic_simulator</name>
+  <version>1.0.0</version>
+  <description>
+    This package contains miscellaneous models used for the quasistatic_simulator project.
+  </description>
+  <author email="pangtao@csail.mit.edu">Tao Pang</author>
+  <maintainer email="pangtao@csail.mit.edu">Tao Pang</maintainer>
+</package>
