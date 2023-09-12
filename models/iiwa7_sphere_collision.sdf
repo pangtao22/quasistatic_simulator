@@ -25,7 +25,6 @@
           <diffuse>0.4 0.4 0.4 1.0</diffuse>
         </material>
       </visual>
-      <gravity>1</gravity>
     </link>
     <link name="iiwa_link_1">
       <pose>0 0 0.1575 0 0 0</pose>
@@ -49,7 +48,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.4 0.4 0.4 0.5</diffuse>
+          <diffuse>0.4 0.4 0.4 1.0</diffuse>
         </material>
       </visual>
       <collision name='iiwa_link_1_contact'>
@@ -68,18 +67,6 @@
           </friction>
         </surface>
       </collision>
-      <visual name='iiwa_link_1_contact_visual'>
-        <pose>0 -0.05 0.175 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.065</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_1" type="revolute">
       <child>iiwa_link_1</child>
@@ -122,18 +109,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
-        </material>
-      </visual>
-      <visual name='iiwa_link_2_contact_visual'>
-        <pose>0 0.18 0 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.067</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+          <diffuse>1.0 0.423529411765 0.0392156862745 1.0</diffuse>
         </material>
       </visual>
       <collision name='iiwa_link_2_contact'>
@@ -152,17 +128,6 @@
           </friction>
         </surface>
       </collision>
-      <visual name='iiwa_link_2_contact_visual2'>
-        <pose>0 0.01 0.05 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.065</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
       <collision name='iiwa_link_2_contact2'>
         <pose>0 0.01 0.05 0 -0 0</pose>
         <geometry>
@@ -179,7 +144,6 @@
           </friction>
         </surface>
       </collision>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_2" type="revolute">
       <child>iiwa_link_2</child>
@@ -222,18 +186,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.4 0.4 0.4 0.5</diffuse>
-        </material>
-      </visual>
-      <visual name='iiwa_link_3_contact_visual'>
-        <pose>0 0.05 0.21 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.063</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+          <diffuse>0.4 0.4 0.4 1.0</diffuse>
         </material>
       </visual>
       <collision name='iiwa_link_3_contact'>
@@ -252,17 +205,6 @@
           </friction>
         </surface>
       </collision>
-      <visual name='iiwa_link_3_contact_visual2'>
-        <pose>0 0.0 0.035 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.067</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
       <collision name='iiwa_link_3_contact2'>
         <pose>0 0.0 0.035 0 -0 0</pose>
         <geometry>
@@ -279,7 +221,6 @@
           </friction>
         </surface>
       </collision>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_3" type="revolute">
       <child>iiwa_link_3</child>
@@ -322,18 +263,7 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>1.0 0.42 0.04 0.5</diffuse>
-        </material>
-      </visual>
-      <visual name='iiwa_link_4_contact_visual'>
-        <pose>0 0.01 0.052 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.063</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
+          <diffuse>1.0 0.42 0.04 1.0</diffuse>
         </material>
       </visual>
       <collision name='iiwa_link_4_contact'>
@@ -352,17 +282,6 @@
           </friction>
         </surface>
       </collision>
-      <visual name='iiwa_link_4_contact_visual2'>
-        <pose>0 0.177 0.0 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.067</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
       <collision name='iiwa_link_4_contact2'>
         <pose>0 0.177 0.0 0 -0 0</pose>
         <geometry>
@@ -379,7 +298,6 @@
           </friction>
         </surface>
       </collision>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_4" type="revolute">
       <child>iiwa_link_4</child>
@@ -422,22 +340,9 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>0.4 0.4 0.4 0.5</diffuse>
+          <diffuse>0.4 0.4 0.4 1.0</diffuse>
         </material>
       </visual>
-
-      <visual name='iiwa_link_5_contact_visual'>
-        <pose>0 0 0.03 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.067</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_5_contact'>
         <pose>0 0 0.03 0 -0 0</pose>
         <geometry>
@@ -454,19 +359,6 @@
           </friction>
         </surface>
       </collision>
-
-      <visual name='iiwa_link_5_contact_visual2'>
-        <pose>0 0.035 0.22 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.06</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_5_contact2'>
         <pose>0 0.035 0.22 0 -0 0</pose>
         <geometry>
@@ -483,19 +375,6 @@
           </friction>
         </surface>
       </collision>
-
-      <visual name='iiwa_link_5_contact_visual3'>
-        <pose>0 0.058 0.18 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.04</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_5_contact3'>
         <pose>0 0.058 0.18 0 -0 0</pose>
         <geometry>
@@ -512,19 +391,6 @@
           </friction>
         </surface>
       </collision>
-
-      <visual name='iiwa_link_5_contact_visual4'>
-        <pose>0 0.04 0.12 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.045</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_5_contact4'>
         <pose>0 0.04 0.12 0 -0 0</pose>
         <geometry>
@@ -541,7 +407,6 @@
           </friction>
         </surface>
       </collision>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_5" type="revolute">
       <child>iiwa_link_5</child>
@@ -585,22 +450,9 @@
           </mesh>
         </geometry>
         <material>
-          <diffuse>1.0 0.42 0.04 0.5</diffuse>
+          <diffuse>1.0 0.42 0.04 1.0</diffuse>
         </material>
       </visual>
-
-      <visual name='iiwa_link_6_contact_visual'>
-        <pose>0 -0.03 0.007 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.06</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_6_contact'>
         <pose>0 -0.03 0.007 0 -0 0</pose>
         <geometry>
@@ -617,19 +469,6 @@
           </friction>
         </surface>
       </collision>
-
-      <visual name='iiwa_link_6_contact_visual2'>
-        <pose>0 0.05 0. 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.055</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_6_contact2'>
         <pose>0 0.05 0. 0 -0 0</pose>
         <geometry>
@@ -646,7 +485,6 @@
           </friction>
         </surface>
       </collision>
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_6" type="revolute">
       <child>iiwa_link_6</child>
@@ -692,19 +530,6 @@
           <diffuse>0.4 0.4 0.4 1.0</diffuse>
         </material>
       </visual>
-
-      <visual name='iiwa_link_7_contact_visual'>
-        <pose>0 -0.0 0.06 0 -0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.031</radius>
-          </sphere>
-        </geometry>
-        <material>
-          <diffuse>0.8 0.8 0.8 1.0</diffuse>
-        </material>
-      </visual>
-
       <collision name='iiwa_link_7_contact'>
         <pose>0 -0.0 0.06 0 -0 0</pose>
         <geometry>
@@ -721,9 +546,6 @@
           </friction>
         </surface>
       </collision>
-
-
-      <gravity>1</gravity>
     </link>
     <joint name="iiwa_joint_7" type="revolute">
       <child>iiwa_link_7</child>
